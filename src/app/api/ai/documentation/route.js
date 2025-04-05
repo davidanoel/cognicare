@@ -11,67 +11,95 @@ export async function POST(req) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { clientId, sessionId, progressData, sessionData, clientData } = await req.json();
+    const {
+      clientId,
+      sessionId,
+      progressData,
+      sessionData,
+      clientData,
+      assessmentResults,
+      diagnosticResults,
+      treatmentResults,
+      progressResults,
+    } = await req.json();
     if (!clientId || !sessionId || !sessionData) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     const systemPrompt = {
       role: "system",
-      content: `You are an expert mental health documentation specialist.
+      content: `You are an expert mental health documentation specialist who creates comprehensive clinical documentation by synthesizing information from multiple sources.
 
-Key Responsibilities:
-1. Clinical note generation
-2. Progress report creation
-3. Treatment plan documentation
-4. Session summary composition
-
-Documentation Standards:
-- Clear and concise language
-- Objective observations
-- Evidence-based terminology
-- SOAP format when applicable
-- Proper clinical terminology
-- Behavioral descriptions
-- Measurable outcomes
-- Treatment progress indicators
-
-Always include:
-- Relevant clinical observations
-- Client statements (quoted when significant)
-- Interventions used
-- Progress toward goals
-- Risk assessment updates
-- Plan for next session
-- Clinical recommendations
-
-Format all documentation professionally and in compliance with clinical standards.`,
+Your response MUST follow this exact JSON structure:
+{
+  "soap": {
+    "subjective": "Client's reported experiences",
+    "objective": "Clinical observations",
+    "assessment": "Clinical judgment",
+    "plan": "Treatment recommendations"
+  },
+  "clinicalDocumentation": {
+    "initialObservations": "Initial clinical observations",
+    "riskAssessmentSummary": "Summary of risk assessment",
+    "diagnosticConsiderations": "Diagnostic considerations",
+    "treatmentGoalsAndInterventions": ["Array of goals and interventions"],
+    "progressIndicators": ["Array of progress indicators"],
+    "treatmentEffectivenessAnalysis": "Analysis of treatment effectiveness",
+    "followUpRecommendations": ["Array of follow-up recommendations"]
+  },
+  "additionalComponents": {
+    "areasRequiringImmediateAttention": ["Array of immediate concerns"],
+    "recommendedAssessmentTools": ["Array of assessment tools"],
+    "specificInterventions": ["Array of specific interventions"],
+    "progressMetrics": ["Array of progress metrics"],
+    "nextSessionFocus": "Focus for next session"
+  },
+  "progressSummary": {
+    "treatmentGoalsProgress": [
+      {
+        "goal": "Treatment goal",
+        "progress": "Progress description"
+      }
+    ],
+    "outcomesMeasurement": ["Array of outcome measurements"],
+    "areasOfImprovement": ["Array of improvement areas"],
+    "challengesAndBarriers": ["Array of challenges"],
+    "treatmentPlanAdjustments": ["Array of adjustments"],
+    "longTermProgressIndicators": ["Array of long-term indicators"]
+  }
+}`,
     };
 
     const userPrompt = {
       role: "user",
-      content: `Generate comprehensive clinical documentation based on the following data:
+      content: `Create comprehensive clinical documentation for this session using the exact schema structure specified. Include all required fields.
 
-Client Information:
-${JSON.stringify(clientData, null, 2)}
+Client Info:
+${JSON.stringify(clientData)}
 
-Session Details:
-${JSON.stringify(sessionData, null, 2)}
+Session Info:
+${JSON.stringify(sessionData)}
 
-Progress Data:
-${JSON.stringify(progressData || {}, null, 2)}
+Assessment Results:
+${JSON.stringify(assessmentResults || {})}
 
-Generate complete documentation including:
-1. Session Summary (SOAP format)
-2. Progress Notes
-3. Treatment Plan Updates
-4. Risk Assessment Updates
-5. Clinical Recommendations
-6. Next Session Plan
-7. Additional Notes/Concerns`,
+Diagnostic Results:
+${JSON.stringify(diagnosticResults || {})}
+
+Treatment Results:
+${JSON.stringify(treatmentResults || {})}
+
+Progress Results:
+${JSON.stringify(progressResults || {})}
+
+Ensure your response includes all required fields and follows the exact schema structure provided.`,
     };
 
-    const response = await createStructuredResponse([systemPrompt, userPrompt]);
+    const response = await createStructuredResponse(
+      [systemPrompt, userPrompt],
+      null,
+      "documentation"
+    );
     const documentationResults = response;
 
     // Store the AI output
@@ -86,14 +114,7 @@ Generate complete documentation including:
       metadata: {
         modelVersion: "gpt-3.5-turbo",
         timestamp: new Date(),
-        hasProgressData: !!progressData,
       },
-    });
-    console.log("Creating AI Report with data:", {
-      clientId,
-      sessionId,
-      counselorId: session.user.id,
-      type: "documentation",
     });
     await aiReport.save();
 

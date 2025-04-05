@@ -1,16 +1,95 @@
 import { TRIGGER_EVENTS } from "@/constants";
 
+async function callAgent(endpoint, data) {
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || `${endpoint} processing failed: ${response.statusText}`);
+  }
+
+  const results = await response.json();
+  console.log(`${endpoint} complete:`, results);
+  return results;
+}
+
+async function processSessionAgents(data) {
+  // Sequential processing through all agents
+  const agentFlow = [
+    {
+      endpoint: "/api/ai/assessment",
+      getData: (prevResults) => ({
+        clientId: data.clientData._id,
+        clientData: data.clientData,
+        sessionData: data.sessionData,
+      }),
+    },
+    {
+      endpoint: "/api/ai/diagnostic",
+      getData: (prevResults) => ({
+        ...prevResults,
+        clientId: data.clientData._id,
+        clientData: data.clientData,
+        sessionData: data.sessionData,
+        priority: prevResults.assessmentResults?.riskLevel === "high" ? "high" : "normal",
+        riskFactor: prevResults.assessmentResults?.riskLevel === "high",
+      }),
+    },
+    {
+      endpoint: "/api/ai/treatment",
+      getData: (prevResults) => ({
+        ...prevResults,
+        clientId: data.clientData._id,
+        clientData: data.clientData,
+        sessionData: data.sessionData,
+      }),
+    },
+    {
+      endpoint: "/api/ai/progress",
+      getData: (prevResults) => ({
+        ...prevResults,
+        clientId: data.clientData._id,
+        clientData: data.clientData,
+        sessionData: data.sessionData,
+      }),
+    },
+    {
+      endpoint: "/api/ai/documentation",
+      getData: (prevResults) => ({
+        ...prevResults,
+        clientId: data.clientData._id,
+        sessionId: data.sessionData._id,
+        sessionData: {
+          ...data.sessionData,
+          clientId: data.sessionData.clientId._id || data.sessionData.clientId,
+        },
+        clientData: data.clientData,
+      }),
+    },
+  ];
+
+  let accumulatedResults = {};
+  for (const agent of agentFlow) {
+    const results = await callAgent(agent.endpoint, agent.getData(accumulatedResults));
+    accumulatedResults = {
+      ...accumulatedResults,
+      [agent.endpoint.split("/").pop() + "Results"]: results,
+    };
+  }
+
+  return accumulatedResults;
+}
+
 export async function handleTrigger(eventType, data) {
   try {
-    let endpoint;
-    let requestData;
-
     switch (eventType) {
-      case TRIGGER_EVENTS.NEW_CLIENT:
-        console.log("New client detected - Full data:", JSON.stringify(data, null, 2));
-        console.log("Initial assessment from client data:", data.initialAssessment);
-        endpoint = "/api/ai/assessment";
-        requestData = {
+      case TRIGGER_EVENTS.NEW_CLIENT: {
+        console.log("Processing new client assessment");
+        const requestData = {
           clientId: data._id,
           clientData: {
             name: data.name,
@@ -23,63 +102,16 @@ export async function handleTrigger(eventType, data) {
           priority: shouldTriggerRiskAssessment(data) ? "high" : "normal",
           riskFactor: shouldTriggerRiskAssessment(data),
         };
-        console.log("Assessment request data:", JSON.stringify(requestData, null, 2));
-        console.log("Initial assessment in request:", requestData.clientData.initialAssessment);
-        break;
+        return await callAgent("/api/ai/assessment", requestData);
+      }
+
       case TRIGGER_EVENTS.SESSION_COMPLETED:
-        console.log("Session completed event received with data:", JSON.stringify(data, null, 2));
-        endpoint = "/api/ai/documentation";
+        console.log("Processing completed session");
+        return await processSessionAgents(data);
 
-        if (!data.clientData?._id) {
-          console.error("Missing clientData._id");
-          throw new Error("Missing required fields: clientData._id");
-        }
-        if (!data.sessionData?._id) {
-          console.error("Missing sessionData._id");
-          throw new Error("Missing required fields: sessionData._id");
-        }
-
-        // Handle nested clientId structure
-        const sessionData = {
-          ...data.sessionData,
-          clientId: data.sessionData.clientId._id || data.sessionData.clientId,
-        };
-
-        requestData = {
-          clientId: data.clientData._id,
-          sessionId: data.sessionData._id,
-          sessionData: sessionData,
-          clientData: data.clientData,
-        };
-        console.log("Documentation request data:", JSON.stringify(requestData, null, 2));
-        break;
-      case TRIGGER_EVENTS.RISK_IDENTIFIED:
-        endpoint = "/api/ai/diagnostic";
-        requestData = {
-          clientId: data._id,
-          assessmentData: data,
-          priority: "high",
-          riskFactor: true,
-        };
-        break;
       default:
         throw new Error(`Unknown event type: ${eventType}`);
     }
-
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(requestData),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || `AI processing failed: ${response.statusText}`);
-    }
-
-    return await response.json();
   } catch (error) {
     console.error("Trigger handling error:", error);
     throw error;
@@ -103,7 +135,6 @@ export function shouldTriggerRiskAssessment(data) {
     "danger",
   ];
 
-  // Only check the initialAssessment and specific risk-related fields
   const textToCheck = [
     data.initialAssessment,
     data.riskFactors?.suicideRisk?.notes,
@@ -114,9 +145,5 @@ export function shouldTriggerRiskAssessment(data) {
     .join(" ")
     .toLowerCase();
 
-  // Check for exact word matches to avoid false positives
-  return riskKeywords.some((keyword) => {
-    const regex = new RegExp(`\\b${keyword}\\b`, "i");
-    return regex.test(textToCheck);
-  });
+  return riskKeywords.some((keyword) => new RegExp(`\\b${keyword}\\b`, "i").test(textToCheck));
 }

@@ -1,32 +1,138 @@
 import { openai } from "@ai-sdk/openai";
 import { streamText, generateObject } from "ai";
+import { NextResponse } from "next/server";
 import { z } from "zod";
 
 export const runtime = "edge";
 
-// Define a flexible schema for the expected JSON object
-// Adjust this based on the actual expected structure from your assessment prompt
+// Define comprehensive schemas for each agent type
 const assessmentSchema = z
   .object({
-    riskLevel: z.string().optional(),
-    primaryConcerns: z.array(z.string()).optional(),
-    recommendedAssessmentTools: z.array(z.string()).optional(),
-    initialClinicalObservations: z.string().optional(),
-    suggestedNextSteps: z.array(z.string()).optional(),
+    riskLevel: z.string(),
+    primaryConcerns: z.array(z.string()),
+    recommendedAssessmentTools: z.array(z.string()),
+    initialClinicalObservations: z.string(),
+    suggestedNextSteps: z.array(z.string()),
     areasRequiringImmediateAttention: z.array(z.string()).optional(),
-    // Add any other expected fields
   })
-  .passthrough(); // Allow other fields not explicitly defined
+  .passthrough();
+
+const diagnosticSchema = z
+  .object({
+    primaryDiagnosis: z.object({
+      code: z.string(),
+      name: z.string(),
+      description: z.string().optional(),
+    }),
+    differentialDiagnoses: z.array(z.string()),
+    ruleOutConditions: z.array(z.string()),
+    severityIndicators: z.array(z.string()),
+    riskFactors: z.array(z.string()),
+    culturalConsiderations: z.array(z.string()),
+    recommendedAssessments: z.array(z.string()),
+    clinicalJustification: z.string(),
+    treatmentImplications: z.array(z.string()),
+  })
+  .passthrough();
+
+const treatmentSchema = z
+  .object({
+    goals: z.object({
+      shortTerm: z.array(z.string()),
+      longTerm: z.array(z.string()),
+    }),
+    interventions: z.array(z.string()),
+    timeline: z.array(
+      z.object({
+        milestone: z.string(),
+        timeframe: z.string(),
+      })
+    ),
+    measurableOutcomes: z.array(z.string()),
+    progressIndicators: z.array(z.string()),
+    recommendedApproaches: z.array(z.string()),
+    potentialBarriers: z.array(z.string()),
+    successMetrics: z.array(z.string()),
+  })
+  .passthrough();
+
+const progressSchema = z
+  .object({
+    progressSummary: z.string(),
+    goalAchievementStatus: z.array(
+      z.object({
+        goal: z.string(),
+        status: z.string(),
+        notes: z.string().optional(),
+      })
+    ),
+    keyObservations: z.array(z.string()),
+    treatmentEffectiveness: z.string(),
+    identifiedBarriers: z.array(z.string()),
+    areasOfImprovement: z.array(z.string()),
+    areasNeedingFocus: z.array(z.string()),
+    recommendations: z.array(z.string()),
+    nextSteps: z.array(z.string()),
+    treatmentPlanAdjustments: z.array(z.string()),
+  })
+  .passthrough();
+
+const documentationSchema = z
+  .object({
+    soap: z.object({
+      subjective: z.string(),
+      objective: z.string(),
+      assessment: z.string(),
+      plan: z.string(),
+    }),
+    clinicalDocumentation: z.object({
+      initialObservations: z.string(),
+      riskAssessmentSummary: z.string(),
+      diagnosticConsiderations: z.string(),
+      treatmentGoalsAndInterventions: z.array(z.string()),
+      progressIndicators: z.array(z.string()),
+      treatmentEffectivenessAnalysis: z.string(),
+      followUpRecommendations: z.array(z.string()),
+    }),
+    additionalComponents: z.object({
+      areasRequiringImmediateAttention: z.array(z.string()).optional(),
+      recommendedAssessmentTools: z.array(z.string()),
+      specificInterventions: z.array(z.string()),
+      progressMetrics: z.array(z.string()),
+      nextSessionFocus: z.string(),
+    }),
+    progressSummary: z.object({
+      treatmentGoalsProgress: z.array(
+        z.object({
+          goal: z.string(),
+          progress: z.string(),
+        })
+      ),
+      outcomesMeasurement: z.array(z.string()),
+      areasOfImprovement: z.array(z.string()),
+      challengesAndBarriers: z.array(z.string()),
+      treatmentPlanAdjustments: z.array(z.string()),
+      longTermProgressIndicators: z.array(z.string()),
+    }),
+  })
+  .passthrough();
+
+// Combined schema that can handle any agent type
+const combinedSchema = z.union([
+  assessmentSchema,
+  diagnosticSchema,
+  treatmentSchema,
+  progressSchema,
+  documentationSchema,
+]);
 
 export async function POST(req) {
   try {
-    const { messages, responseType } = await req.json();
-
-    const model = openai("gpt-3.5-turbo");
+    const { messages, responseType, agentType } = await req.json();
 
     if (responseType === "stream") {
       const result = await streamText({
-        model,
+        model: openai("gpt-3.5-turbo"),
         messages: messages.map((msg) => ({
           role: msg.role,
           content: msg.content,
@@ -37,11 +143,32 @@ export async function POST(req) {
       return result.toAIStreamResponse();
     }
 
-    // Handle JSON responses using generateObject
+    // Handle JSON responses using generateObject with appropriate schema
     if (responseType === "json") {
+      let schema;
+      switch (agentType) {
+        case "assessment":
+          schema = assessmentSchema;
+          break;
+        case "diagnostic":
+          schema = diagnosticSchema;
+          break;
+        case "treatment":
+          schema = treatmentSchema;
+          break;
+        case "progress":
+          schema = progressSchema;
+          break;
+        case "documentation":
+          schema = documentationSchema;
+          break;
+        default:
+          schema = combinedSchema;
+      }
+
       const result = await generateObject({
-        model,
-        schema: assessmentSchema,
+        model: openai("gpt-3.5-turbo"),
+        schema,
         messages: messages.map((msg) => ({
           role: msg.role,
           content: msg.content,
@@ -54,7 +181,6 @@ export async function POST(req) {
       });
     }
 
-    // Fallback for unknown responseType (optional, could return error)
     return new Response(JSON.stringify({ error: "Invalid responseType specified" }), {
       status: 400,
       headers: { "Content-Type": "application/json" },

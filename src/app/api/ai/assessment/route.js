@@ -87,7 +87,7 @@ Remember:
 - For sleep issues, start with basic sleep assessment tools unless other serious symptoms are reported`,
     };
 
-    const response = await createStructuredResponse([systemPrompt, userPrompt]);
+    const response = await createStructuredResponse([systemPrompt, userPrompt], null, "assessment");
     const assessmentResults = response;
 
     // Store the AI output

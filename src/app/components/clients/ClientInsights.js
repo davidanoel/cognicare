@@ -168,17 +168,45 @@ export default function ClientInsights({ clientId }) {
             {diagnosticContent.primaryDiagnosis && (
               <div>
                 <span className="font-medium">Primary Diagnosis:</span>
-                <p className="mt-1">{diagnosticContent.primaryDiagnosis}</p>
+                <div className="mt-1">
+                  <p className="font-medium">{diagnosticContent.primaryDiagnosis.name}</p>
+                  <p className="text-sm text-gray-600">
+                    Code: {diagnosticContent.primaryDiagnosis.code}
+                  </p>
+                  {diagnosticContent.primaryDiagnosis.description && (
+                    <p className="text-sm text-gray-600 mt-1">
+                      {diagnosticContent.primaryDiagnosis.description}
+                    </p>
+                  )}
+                </div>
               </div>
             )}
-            {diagnosticContent.recommendations && diagnosticContent.recommendations.length > 0 && (
+            {diagnosticContent.differentialDiagnoses &&
+              diagnosticContent.differentialDiagnoses.length > 0 && (
+                <div>
+                  <span className="font-medium">Differential Diagnoses:</span>
+                  <ul className="list-disc ml-5 mt-1">
+                    {diagnosticContent.differentialDiagnoses.map((diagnosis, i) => (
+                      <li key={i}>{diagnosis}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            {diagnosticContent.severityIndicators &&
+              diagnosticContent.severityIndicators.length > 0 && (
+                <div>
+                  <span className="font-medium">Severity Indicators:</span>
+                  <ul className="list-disc ml-5 mt-1">
+                    {diagnosticContent.severityIndicators.map((indicator, i) => (
+                      <li key={i}>{indicator}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            {diagnosticContent.clinicalJustification && (
               <div>
-                <span className="font-medium">Recommendations:</span>
-                <ul className="list-disc ml-5 mt-1">
-                  {diagnosticContent.recommendations.map((rec, i) => (
-                    <li key={i}>{rec}</li>
-                  ))}
-                </ul>
+                <span className="font-medium">Clinical Justification:</span>
+                <p className="mt-1 text-gray-700">{diagnosticContent.clinicalJustification}</p>
               </div>
             )}
           </div>

@@ -11,8 +11,9 @@ export async function POST(req) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { clientId, assessmentData } = await req.json();
-    if (!clientId || !assessmentData) {
+    const { clientId, clientData, sessionData, assessmentResults, priority, riskFactor } =
+      await req.json();
+    if (!clientId || !assessmentResults) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
@@ -35,14 +36,24 @@ Always consider:
 - Cultural considerations
 - Medical conditions
 - Substance use factors
+${priority === "high" ? "\nNote: This case has been flagged as high priority." : ""}
+${riskFactor ? "\nNote: Risk factors have been identified in the assessment." : ""}
 
 Provide diagnostic impressions in structured JSON format.`,
     };
 
     const userPrompt = {
       role: "user",
-      content: `Based on the following assessment data, provide a comprehensive diagnostic analysis:
-${JSON.stringify(assessmentData, null, 2)}
+      content: `Based on the following information, provide a comprehensive diagnostic analysis:
+
+Client Information:
+${JSON.stringify(clientData, null, 2)}
+
+Session Data:
+${JSON.stringify(sessionData || {}, null, 2)}
+
+Assessment Results:
+${JSON.stringify(assessmentResults, null, 2)}
 
 Include in your analysis:
 1. Primary Diagnosis (with DSM-5 code)
@@ -56,13 +67,14 @@ Include in your analysis:
 9. Treatment Implications`,
     };
 
-    const response = await createStructuredResponse([systemPrompt, userPrompt]);
-    const diagnosticResults = JSON.parse(response);
+    const response = await createStructuredResponse([systemPrompt, userPrompt], null, "diagnostic");
+    const diagnosticResults = response;
 
     // Store the AI output
     await connectDB();
     const aiReport = new AIReport({
       clientId,
+      counselorId: session.user.id,
       type: "diagnostic",
       content: diagnosticResults,
       source: "diagnostic-analysis",

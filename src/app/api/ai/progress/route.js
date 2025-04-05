@@ -11,27 +11,79 @@ export async function POST(req) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { clientId, sessionNotes } = await req.json();
-    if (!clientId || !sessionNotes) {
+    const {
+      clientId,
+      clientData,
+      sessionData,
+      assessmentResults,
+      diagnosticResults,
+      treatmentResults,
+    } = await req.json();
+
+    if (!clientId || !sessionData) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     // Process through AI
-    const messages = [
-      {
-        role: "user",
-        content: `Review these session notes and provide a progress analysis. Format the response as JSON with fields: progressSummary, keyObservations, recommendations, and nextSteps.\n\nSession Notes: ${sessionNotes}`,
-      },
-    ];
+    const systemPrompt = {
+      role: "system",
+      content: `You are an expert mental health progress monitoring specialist.
 
-    const progressAnalysis = await createStructuredResponse(messages);
+Key Focus Areas:
+1. Treatment progress evaluation
+2. Outcome measurement
+3. Goal achievement tracking
+4. Barrier identification
+5. Treatment effectiveness analysis
+
+Provide progress analysis in structured JSON format.`,
+    };
+
+    const userPrompt = {
+      role: "user",
+      content: `Analyze the client's progress based on the following information:
+
+Client Information:
+${JSON.stringify(clientData, null, 2)}
+
+Current Session:
+${JSON.stringify(sessionData, null, 2)}
+
+Previous Assessment:
+${JSON.stringify(assessmentResults || {}, null, 2)}
+
+Diagnostic Information:
+${JSON.stringify(diagnosticResults || {}, null, 2)}
+
+Treatment Plan:
+${JSON.stringify(treatmentResults || {}, null, 2)}
+
+Provide a comprehensive progress analysis including:
+1. Progress Summary
+2. Goal Achievement Status
+3. Key Observations
+4. Treatment Effectiveness
+5. Identified Barriers
+6. Areas of Improvement
+7. Areas Needing Focus
+8. Recommendations
+9. Next Steps
+10. Adjustments to Treatment Plan`,
+    };
+
+    const progressAnalysis = await createStructuredResponse(
+      [systemPrompt, userPrompt],
+      null,
+      "progress"
+    );
 
     // Store the AI output
     await connectDB();
     const aiReport = new AIReport({
       clientId,
+      counselorId: session.user.id,
       type: "progress",
-      content: JSON.parse(progressAnalysis),
+      content: progressAnalysis,
       source: "progress-monitoring",
       metadata: {
         modelVersion: "gpt-3.5-turbo",
@@ -40,7 +92,7 @@ export async function POST(req) {
     });
     await aiReport.save();
 
-    return NextResponse.json(JSON.parse(progressAnalysis));
+    return NextResponse.json(progressAnalysis);
   } catch (error) {
     console.error("Progress monitoring error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

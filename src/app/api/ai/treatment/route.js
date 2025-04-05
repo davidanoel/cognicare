@@ -11,27 +11,67 @@ export async function POST(req) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { clientId, clientHistory } = await req.json();
-    if (!clientId || !clientHistory) {
+    const { clientId, clientData, sessionData, assessmentResults, diagnosticResults } =
+      await req.json();
+    if (!clientId || !diagnosticResults) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     // Process through AI
-    const messages = [
-      {
-        role: "user",
-        content: `Based on the client's history, suggest a treatment plan. Format the response as JSON with fields: goals, interventions, timeline, and measurableOutcomes.\n\nClient History: ${clientHistory}`,
-      },
-    ];
+    const systemPrompt = {
+      role: "system",
+      content: `You are an expert mental health treatment planner with extensive experience in developing evidence-based treatment plans.
 
-    const treatmentPlan = await createStructuredResponse(messages);
+Key Focus Areas:
+1. Evidence-based interventions
+2. Goal setting and outcome measurement
+3. Treatment timeline planning
+4. Progress monitoring strategies
+5. Intervention customization
+
+Provide treatment recommendations in structured JSON format.`,
+    };
+
+    const userPrompt = {
+      role: "user",
+      content: `Based on the following information, develop a comprehensive treatment plan:
+
+Client Information:
+${JSON.stringify(clientData, null, 2)}
+
+Session Information:
+${JSON.stringify(sessionData || {}, null, 2)}
+
+Assessment Results:
+${JSON.stringify(assessmentResults || {}, null, 2)}
+
+Diagnostic Results:
+${JSON.stringify(diagnosticResults, null, 2)}
+
+Create a treatment plan including:
+1. Treatment Goals (short-term and long-term)
+2. Specific Interventions
+3. Timeline and Milestones
+4. Measurable Outcomes
+5. Progress Indicators
+6. Recommended Approaches
+7. Potential Barriers
+8. Success Metrics`,
+    };
+
+    const treatmentPlan = await createStructuredResponse(
+      [systemPrompt, userPrompt],
+      null,
+      "treatment"
+    );
 
     // Store the AI output
     await connectDB();
     const aiReport = new AIReport({
       clientId,
+      counselorId: session.user.id,
       type: "treatment",
-      content: JSON.parse(treatmentPlan),
+      content: treatmentPlan,
       source: "treatment-planning",
       metadata: {
         modelVersion: "gpt-3.5-turbo",
@@ -40,7 +80,7 @@ export async function POST(req) {
     });
     await aiReport.save();
 
-    return NextResponse.json(JSON.parse(treatmentPlan));
+    return NextResponse.json(treatmentPlan);
   } catch (error) {
     console.error("Treatment planning error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
