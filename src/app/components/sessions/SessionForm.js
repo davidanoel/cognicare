@@ -128,13 +128,12 @@ export default function SessionForm({ session, onSuccess, onCancel, initialClien
       }
 
       const savedSession = await response.json();
+      console.log("Session saved successfully:", savedSession);
 
       // If session is completed, trigger AI documentation
       if (formData.status === "completed") {
         setAiProcessing(true);
         try {
-          console.log("Session saved successfully:", savedSession);
-
           // First fetch the client data
           const clientResponse = await fetch(`/api/clients/${formData.clientId}`);
           if (!clientResponse.ok) {

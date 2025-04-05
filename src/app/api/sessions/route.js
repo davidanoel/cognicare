@@ -42,7 +42,8 @@ export const POST = requireAuth(async (req) => {
     const newSession = {
       ...body,
       counselorId: user.id,
-      status: "scheduled",
+      // Use the status from form data, default to "scheduled" if not provided
+      status: body.status || "scheduled",
     };
 
     // Validate required fields

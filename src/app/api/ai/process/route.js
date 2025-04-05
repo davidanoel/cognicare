@@ -8,6 +8,7 @@ export const runtime = "edge";
 // Define comprehensive schemas for each agent type
 const assessmentSchema = z
   .object({
+    summary: z.string().describe("Brief summary of key assessment findings"),
     riskLevel: z.string(),
     primaryConcerns: z.array(z.string()),
     recommendedAssessmentTools: z.array(z.string()),
@@ -19,6 +20,11 @@ const assessmentSchema = z
 
 const diagnosticSchema = z
   .object({
+    summary: z
+      .string()
+      .describe(
+        "Brief summary including primary DSM-5 diagnosis (with code), key differential diagnoses, and severity level. Example: 'Primary: GAD (F41.1) - Moderate; Differential: MDD (F33.1), Adjustment Disorder (F43.23)'"
+      ),
     primaryDiagnosis: z.object({
       code: z.string(),
       name: z.string(),
@@ -37,6 +43,7 @@ const diagnosticSchema = z
 
 const treatmentSchema = z
   .object({
+    summary: z.string().describe("Brief summary of treatment plan and key interventions"),
     goals: z.object({
       shortTerm: z.array(z.string()),
       longTerm: z.array(z.string()),
@@ -58,6 +65,7 @@ const treatmentSchema = z
 
 const progressSchema = z
   .object({
+    summary: z.string().describe("Brief summary of progress and key observations"),
     progressSummary: z.string(),
     goalAchievementStatus: z.array(
       z.object({
@@ -79,6 +87,7 @@ const progressSchema = z
 
 const documentationSchema = z
   .object({
+    summary: z.string().describe("Brief summary of overall session and key documentation points"),
     soap: z.object({
       subjective: z.string(),
       objective: z.string(),
