@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { handleTrigger, TRIGGER_EVENTS } from "@/lib/ai/triggers";
+import { handleTrigger } from "@/lib/ai/triggers";
+import { TRIGGER_EVENTS } from "@/constants";
 
 export default function SessionForm({ session, onSuccess, onCancel, initialClientId }) {
   const [clients, setClients] = useState([]);
@@ -102,10 +103,20 @@ export default function SessionForm({ session, onSuccess, onCancel, initialClien
     setLoading(true);
     setError(null);
 
+    // Validate form before submission
+    if (!validateForm()) {
+      setLoading(false);
+      return;
+    }
+
     try {
+      // Determine if this is a create or update operation
+      const method = session ? "PATCH" : "POST";
+      const url = session ? `/api/sessions/${session._id}` : "/api/sessions";
+
       // Save session data
-      const response = await fetch("/api/sessions", {
-        method: "POST",
+      const response = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
         },
@@ -113,7 +124,7 @@ export default function SessionForm({ session, onSuccess, onCancel, initialClien
       });
 
       if (!response.ok) {
-        throw new Error("Failed to create session");
+        throw new Error(session ? "Failed to update session" : "Failed to create session");
       }
 
       const savedSession = await response.json();
@@ -122,13 +133,33 @@ export default function SessionForm({ session, onSuccess, onCancel, initialClien
       if (formData.status === "completed") {
         setAiProcessing(true);
         try {
+          console.log("Session saved successfully:", savedSession);
+
+          // First fetch the client data
+          const clientResponse = await fetch(`/api/clients/${formData.clientId}`);
+          if (!clientResponse.ok) {
+            throw new Error("Failed to fetch client data");
+          }
+          const clientDataResponse = await clientResponse.json();
+          const clientData = clientDataResponse.client; // Extract the client object
+          console.log("Client data fetched:", clientData);
+
+          // Ensure we have all required data
+          if (!savedSession._id) {
+            throw new Error("Session ID is missing from saved session");
+          }
+          if (!clientData?._id) {
+            throw new Error("Client ID is missing from client data");
+          }
+
           const aiResponse = await handleTrigger(TRIGGER_EVENTS.SESSION_COMPLETED, {
             sessionData: savedSession,
-            clientId: formData.clientId,
+            clientData: clientData,
           });
           console.log("AI Documentation Complete:", aiResponse);
         } catch (aiError) {
           console.error("AI Documentation Error:", aiError);
+          setError(aiError.message || "Failed to generate AI documentation");
           // Don't block the session creation if AI processing fails
         }
         setAiProcessing(false);

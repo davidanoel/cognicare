@@ -22,48 +22,80 @@ export async function POST(req) {
       
 Key Responsibilities:
 1. Initial client assessment
-2. Risk factor identification
+2. Proportional risk evaluation
 3. Clinical observation documentation
 4. Treatment priority determination
 
-Always consider:
-- Immediate safety concerns
-- Risk levels
-- Support system availability
-- Current symptoms
-- Historical factors
+Assessment Guidelines:
+- Evaluate risk levels proportionally to the presented symptoms
+- Do not assume severe conditions without clear indicators
+- Base recommendations on the actual information provided
+- Consider the context and severity of reported symptoms
+- Avoid over-escalating minor concerns
+- Only suggest suicide assessment tools when there are clear risk indicators
+
+Risk Level Definitions:
+- none: No clinical risks identified (e.g., routine wellness check)
+- low: Common concerns with minimal impact (e.g., mild sleep issues, stress)
+- moderate: Notable concerns requiring attention (e.g., persistent anxiety, moderate depression)
+- high: ONLY for serious concerns (e.g., active suicidal ideation, severe depression)
+- severe: ONLY for immediate danger (e.g., current suicide attempt, active psychosis)
+
+Sleep Issues Guidelines:
+- Insomnia alone is typically a low-risk concern unless accompanied by other symptoms
+- Sleep problems should be assessed as high-risk only if accompanied by clear indicators of severe depression or other serious conditions
+- Focus on sleep hygiene and routine assessment tools before escalating
 
 Provide structured assessment in JSON format.`,
     };
 
     const userPrompt = {
       role: "user",
-      content: `Perform a comprehensive initial assessment for the following client data:
-${JSON.stringify(clientData, null, 2)}
+      content: `Perform a proportional initial assessment for the following client data:
+Name: ${clientData.name}
+Age: ${clientData.age}
+Gender: ${clientData.gender}
+Status: ${clientData.status}
 
-${priority === "high" ? "This is a HIGH PRIORITY assessment requiring immediate attention." : ""}
+Initial Assessment Notes:
+${clientData.initialAssessment}
+
+Context: This is the client's initial presentation. Assess based ONLY on the information provided.
+${
+  priority === "high"
+    ? "Note: This case has been flagged for review due to potential concerns."
+    : ""
+}
 ${
   riskFactor
-    ? "Risk factors have been identified. Please pay special attention to safety concerns."
+    ? "Note: Some risk-related terms were detected, but please assess independently based on the actual content."
     : ""
 }
 
-Provide assessment results including:
-1. Risk Level (none, low, moderate, high, severe)
-2. Primary Concerns
-3. Recommended Assessment Tools
-4. Initial Clinical Observations
-5. Suggested Next Steps
-6. Areas Requiring Immediate Attention`,
+Provide a proportional assessment including:
+1. Risk Level (must match the defined risk levels and be based solely on presented information)
+2. Primary Concerns (list only concerns directly mentioned or clearly implied)
+3. Recommended Assessment Tools (appropriate and proportional to the symptoms)
+4. Initial Clinical Observations (stick to factual observations, avoid speculation)
+5. Suggested Next Steps (must be proportional to the actual concerns identified)
+6. Areas Requiring Immediate Attention (include ONLY if there are genuinely urgent issues)
+
+Remember:
+- Base assessment ONLY on explicitly provided information
+- Do not assume additional symptoms or risks
+- Keep recommendations proportional to the actual presented concerns
+- For sleep issues, start with basic sleep assessment tools unless other serious symptoms are reported`,
     };
 
     const response = await createStructuredResponse([systemPrompt, userPrompt]);
-    const assessmentResults = JSON.parse(response);
+    const assessmentResults = response;
 
     // Store the AI output
     await connectDB();
+    console.log("Creating AI Report with clientId:", clientId);
     const aiReport = new AIReport({
       clientId,
+      counselorId: session.user.id,
       type: "assessment",
       content: assessmentResults,
       source: "initial-assessment",
@@ -74,7 +106,9 @@ Provide assessment results including:
         riskFactor: !!riskFactor,
       },
     });
+    console.log("AI Report object created:", aiReport);
     await aiReport.save();
+    console.log("AI Report saved successfully");
 
     return NextResponse.json(assessmentResults);
   } catch (error) {

@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth";
+import { requireAuth, getCurrentUser } from "@/lib/auth";
 import Client from "@/models/client";
 import Session from "@/models/session";
 import Report from "@/models/report";
 
-export const GET = requireAuth(async (req, session) => {
+export const GET = requireAuth(async (req) => {
   try {
-    const counselorId = session.user.id;
+    const user = await getCurrentUser();
+    const counselorId = user.id;
 
     // Get total clients
     const totalClients = await Client.countDocuments({ counselorId });

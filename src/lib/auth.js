@@ -26,7 +26,7 @@ export async function isAdmin() {
 }
 
 export function requireAuth(handler) {
-  return async (req) => {
+  return async (req, context) => {
     const session = await getSession();
 
     if (!session) {
@@ -36,7 +36,7 @@ export function requireAuth(handler) {
       });
     }
 
-    return handler(req, session);
+    return handler(req, context);
   };
 }
 

@@ -1,5 +1,6 @@
 export async function createAgentStream(messages, context) {
-  const response = await fetch("/api/ai/process", {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const response = await fetch(`${baseUrl}/api/ai/process`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -24,7 +25,8 @@ export async function createAgentStream(messages, context) {
 }
 
 export async function createStructuredResponse(messages, context) {
-  const response = await fetch("/api/ai/process", {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const response = await fetch(`${baseUrl}/api/ai/process`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

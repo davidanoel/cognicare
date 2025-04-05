@@ -72,13 +72,14 @@ Generate complete documentation including:
     };
 
     const response = await createStructuredResponse([systemPrompt, userPrompt]);
-    const documentationResults = JSON.parse(response);
+    const documentationResults = response;
 
     // Store the AI output
     await connectDB();
     const aiReport = new AIReport({
       clientId,
       sessionId,
+      counselorId: session.user.id,
       type: "documentation",
       content: documentationResults,
       source: "session-documentation",
@@ -87,6 +88,12 @@ Generate complete documentation including:
         timestamp: new Date(),
         hasProgressData: !!progressData,
       },
+    });
+    console.log("Creating AI Report with data:", {
+      clientId,
+      sessionId,
+      counselorId: session.user.id,
+      type: "documentation",
     });
     await aiReport.save();
 

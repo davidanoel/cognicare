@@ -122,9 +122,13 @@ export default function ClientForm({ client, onSuccess, onCancel }) {
     }
 
     try {
+      // Determine if this is a create or update operation
+      const method = client ? "PATCH" : "POST";
+      const url = client ? `/api/clients/${client._id}` : "/api/clients";
+
       // Save client data
-      const response = await fetch("/api/clients", {
-        method: "POST",
+      const response = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
         },
@@ -132,22 +136,23 @@ export default function ClientForm({ client, onSuccess, onCancel }) {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to create client");
+        throw new Error(client ? "Failed to update client" : "Failed to create client");
       }
 
       const savedClient = await response.json();
-      console.log("Saved Client:", savedClient);
 
-      // Start AI processing
-      setAiProcessing(true);
-      try {
-        const aiResponse = await handleTrigger(TRIGGER_EVENTS.NEW_CLIENT, savedClient);
-        console.log("AI Processing Complete:", aiResponse);
-      } catch (aiError) {
-        console.error("AI Processing Error:", aiError);
-        // Don't block the client creation if AI processing fails
+      // Only trigger AI assessment for new clients
+      if (!client) {
+        setAiProcessing(true);
+        try {
+          const aiResponse = await handleTrigger(TRIGGER_EVENTS.NEW_CLIENT, savedClient);
+          console.log("AI Processing Complete:", aiResponse);
+        } catch (aiError) {
+          console.error("AI Processing Error:", aiError);
+          // Don't block the client creation if AI processing fails
+        }
+        setAiProcessing(false);
       }
-      setAiProcessing(false);
 
       if (onSuccess) {
         onSuccess(savedClient);

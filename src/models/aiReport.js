@@ -7,6 +7,11 @@ const aiReportSchema = new mongoose.Schema(
       ref: "Client",
       required: true,
     },
+    counselorId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     sessionId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Session",

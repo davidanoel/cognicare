@@ -50,6 +50,7 @@ export const POST = requireAuth(async (req) => {
 
     // Get body data from request
     const body = await req.json();
+    console.log("Received client data:", JSON.stringify(body, null, 2));
 
     // Add counselorId and default status if not provided
     body.counselorId = user.id;
@@ -59,6 +60,12 @@ export const POST = requireAuth(async (req) => {
     if (!body.name) {
       return NextResponse.json({ message: "Name is required" }, { status: 400 });
     }
+
+    if (!body.initialAssessment) {
+      console.log("Missing initialAssessment in request body");
+      return NextResponse.json({ message: "Initial assessment is required" }, { status: 400 });
+    }
+    console.log("Initial assessment found:", body.initialAssessment);
 
     // Ensure contactInfo structure exists
     if (!body.contactInfo) {
@@ -101,11 +108,12 @@ export const POST = requireAuth(async (req) => {
     }
 
     // Create and save the client
+    console.log("Creating client with data:", JSON.stringify(body, null, 2));
     const client = await Client.create(body);
+    console.log("Created client:", JSON.stringify(client.toObject(), null, 2));
 
-    // Return the client without initialAssessment
-    const { initialAssessment, ...clientWithoutAssessment } = client.toObject();
-    return NextResponse.json(clientWithoutAssessment, { status: 201 });
+    // Return the complete client object including initialAssessment
+    return NextResponse.json(client.toObject(), { status: 201 });
   } catch (error) {
     console.error("Error creating client:", error);
     return NextResponse.json({ message: "Error creating client" }, { status: 500 });
