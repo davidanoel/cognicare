@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ClientForm from "./ClientForm";
+import ClientInsights from "./ClientInsights";
 
 export default function ClientDetail({ clientId }) {
   const [client, setClient] = useState(null);
@@ -655,6 +656,15 @@ export default function ClientDetail({ clientId }) {
           </div>
         )}
       </div>
+
+      {/* AI Insights Section */}
+      <div className="mt-6">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Clinical Insights</h2>
+        <ClientInsights clientId={client._id} />
+      </div>
+
+      {/* Sessions Section */}
+      <div className="mt-6">{/* ... existing sessions section ... */}</div>
     </div>
   );
 }

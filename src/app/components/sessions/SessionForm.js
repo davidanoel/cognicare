@@ -3,23 +3,28 @@
 import { useState, useEffect } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { handleTrigger, TRIGGER_EVENTS } from "@/lib/ai/triggers";
 
 export default function SessionForm({ session, onSuccess, onCancel, initialClientId }) {
   const [clients, setClients] = useState([]);
   const [loadingClients, setLoadingClients] = useState(true);
   const [formData, setFormData] = useState({
     clientId: initialClientId || "",
-    date: new Date(),
-    duration: 60,
-    type: "followup",
+    date: new Date().toISOString().split("T")[0],
+    duration: 50,
+    type: "initial",
     format: "in-person",
     status: "scheduled",
     notes: "",
+    concerns: "",
+    progress: "",
+    nextSteps: "",
     moodRating: 5,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [validationErrors, setValidationErrors] = useState({});
+  const [aiProcessing, setAiProcessing] = useState(false);
 
   // Fetch all clients for the dropdown
   useEffect(() => {
@@ -44,12 +49,15 @@ export default function SessionForm({ session, onSuccess, onCancel, initialClien
     if (session) {
       setFormData({
         clientId: session.clientId._id || session.clientId,
-        date: new Date(session.date),
+        date: session.date.split("T")[0],
         duration: session.duration,
         type: session.type,
         format: session.format,
         status: session.status,
         notes: session.notes || "",
+        concerns: session.concerns || "",
+        progress: session.progress || "",
+        nextSteps: session.nextSteps || "",
         moodRating: session.moodRating || 5,
       });
     }
@@ -66,7 +74,7 @@ export default function SessionForm({ session, onSuccess, onCancel, initialClien
   const handleDateChange = (date) => {
     setFormData((prev) => ({
       ...prev,
-      date,
+      date: date.toISOString().split("T")[0],
     }));
   };
 
@@ -91,31 +99,47 @@ export default function SessionForm({ session, onSuccess, onCancel, initialClien
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!validateForm()) return;
-
     setLoading(true);
     setError(null);
 
     try {
-      const url = session ? `/api/sessions/${session._id}` : "/api/sessions";
-      const method = session ? "PATCH" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
+      // Save session data
+      const response = await fetch("/api/sessions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(formData),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to save session");
+        throw new Error("Failed to create session");
       }
 
-      if (onSuccess) onSuccess();
+      const savedSession = await response.json();
+
+      // If session is completed, trigger AI documentation
+      if (formData.status === "completed") {
+        setAiProcessing(true);
+        try {
+          const aiResponse = await handleTrigger(TRIGGER_EVENTS.SESSION_COMPLETED, {
+            sessionData: savedSession,
+            clientId: formData.clientId,
+          });
+          console.log("AI Documentation Complete:", aiResponse);
+        } catch (aiError) {
+          console.error("AI Documentation Error:", aiError);
+          // Don't block the session creation if AI processing fails
+        }
+        setAiProcessing(false);
+      }
+
+      if (onSuccess) {
+        onSuccess(savedSession);
+      }
     } catch (err) {
-      console.error("Error saving session:", err);
-      setError(err.message || "An error occurred while saving the session");
+      console.error("Error:", err);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -165,7 +189,7 @@ export default function SessionForm({ session, onSuccess, onCancel, initialClien
             Date & Time <span className="text-red-500">*</span>
           </label>
           <DatePicker
-            selected={formData.date}
+            selected={new Date(formData.date)}
             onChange={handleDateChange}
             showTimeSelect
             timeFormat="HH:mm"
@@ -315,11 +339,19 @@ export default function SessionForm({ session, onSuccess, onCancel, initialClien
         <button
           type="submit"
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
-          disabled={loading}
+          disabled={loading || aiProcessing}
         >
-          {loading ? "Saving..." : session ? "Update Session" : "Create Session"}
+          {loading ? "Saving..." : aiProcessing ? "Processing..." : "Save Session"}
         </button>
       </div>
+
+      {aiProcessing && (
+        <div className="mt-4 p-4 bg-blue-50 text-blue-700 rounded">
+          <p className="text-sm">
+            Generating session documentation... This may take a few moments.
+          </p>
+        </div>
+      )}
     </form>
   );
 }

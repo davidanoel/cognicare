@@ -1,27 +1,35 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { handleTrigger, TRIGGER_EVENTS } from "@/lib/ai/triggers";
 
 export default function ClientForm({ client, onSuccess, onCancel }) {
   const [formData, setFormData] = useState({
-    name: "",
-    age: "",
-    gender: "male",
+    name: client ? client.name || "" : "",
+    age: client ? client.age || "" : "",
+    gender: client ? client.gender || "male" : "male",
     contactInfo: {
-      email: "",
-      phone: "",
-      emergencyContact: {
-        name: "",
-        relationship: "",
-        phone: "",
-      },
+      email: client ? client.contactInfo?.email || "" : "",
+      phone: client ? client.contactInfo?.phone || "" : "",
+      emergencyContact: client
+        ? client.contactInfo?.emergencyContact || {
+            name: "",
+            relationship: "",
+            phone: "",
+          }
+        : {
+            name: "",
+            relationship: "",
+            phone: "",
+          },
     },
-    initialAssessment: "",
-    status: "active",
+    initialAssessment: client ? client.initialAssessment || "" : "",
+    status: client ? client.status || "active" : "active",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [validationErrors, setValidationErrors] = useState({});
+  const [aiProcessing, setAiProcessing] = useState(false);
 
   useEffect(() => {
     if (client) {
@@ -101,31 +109,42 @@ export default function ClientForm({ client, onSuccess, onCancel }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!validateForm()) return;
-
     setLoading(true);
     setError(null);
 
     try {
-      const url = client ? `/api/clients/${client._id}` : "/api/clients";
-      const method = client ? "PATCH" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
+      // Save client data
+      const response = await fetch("/api/clients", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(formData),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to save client");
+        throw new Error("Failed to create client");
       }
 
-      if (onSuccess) onSuccess();
+      const savedClient = await response.json();
+
+      // Start AI processing
+      setAiProcessing(true);
+      try {
+        const aiResponse = await handleTrigger(TRIGGER_EVENTS.NEW_CLIENT, savedClient);
+        console.log("AI Processing Complete:", aiResponse);
+      } catch (aiError) {
+        console.error("AI Processing Error:", aiError);
+        // Don't block the client creation if AI processing fails
+      }
+      setAiProcessing(false);
+
+      if (onSuccess) {
+        onSuccess(savedClient);
+      }
     } catch (err) {
-      console.error("Error saving client:", err);
-      setError(err.message || "An error occurred while saving the client");
+      console.error("Error:", err);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -302,23 +321,23 @@ export default function ClientForm({ client, onSuccess, onCancel }) {
         )}
       </div>
 
-      <div className="flex justify-end space-x-4 pt-4">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
-          disabled={loading}
-        >
-          Cancel
-        </button>
+      <div className="flex items-center justify-between">
         <button
           type="submit"
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
-          disabled={loading}
+          disabled={loading || aiProcessing}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-blue-300"
         >
-          {loading ? "Saving..." : client ? "Update Client" : "Add Client"}
+          {loading ? "Saving..." : aiProcessing ? "Processing..." : "Save Client"}
         </button>
+
+        {error && <p className="text-red-500 text-sm">{error}</p>}
       </div>
+
+      {aiProcessing && (
+        <div className="mt-4 p-4 bg-blue-50 text-blue-700 rounded">
+          <p className="text-sm">AI assessment in progress... This may take a few moments.</p>
+        </div>
+      )}
     </form>
   );
 }
