@@ -9,7 +9,14 @@ export default function ClientInsights({ clientId }) {
     const fetchInsights = async () => {
       try {
         const response = await fetch(`/api/reports/${clientId}`);
-        if (!response.ok) throw new Error("Failed to fetch insights");
+        if (!response.ok) {
+          if (response.status === 404) {
+            // No reports yet
+            setError("no_reports");
+          } else {
+            throw new Error("Failed to fetch insights");
+          }
+        }
         const data = await response.json();
         setInsights(data);
       } catch (err) {
@@ -25,6 +32,15 @@ export default function ClientInsights({ clientId }) {
   }, [clientId]);
 
   if (loading) return <div className="p-4">Loading insights...</div>;
+  if (error === "no_reports") {
+    return (
+      <div className="bg-blue-50 p-4 rounded-lg">
+        <p className="text-blue-600">
+          No AI insights available yet. They will appear here after the initial assessment.
+        </p>
+      </div>
+    );
+  }
   if (error) return <div className="p-4 text-red-500">Error: {error}</div>;
   if (!insights) return null;
 

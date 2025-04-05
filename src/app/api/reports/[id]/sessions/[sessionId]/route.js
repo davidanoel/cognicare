@@ -10,7 +10,7 @@ export async function GET(req, { params }) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { clientId, sessionId } = params;
+    const { id: clientId, sessionId } = params;
     if (!clientId || !sessionId) {
       return NextResponse.json({ error: "Client ID and Session ID are required" }, { status: 400 });
     }

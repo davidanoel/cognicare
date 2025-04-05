@@ -1,40 +1,51 @@
-import { OpenAIStream, StreamingTextResponse } from "ai";
-import OpenAI from "openai";
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 export async function createAgentStream(messages, context) {
-  const response = await openai.chat.completions.create({
-    model: "gpt-3.5-turbo",
-    stream: true,
-    messages: [
-      {
-        role: "system",
-        content: "You are a professional mental health AI assistant.",
-      },
-      ...messages,
-    ],
+  const response = await fetch("/api/ai/process", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      messages: [
+        {
+          role: "system",
+          content: "You are a professional mental health AI assistant.",
+        },
+        ...messages,
+      ],
+      responseType: "stream",
+    }),
   });
 
-  const stream = OpenAIStream(response);
-  return new StreamingTextResponse(stream);
+  if (!response.ok) {
+    throw new Error("AI processing failed");
+  }
+
+  return response;
 }
 
 export async function createStructuredResponse(messages, context) {
-  const response = await openai.chat.completions.create({
-    model: "gpt-3.5-turbo",
-    temperature: 0.7,
-    messages: [
-      {
-        role: "system",
-        content:
-          "You are a professional mental health AI assistant. Always respond in valid JSON format.",
-      },
-      ...messages,
-    ],
+  const response = await fetch("/api/ai/process", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a professional mental health AI assistant. Always respond in valid JSON format.",
+        },
+        ...messages,
+      ],
+      responseType: "json",
+    }),
   });
 
-  return response.choices[0].message.content;
+  if (!response.ok) {
+    throw new Error("AI processing failed");
+  }
+
+  const result = await response.json();
+  return result;
 }

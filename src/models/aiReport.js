@@ -7,49 +7,30 @@ const aiReportSchema = new mongoose.Schema(
       ref: "Client",
       required: true,
     },
+    sessionId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Session",
+      required: false, // Only required for session-specific reports
+    },
     type: {
       type: String,
       required: true,
-      enum: ["assessment", "diagnostic", "progress", "treatment"],
-    },
-    timestamp: {
-      type: Date,
-      default: Date.now,
+      enum: ["assessment", "diagnostic", "treatment", "progress", "documentation"],
     },
     content: {
-      summary: String,
-      riskLevel: {
-        type: String,
-        enum: ["low", "moderate", "high", "severe"],
-      },
-      primaryConcerns: [String],
-      diagnoses: [
-        {
-          code: String,
-          name: String,
-          description: String,
-        },
-      ],
-      recommendations: [String],
+      type: mongoose.Schema.Types.Mixed,
+      required: true,
     },
     source: {
       type: String,
       required: true,
-      enum: ["initial-assessment", "session-notes", "progress-review"],
-    },
-    status: {
-      type: String,
-      required: true,
-      default: "active",
-      enum: ["active", "archived"],
     },
     metadata: {
-      sessionId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Session",
-      },
-      confidence: Number,
       modelVersion: String,
+      timestamp: Date,
+      priority: String,
+      riskFactor: Boolean,
+      hasProgressData: Boolean,
     },
   },
   {
@@ -57,9 +38,7 @@ const aiReportSchema = new mongoose.Schema(
   }
 );
 
-// Index for efficient querying
-aiReportSchema.index({ clientId: 1, type: 1, timestamp: -1 });
-
+// Prevent model recompilation error in development
 const AIReport = mongoose.models.AIReport || mongoose.model("AIReport", aiReportSchema);
 
 export default AIReport;

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Report from "@/models/report";
-import { requireAuth, getCurrentUser } from "@/lib/auth";
+import { requireAuth, getCurrentUser, getSession } from "@/lib/auth";
+import AIReport from "@/models/aiReport";
 
 // Get a specific report
 export const GET = requireAuth(async (req, _, { params }) => {
@@ -90,3 +91,35 @@ export const DELETE = requireAuth(async (req, _, { params }) => {
     return NextResponse.json({ message: "Error deleting report" }, { status: 500 });
   }
 });
+
+export async function getReports(req, { params }) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id: clientId } = params;
+    if (!clientId) {
+      return NextResponse.json({ error: "Client ID is required" }, { status: 400 });
+    }
+
+    await connectDB();
+
+    // Fetch the latest report of each type for this client
+    const reports = await AIReport.find({ clientId }).sort({ "metadata.timestamp": -1 });
+
+    // Group reports by type, keeping only the latest of each
+    const latestReports = reports.reduce((acc, report) => {
+      if (!acc[report.type] || report.metadata.timestamp > acc[report.type].metadata.timestamp) {
+        acc[report.type] = report;
+      }
+      return acc;
+    }, {});
+
+    return NextResponse.json(latestReports);
+  } catch (error) {
+    console.error("Error fetching reports:", error);
+    return NextResponse.json({ error: "Failed to fetch reports" }, { status: 500 });
+  }
+}

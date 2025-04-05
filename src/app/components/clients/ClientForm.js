@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { handleTrigger, TRIGGER_EVENTS } from "@/lib/ai/triggers";
+import { handleTrigger } from "@/lib/ai/triggers";
+import { TRIGGER_EVENTS } from "@/constants";
 
 export default function ClientForm({ client, onSuccess, onCancel }) {
   const [formData, setFormData] = useState({
@@ -112,6 +113,14 @@ export default function ClientForm({ client, onSuccess, onCancel }) {
     setLoading(true);
     setError(null);
 
+    // Validate form before submission
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      setLoading(false);
+      return;
+    }
+
     try {
       // Save client data
       const response = await fetch("/api/clients", {
@@ -127,6 +136,7 @@ export default function ClientForm({ client, onSuccess, onCancel }) {
       }
 
       const savedClient = await response.json();
+      console.log("Saved Client:", savedClient);
 
       // Start AI processing
       setAiProcessing(true);
