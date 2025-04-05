@@ -1,46 +1,36 @@
 import { NextResponse } from "next/server";
-import dbConnect from "@/lib/db";
-import AIReport from "@/models/aiReport";
 import { getSession } from "@/lib/auth";
+import { connectDB } from "@/lib/mongodb";
+import AIReport from "@/models/aiReport";
 
-export async function GET(request, { params }) {
+export async function GET(req, { params }) {
   try {
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await dbConnect();
     const { clientId } = params;
-
-    // Fetch the most recent reports of each type for this client
-    const reports = await AIReport.aggregate([
-      {
-        $match: {
-          clientId: clientId,
-          status: "active",
-        },
-      },
-      { $sort: { timestamp: -1 } },
-      {
-        $group: {
-          _id: "$type",
-          report: { $first: "$$ROOT" },
-        },
-      },
-      { $replaceRoot: { newRoot: "$report" } },
-    ]);
-
-    if (!reports || reports.length === 0) {
-      return NextResponse.json({
-        message: "No reports found for this client",
-        reports: [],
-      });
+    if (!clientId) {
+      return NextResponse.json({ error: "Client ID is required" }, { status: 400 });
     }
 
-    return NextResponse.json({ reports });
+    await connectDB();
+
+    // Fetch the latest report of each type for this client
+    const reports = await AIReport.find({ clientId }).sort({ "metadata.timestamp": -1 });
+
+    // Group reports by type, keeping only the latest of each
+    const latestReports = reports.reduce((acc, report) => {
+      if (!acc[report.type] || report.metadata.timestamp > acc[report.type].metadata.timestamp) {
+        acc[report.type] = report;
+      }
+      return acc;
+    }, {});
+
+    return NextResponse.json(latestReports);
   } catch (error) {
-    console.error("Error fetching client reports:", error);
-    return NextResponse.json({ error: "Failed to fetch client reports" }, { status: 500 });
+    console.error("Error fetching reports:", error);
+    return NextResponse.json({ error: "Failed to fetch reports" }, { status: 500 });
   }
 }
