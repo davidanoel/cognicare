@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import UserForm from "./UserForm";
@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 
 export default function UserList() {
   const { data: session } = useSession();
-  const [users, setUsers] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAddUser, setShowAddUser] = useState(false);
@@ -16,20 +16,19 @@ export default function UserList() {
   const [roleFilter, setRoleFilter] = useState("");
   const router = useRouter();
 
+  // Only fetch all users once on component mount
   useEffect(() => {
-    fetchUsers();
-  }, [searchTerm, roleFilter]);
+    fetchAllUsers();
+  }, []);
 
-  const fetchUsers = async () => {
+  const fetchAllUsers = async () => {
     try {
-      let url = "/api/users?";
-      if (searchTerm) url += `search=${encodeURIComponent(searchTerm)}&`;
-      if (roleFilter) url += `role=${encodeURIComponent(roleFilter)}`;
+      setLoading(true);
+      const response = await fetch("/api/users");
 
-      const response = await fetch(url);
       if (!response.ok) throw new Error("Failed to fetch users");
       const data = await response.json();
-      setUsers(data);
+      setAllUsers(data);
       setError(null);
     } catch (err) {
       setError("Error loading users");
@@ -38,6 +37,22 @@ export default function UserList() {
       setLoading(false);
     }
   };
+
+  // Filter users client-side using useMemo for performance
+  const filteredUsers = useMemo(() => {
+    return allUsers.filter((user) => {
+      // Apply search filter (case-insensitive)
+      const matchesSearch =
+        searchTerm === "" ||
+        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase());
+
+      // Apply role filter
+      const matchesRole = roleFilter === "" || user.role.toLowerCase() === roleFilter.toLowerCase();
+
+      return matchesSearch && matchesRole;
+    });
+  }, [allUsers, searchTerm, roleFilter]);
 
   const handleDeleteUser = async (userId) => {
     if (!confirm("Are you sure you want to delete this user?")) return;
@@ -48,7 +63,7 @@ export default function UserList() {
       });
 
       if (!response.ok) throw new Error("Failed to delete user");
-      fetchUsers(); // Refresh the list
+      fetchAllUsers(); // Refresh the list after deletion
     } catch (err) {
       setError("Error deleting user");
       console.error("Error:", err);
@@ -57,7 +72,7 @@ export default function UserList() {
 
   const handleUserAdded = () => {
     setShowAddUser(false);
-    fetchUsers();
+    fetchAllUsers(); // Refresh the user list
   };
 
   if (loading) return <div className="text-center p-4">Loading...</div>;
@@ -96,53 +111,63 @@ export default function UserList() {
       </div>
 
       {/* Users Table */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Name
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Email
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Role
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {users.map((user) => (
-              <tr key={user._id}>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <Link href={`/users/${user._id}`} className="text-blue-600 hover:text-blue-800">
-                    {user.name}
-                  </Link>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
-                <td className="px-6 py-4 whitespace-nowrap capitalize">{user.role}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button
-                    onClick={() => router.push(`/users/${user._id}`)}
-                    className="text-indigo-600 hover:text-indigo-900 mr-4"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDeleteUser(user._id)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    Delete
-                  </button>
-                </td>
+      {filteredUsers.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-gray-500">
+            {allUsers.length === 0
+              ? "No users found. Add a new user to get started."
+              : "No users match your search criteria."}
+          </p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="min-w-full bg-white">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Name
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Email
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Role
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredUsers.map((user) => (
+                <tr key={user._id}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <Link href={`/users/${user._id}`} className="text-blue-600 hover:text-blue-800">
+                      {user.name}
+                    </Link>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
+                  <td className="px-6 py-4 whitespace-nowrap capitalize">{user.role}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <button
+                      onClick={() => router.push(`/users/${user._id}`)}
+                      className="text-indigo-600 hover:text-indigo-900 mr-4"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeleteUser(user._id)}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Add User Modal */}
       {showAddUser && (

@@ -41,15 +41,24 @@ export const GET = requireAuth(async (req, session) => {
     ]);
 
     // Format recent activity
-    const recentActivity = [...recentSessions, ...recentReports]
-      .map((item) => ({
-        type: item.type || (item.sessionId ? "report" : "session"),
-        date: item.createdAt,
-        clientName: item.clientId?.name || "Unknown Client",
-        status: item.status,
-        id: item._id.toString(),
-      }))
-      .sort((a, b) => b.date - a.date)
+    const recentActivity = [
+      ...recentSessions.map((session) => ({
+        type: "session",
+        date: session.createdAt,
+        clientName: session.clientId?.name || "Unknown Client",
+        status: session.status,
+        id: session._id.toString(),
+        duration: session.duration,
+      })),
+      ...recentReports.map((report) => ({
+        type: "report",
+        date: report.createdAt,
+        clientName: report.clientId?.name || "Unknown Client",
+        status: report.status,
+        id: report._id.toString(),
+      })),
+    ]
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, 5);
 
     return NextResponse.json({

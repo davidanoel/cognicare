@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ClientForm from "./ClientForm";
 
 export default function ClientList() {
-  const [clients, setClients] = useState([]);
+  const [allClients, setAllClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -14,25 +14,23 @@ export default function ClientList() {
   const [showAddClient, setShowAddClient] = useState(false);
   const router = useRouter();
 
+  // Only fetch all clients once on component mount
   useEffect(() => {
-    fetchClients();
-  }, [searchTerm, statusFilter]);
+    fetchAllClients();
+  }, []);
 
-  const fetchClients = async () => {
+  const fetchAllClients = async () => {
     try {
       setLoading(true);
-      let url = "/api/clients?";
-      if (searchTerm) url += `search=${encodeURIComponent(searchTerm)}&`;
-      if (statusFilter) url += `status=${encodeURIComponent(statusFilter)}`;
+      const response = await fetch("/api/clients");
 
-      const response = await fetch(url);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || "Failed to fetch clients");
       }
 
       const data = await response.json();
-      setClients(data);
+      setAllClients(data);
       setError(null);
     } catch (err) {
       console.error("Error fetching clients:", err);
@@ -42,9 +40,24 @@ export default function ClientList() {
     }
   };
 
+  // Filter clients client-side
+  const filteredClients = useMemo(() => {
+    return allClients.filter((client) => {
+      // Apply search filter (case-insensitive)
+      const matchesSearch =
+        searchTerm === "" || client.name.toLowerCase().includes(searchTerm.toLowerCase());
+
+      // Apply status filter
+      const matchesStatus =
+        statusFilter === "" || client.status.toLowerCase() === statusFilter.toLowerCase();
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [allClients, searchTerm, statusFilter]);
+
   const handleClientAdded = () => {
     setShowAddClient(false);
-    fetchClients();
+    fetchAllClients(); // Refresh all clients
   };
 
   if (loading) {
@@ -64,7 +77,7 @@ export default function ClientList() {
         <strong className="font-bold">Error: </strong>
         <span className="block sm:inline">{error}</span>
         <button
-          onClick={fetchClients}
+          onClick={fetchAllClients}
           className="mt-2 bg-red-100 text-red-700 px-4 py-2 rounded hover:bg-red-200"
         >
           Try Again
@@ -107,9 +120,13 @@ export default function ClientList() {
         </select>
       </div>
 
-      {clients.length === 0 ? (
+      {filteredClients.length === 0 ? (
         <div className="text-center py-8">
-          <p className="text-gray-500">No clients found. Add a new client to get started.</p>
+          <p className="text-gray-500">
+            {allClients.length === 0
+              ? "No clients found. Add a new client to get started."
+              : "No clients match your search criteria."}
+          </p>
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -134,7 +151,7 @@ export default function ClientList() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {clients.map((client) => (
+              {filteredClients.map((client) => (
                 <tr key={client._id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Link

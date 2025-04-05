@@ -37,7 +37,7 @@ const sessionSchema = new mongoose.Schema({
   // Raw input from counselor
   notes: {
     type: String,
-    required: true,
+    required: false,
   },
   // Basic session metrics
   moodRating: {

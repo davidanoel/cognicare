@@ -362,7 +362,7 @@ export default function ClientDetail({ clientId }) {
                   <p className="text-sm text-gray-500">No recent sessions found.</p>
                 )}
                 <button
-                  onClick={() => router.push(`/clients/${clientId}/sessions/new`)}
+                  onClick={() => router.push(`/sessions/new?clientId=${clientId}`)}
                   className="mt-4 text-sm text-blue-600 hover:text-blue-800"
                 >
                   + Add New Session
@@ -404,7 +404,7 @@ export default function ClientDetail({ clientId }) {
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-medium text-gray-900">Therapy Sessions</h2>
               <button
-                onClick={() => router.push(`/clients/${clientId}/sessions/new`)}
+                onClick={() => router.push(`/sessions/new?clientId=${clientId}`)}
                 className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
               >
                 New Session

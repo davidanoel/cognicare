@@ -2,21 +2,26 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [stats, setStats] = useState({
     totalClients: 0,
     totalSessions: 0,
     totalReports: 0,
     recentActivity: [],
+    activeSessions: 0,
+    completedSessions: 0,
+    reportsGenerated: 0,
   });
 
   useEffect(() => {
-    // TODO: Fetch dashboard stats from API
     const fetchStats = async () => {
       try {
         const response = await fetch("/api/dashboard/stats");
         const data = await response.json();
+        console.log("Dashboard stats:", data); // Debug log
         setStats(data);
       } catch (error) {
         console.error("Error fetching dashboard stats:", error);
@@ -26,10 +31,56 @@ export default function DashboardPage() {
     fetchStats();
   }, []);
 
+  const handleActivityClick = (activity) => {
+    console.log("Clicked activity:", activity); // Debug log
+    if (activity.type === "session") {
+      router.push(`/sessions/${activity.id}`);
+    } else if (activity.type === "report") {
+      router.push(`/reports/${activity.id}`);
+    }
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const getStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case "completed":
+        return "bg-green-100 text-green-800";
+      case "scheduled":
+        return "bg-blue-100 text-blue-800";
+      case "in-progress":
+        return "bg-yellow-100 text-yellow-800";
+      case "cancelled":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getActivityIcon = (type) => {
+    switch (type) {
+      case "session":
+        return "💬";
+      case "report":
+        return "📝";
+      default:
+        return "📌";
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Total Clients Card */}
         <div className="bg-white overflow-hidden shadow rounded-lg">
           <div className="p-5">
             <div className="flex items-center">
@@ -55,6 +106,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* Active Sessions Card */}
         <div className="bg-white overflow-hidden shadow rounded-lg">
           <div className="p-5">
             <div className="flex items-center">
@@ -63,10 +115,10 @@ export default function DashboardPage() {
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">Total Sessions</dt>
+                  <dt className="text-sm font-medium text-gray-500 truncate">Active Sessions</dt>
                   <dd className="flex items-baseline">
-                    <div className="text-2xl font-semibold text-gray-900">
-                      {stats.totalSessions}
+                    <div className="text-2xl font-semibold text-blue-600">
+                      {stats.activeSessions}
                     </div>
                   </dd>
                 </dl>
@@ -82,17 +134,51 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* Completed Sessions Card */}
         <div className="bg-white overflow-hidden shadow rounded-lg">
           <div className="p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <span className="text-3xl">📝</span>
+                <span className="text-3xl">✅</span>
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">Total Reports</dt>
+                  <dt className="text-sm font-medium text-gray-500 truncate">Completed Sessions</dt>
                   <dd className="flex items-baseline">
-                    <div className="text-2xl font-semibold text-gray-900">{stats.totalReports}</div>
+                    <div className="text-2xl font-semibold text-green-600">
+                      {stats.completedSessions}
+                    </div>
+                  </dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+          <div className="bg-gray-50 px-5 py-3">
+            <div className="text-sm">
+              <Link
+                href="/sessions?status=completed"
+                className="font-medium text-blue-600 hover:text-blue-500"
+              >
+                View completed sessions
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Reports Generated Card */}
+        <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <span className="text-3xl">📊</span>
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">Reports Generated</dt>
+                  <dd className="flex items-baseline">
+                    <div className="text-2xl font-semibold text-purple-600">
+                      {stats.reportsGenerated}
+                    </div>
                   </dd>
                 </dl>
               </div>
@@ -116,24 +202,36 @@ export default function DashboardPage() {
         <div className="border-t border-gray-200">
           <ul className="divide-y divide-gray-200">
             {stats.recentActivity.map((activity, index) => (
-              <li key={index} className="px-4 py-4 sm:px-6">
+              <li
+                key={index}
+                className="px-4 py-4 sm:px-6 hover:bg-gray-50 cursor-pointer transition-colors duration-150"
+                onClick={() => handleActivityClick(activity)}
+              >
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-blue-600 truncate">{activity.type}</p>
+                  <div className="flex items-center">
+                    <span className="text-xl mr-3">{getActivityIcon(activity.type)}</span>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        Session with {activity.clientName}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {activity.duration ? `Duration: ${activity.duration} minutes` : "Session"}
+                      </p>
+                    </div>
+                  </div>
                   <div className="ml-2 flex-shrink-0 flex">
-                    <p className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                      {activity.status}
+                    <p
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(
+                        activity.status
+                      )}`}
+                    >
+                      {activity.status || "N/A"}
                     </p>
                   </div>
                 </div>
-                <div className="mt-2 sm:flex sm:justify-between">
-                  <div className="sm:flex">
-                    <p className="flex items-center text-sm text-gray-500">
-                      {activity.description}
-                    </p>
-                  </div>
-                  <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
-                    <p>{activity.date}</p>
-                  </div>
+                <div className="mt-2 flex items-center text-sm text-gray-500">
+                  <span className="mr-2">📅</span>
+                  <p>{formatDate(activity.date)}</p>
                 </div>
               </li>
             ))}

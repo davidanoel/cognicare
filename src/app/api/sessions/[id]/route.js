@@ -4,13 +4,15 @@ import Session from "@/models/session";
 import { requireAuth, getCurrentUser } from "@/lib/auth";
 
 // Get a specific session
-export const GET = requireAuth(async (req, _, { params }) => {
+export const GET = requireAuth(async (req) => {
   try {
     await connectDB();
     const user = await getCurrentUser();
+    const url = new URL(req.url);
+    const id = url.pathname.split("/").pop();
 
     const sessionData = await Session.findOne({
-      _id: params.id,
+      _id: id,
       counselorId: user.id,
     })
       .populate("clientId", "name")
@@ -28,17 +30,19 @@ export const GET = requireAuth(async (req, _, { params }) => {
 });
 
 // Update a session
-export const PATCH = requireAuth(async (req, _, { params }) => {
+export const PATCH = requireAuth(async (req) => {
   try {
     await connectDB();
     const user = await getCurrentUser();
+    const url = new URL(req.url);
+    const id = url.pathname.split("/").pop();
 
     const body = await req.json();
-    const { notes, status, moodRating } = body;
+    const { notes, status, moodRating, date, duration, type, format } = body;
 
     // Find the session and ensure it belongs to the counselor
     const existingSession = await Session.findOne({
-      _id: params.id,
+      _id: id,
       counselorId: user.id,
     });
 
@@ -46,16 +50,20 @@ export const PATCH = requireAuth(async (req, _, { params }) => {
       return NextResponse.json({ message: "Session not found" }, { status: 404 });
     }
 
-    // Update allowed fields
+    // Update all editable fields if they are provided
     if (notes !== undefined) existingSession.notes = notes;
     if (status !== undefined) existingSession.status = status;
     if (moodRating !== undefined) existingSession.moodRating = moodRating;
+    if (date !== undefined) existingSession.date = new Date(date);
+    if (duration !== undefined) existingSession.duration = duration;
+    if (type !== undefined) existingSession.type = type;
+    if (format !== undefined) existingSession.format = format;
 
     // Save the updated session
     await existingSession.save();
 
     // Return the updated session with populated fields
-    const updatedSession = await Session.findById(params.id).populate("clientId", "name").lean();
+    const updatedSession = await Session.findById(id).populate("clientId", "name").lean();
 
     return NextResponse.json(updatedSession);
   } catch (error) {
@@ -65,13 +73,15 @@ export const PATCH = requireAuth(async (req, _, { params }) => {
 });
 
 // Delete a session
-export const DELETE = requireAuth(async (req, _, { params }) => {
+export const DELETE = requireAuth(async (req) => {
   try {
     await connectDB();
     const user = await getCurrentUser();
+    const url = new URL(req.url);
+    const id = url.pathname.split("/").pop();
 
     const deletedSession = await Session.findOneAndDelete({
-      _id: params.id,
+      _id: id,
       counselorId: user.id,
     });
 
