@@ -241,6 +241,148 @@ export default function ClientInsights({ clientId }) {
         </div>
       )}
 
+      {progressContent && (
+        <div className="bg-white p-4 rounded-lg shadow">
+          <h3 className="text-lg font-semibold mb-4">Progress Notes</h3>
+
+          {/* Summary */}
+          {progressContent.summary && (
+            <div className="mb-4">
+              <h4 className="text-md font-semibold text-gray-700 mb-2">Summary</h4>
+              <p className="text-gray-600">{progressContent.summary}</p>
+            </div>
+          )}
+
+          {/* Progress Summary */}
+          {progressContent.progressSummary && (
+            <div className="mb-4">
+              <h4 className="text-md font-semibold text-gray-700 mb-2">Progress Summary</h4>
+              <p className="text-gray-600">{progressContent.progressSummary}</p>
+            </div>
+          )}
+
+          {/* Goal Achievement Status */}
+          {progressContent.goalAchievementStatus?.length > 0 && (
+            <div className="mb-6">
+              <h4 className="text-md font-semibold text-gray-700 mb-2">Goal Achievement Status</h4>
+              <div className="space-y-4">
+                {progressContent.goalAchievementStatus.map((goal, i) => (
+                  <div key={i} className="border-l-4 border-blue-200 pl-4">
+                    <h5 className="font-medium text-gray-700">{goal.goal}</h5>
+                    <div className="mt-2 space-y-2">
+                      <p className="text-gray-600">
+                        <span className="font-medium">Status: </span>
+                        <span className={getProgressStatusColor(goal.status)}>{goal.status}</span>
+                      </p>
+                      {goal.notes && (
+                        <p className="text-gray-600">
+                          <span className="font-medium">Notes: </span>
+                          {goal.notes}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Key Observations */}
+          {progressContent.keyObservations?.length > 0 && (
+            <div className="mb-6">
+              <h4 className="text-md font-semibold text-gray-700 mb-2">Key Observations</h4>
+              <ul className="list-disc ml-8 space-y-2 text-gray-600">
+                {progressContent.keyObservations.map((observation, i) => (
+                  <li key={i}>{observation}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Treatment Effectiveness */}
+          {progressContent.treatmentEffectiveness && (
+            <div className="mb-6">
+              <h4 className="text-md font-semibold text-gray-700 mb-2">Treatment Effectiveness</h4>
+              <p className="text-gray-600">{progressContent.treatmentEffectiveness}</p>
+            </div>
+          )}
+
+          {/* Identified Barriers */}
+          {progressContent.identifiedBarriers?.length > 0 && (
+            <div className="mb-6">
+              <h4 className="text-md font-semibold text-gray-700 mb-2">Identified Barriers</h4>
+              <ul className="list-disc ml-8 space-y-2 text-gray-600">
+                {progressContent.identifiedBarriers.map((barrier, i) => (
+                  <li key={i}>{barrier}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Areas of Improvement */}
+          {progressContent.areasOfImprovement?.length > 0 && (
+            <div className="mb-6">
+              <h4 className="text-md font-semibold text-gray-700 mb-2">Areas of Improvement</h4>
+              <ul className="list-disc ml-8 space-y-2 text-gray-600">
+                {progressContent.areasOfImprovement.map((area, i) => (
+                  <li key={i}>{area}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Areas Needing Focus */}
+          {progressContent.areasNeedingFocus?.length > 0 && (
+            <div className="mb-6">
+              <h4 className="text-md font-semibold text-gray-700 mb-2">Areas Needing Focus</h4>
+              <ul className="list-disc ml-8 space-y-2 text-gray-600">
+                {progressContent.areasNeedingFocus.map((area, i) => (
+                  <li key={i}>{area}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Recommendations */}
+          {progressContent.recommendations?.length > 0 && (
+            <div className="mb-6">
+              <h4 className="text-md font-semibold text-gray-700 mb-2">Recommendations</h4>
+              <ul className="list-disc ml-8 space-y-2 text-gray-600">
+                {progressContent.recommendations.map((recommendation, i) => (
+                  <li key={i}>{recommendation}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Next Steps */}
+          {progressContent.nextSteps?.length > 0 && (
+            <div className="mb-6">
+              <h4 className="text-md font-semibold text-gray-700 mb-2">Next Steps</h4>
+              <ul className="list-disc ml-8 space-y-2 text-gray-600">
+                {progressContent.nextSteps.map((step, i) => (
+                  <li key={i}>{step}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Treatment Plan Adjustments */}
+          {progressContent.treatmentPlanAdjustments?.length > 0 && (
+            <div>
+              <h4 className="text-md font-semibold text-gray-700 mb-2">
+                Treatment Plan Adjustments
+              </h4>
+              <ul className="list-disc ml-8 space-y-2 text-gray-600">
+                {progressContent.treatmentPlanAdjustments.map((adjustment, i) => (
+                  <li key={i}>{adjustment}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
       {documentationContent && (
         <div className="bg-white p-4 rounded-lg shadow">
           <h3 className="text-lg font-semibold mb-4">Session Documentation</h3>
@@ -490,148 +632,6 @@ export default function ClientInsights({ clientId }) {
                   </div>
                 )}
               </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {progressContent && (
-        <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">Progress Notes</h3>
-
-          {/* Summary */}
-          {progressContent.summary && (
-            <div className="mb-4">
-              <h4 className="text-md font-semibold text-gray-700 mb-2">Summary</h4>
-              <p className="text-gray-600">{progressContent.summary}</p>
-            </div>
-          )}
-
-          {/* Progress Summary */}
-          {progressContent.progressSummary && (
-            <div className="mb-4">
-              <h4 className="text-md font-semibold text-gray-700 mb-2">Progress Summary</h4>
-              <p className="text-gray-600">{progressContent.progressSummary}</p>
-            </div>
-          )}
-
-          {/* Goal Achievement Status */}
-          {progressContent.goalAchievementStatus?.length > 0 && (
-            <div className="mb-6">
-              <h4 className="text-md font-semibold text-gray-700 mb-2">Goal Achievement Status</h4>
-              <div className="space-y-4">
-                {progressContent.goalAchievementStatus.map((goal, i) => (
-                  <div key={i} className="border-l-4 border-blue-200 pl-4">
-                    <h5 className="font-medium text-gray-700">{goal.goal}</h5>
-                    <div className="mt-2 space-y-2">
-                      <p className="text-gray-600">
-                        <span className="font-medium">Status: </span>
-                        <span className={getProgressStatusColor(goal.status)}>{goal.status}</span>
-                      </p>
-                      {goal.notes && (
-                        <p className="text-gray-600">
-                          <span className="font-medium">Notes: </span>
-                          {goal.notes}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Key Observations */}
-          {progressContent.keyObservations?.length > 0 && (
-            <div className="mb-6">
-              <h4 className="text-md font-semibold text-gray-700 mb-2">Key Observations</h4>
-              <ul className="list-disc ml-8 space-y-2 text-gray-600">
-                {progressContent.keyObservations.map((observation, i) => (
-                  <li key={i}>{observation}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Treatment Effectiveness */}
-          {progressContent.treatmentEffectiveness && (
-            <div className="mb-6">
-              <h4 className="text-md font-semibold text-gray-700 mb-2">Treatment Effectiveness</h4>
-              <p className="text-gray-600">{progressContent.treatmentEffectiveness}</p>
-            </div>
-          )}
-
-          {/* Identified Barriers */}
-          {progressContent.identifiedBarriers?.length > 0 && (
-            <div className="mb-6">
-              <h4 className="text-md font-semibold text-gray-700 mb-2">Identified Barriers</h4>
-              <ul className="list-disc ml-8 space-y-2 text-gray-600">
-                {progressContent.identifiedBarriers.map((barrier, i) => (
-                  <li key={i}>{barrier}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Areas of Improvement */}
-          {progressContent.areasOfImprovement?.length > 0 && (
-            <div className="mb-6">
-              <h4 className="text-md font-semibold text-gray-700 mb-2">Areas of Improvement</h4>
-              <ul className="list-disc ml-8 space-y-2 text-gray-600">
-                {progressContent.areasOfImprovement.map((area, i) => (
-                  <li key={i}>{area}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Areas Needing Focus */}
-          {progressContent.areasNeedingFocus?.length > 0 && (
-            <div className="mb-6">
-              <h4 className="text-md font-semibold text-gray-700 mb-2">Areas Needing Focus</h4>
-              <ul className="list-disc ml-8 space-y-2 text-gray-600">
-                {progressContent.areasNeedingFocus.map((area, i) => (
-                  <li key={i}>{area}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Recommendations */}
-          {progressContent.recommendations?.length > 0 && (
-            <div className="mb-6">
-              <h4 className="text-md font-semibold text-gray-700 mb-2">Recommendations</h4>
-              <ul className="list-disc ml-8 space-y-2 text-gray-600">
-                {progressContent.recommendations.map((recommendation, i) => (
-                  <li key={i}>{recommendation}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Next Steps */}
-          {progressContent.nextSteps?.length > 0 && (
-            <div className="mb-6">
-              <h4 className="text-md font-semibold text-gray-700 mb-2">Next Steps</h4>
-              <ul className="list-disc ml-8 space-y-2 text-gray-600">
-                {progressContent.nextSteps.map((step, i) => (
-                  <li key={i}>{step}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Treatment Plan Adjustments */}
-          {progressContent.treatmentPlanAdjustments?.length > 0 && (
-            <div>
-              <h4 className="text-md font-semibold text-gray-700 mb-2">
-                Treatment Plan Adjustments
-              </h4>
-              <ul className="list-disc ml-8 space-y-2 text-gray-600">
-                {progressContent.treatmentPlanAdjustments.map((adjustment, i) => (
-                  <li key={i}>{adjustment}</li>
-                ))}
-              </ul>
             </div>
           )}
         </div>

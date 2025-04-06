@@ -98,7 +98,9 @@ Remember:
       counselorId: session.user.id,
       type: "assessment",
       content: assessmentResults,
-      source: "initial-assessment",
+      source: clientData.sessionId
+        ? `session-assessment-${clientData.sessionId}`
+        : "initial-assessment",
       metadata: {
         modelVersion: "gpt-3.5-turbo",
         timestamp: new Date(),
