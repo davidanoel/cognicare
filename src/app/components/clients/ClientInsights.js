@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 export default function ClientInsights({ clientId }) {
   const [assessmentReport, setAssessmentReport] = useState(null);
   const [diagnosticReport, setDiagnosticReport] = useState(null);
-  const [treatmentReport, setTreatmentReport] = useState(null);
   const [documentationReport, setDocumentationReport] = useState(null);
   const [progressReport, setProgressReport] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -15,7 +14,6 @@ export default function ClientInsights({ clientId }) {
       setError(null);
       setAssessmentReport(null);
       setDiagnosticReport(null);
-      setTreatmentReport(null);
       setDocumentationReport(null);
       setProgressReport(null);
       try {
@@ -44,7 +42,6 @@ export default function ClientInsights({ clientId }) {
 
         setAssessmentReport(assessment);
         setDiagnosticReport(diagnostic);
-        setTreatmentReport(treatment);
         setDocumentationReport(documentation);
         setProgressReport(progress);
 
@@ -69,7 +66,6 @@ export default function ClientInsights({ clientId }) {
     error === "no_reports" ||
     (!assessmentReport &&
       !diagnosticReport &&
-      !treatmentReport &&
       !documentationReport &&
       !progressReport)
   ) {
@@ -88,7 +84,6 @@ export default function ClientInsights({ clientId }) {
   // Note: Check if report content exists before accessing nested properties
   const assessmentContent = assessmentReport?.content;
   const diagnosticContent = diagnosticReport?.content;
-  const treatmentContent = treatmentReport?.content;
   const documentationContent = documentationReport?.content;
   const progressContent = progressReport?.content;
 
@@ -207,34 +202,6 @@ export default function ClientInsights({ clientId }) {
               <div>
                 <span className="font-medium">Clinical Justification:</span>
                 <p className="mt-1 text-gray-700">{diagnosticContent.clinicalJustification}</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {treatmentContent && (
-        <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-2">Treatment Plan Suggestions</h3>
-          <div className="space-y-2">
-            {treatmentContent.goals && treatmentContent.goals.length > 0 && (
-              <div>
-                <span className="font-medium">Goals:</span>
-                <ul className="list-disc ml-5 mt-1">
-                  {treatmentContent.goals.map((goal, i) => (
-                    <li key={i}>{goal}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {treatmentContent.interventions && treatmentContent.interventions.length > 0 && (
-              <div>
-                <span className="font-medium">Interventions:</span>
-                <ul className="list-disc ml-5 mt-1">
-                  {treatmentContent.interventions.map((intervention, i) => (
-                    <li key={i}>{intervention}</li>
-                  ))}
-                </ul>
               </div>
             )}
           </div>
@@ -639,7 +606,6 @@ export default function ClientInsights({ clientId }) {
     </div>
   );
 }
-
 function getRiskLevelColor(level) {
   const colors = {
     none: "text-green-600",

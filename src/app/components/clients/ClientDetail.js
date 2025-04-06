@@ -9,6 +9,7 @@ export default function ClientDetail({ clientId }) {
   const [client, setClient] = useState(null);
   const [recentSessions, setRecentSessions] = useState([]);
   const [recentReports, setRecentReports] = useState([]);
+  const [treatmentReport, setTreatmentReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("overview");
@@ -18,6 +19,7 @@ export default function ClientDetail({ clientId }) {
   useEffect(() => {
     if (clientId) {
       fetchClient();
+      fetchTreatmentPlan();
     }
   }, [clientId]);
 
@@ -39,6 +41,32 @@ export default function ClientDetail({ clientId }) {
     } catch (err) {
       console.error("Error fetching client:", err);
       setError(err.message || "Error loading client");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchTreatmentPlan = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetch(`/api/reports/${clientId}`);
+      if (!response.ok) {
+        if (response.status === 404) {
+          setError("no_reports");
+        } else {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Failed to fetch treatment plan");
+        }
+        return;
+      }
+
+      const reports = await response.json();
+      const treatment = reports.find((r) => r.type === "treatment");
+      console.log(treatment);
+      setTreatmentReport(treatment);
+    } catch (err) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -534,123 +562,175 @@ export default function ClientDetail({ clientId }) {
 
         {activeTab === "treatment" && (
           <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-lg font-medium text-gray-900">Treatment Plan</h2>
-              <button
-                onClick={() => router.push(`/clients/${clientId}/treatment/edit`)}
-                className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-              >
-                Edit Plan
-              </button>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Treatment Plan</h2>
             </div>
 
-            {client.treatmentPlan?.goals?.length > 0 ? (
-              <div>
-                <h3 className="text-md font-medium text-gray-700 mb-2">Treatment Goals</h3>
-                <div className="space-y-4">
-                  {client.treatmentPlan.goals.map((goal, index) => (
-                    <div key={index} className="bg-gray-50 p-4 rounded border border-gray-200">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="font-medium text-gray-900">{goal.description}</h4>
-                          <p className="text-sm text-gray-500 mt-1">
-                            {goal.type.charAt(0).toUpperCase() + goal.type.slice(1)} term goal •
-                            {goal.targetDate ? ` Target: ${formatDate(goal.targetDate)}` : ""}
-                          </p>
-                        </div>
-                        <span
-                          className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                            goal.status === "active"
-                              ? "bg-blue-100 text-blue-800"
-                              : goal.status === "achieved"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {goal.status.charAt(0).toUpperCase() + goal.status.slice(1)}
-                        </span>
-                      </div>
-                      {goal.interventions?.length > 0 && (
-                        <div className="mt-3">
-                          <h5 className="text-sm font-medium text-gray-700">Interventions:</h5>
-                          <ul className="list-disc list-inside text-sm text-gray-600 ml-2">
-                            {goal.interventions.map((intervention, idx) => (
-                              <li key={idx}>{intervention}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      {goal.progress !== undefined && (
-                        <div className="mt-3">
-                          <div className="flex items-center">
-                            <span className="text-sm font-medium text-gray-700 mr-2">
-                              Progress:
-                            </span>
-                            <div className="w-full bg-gray-200 rounded-full h-2.5">
-                              <div
-                                className="bg-blue-600 h-2.5 rounded-full"
-                                style={{ width: `${goal.progress}%` }}
-                              ></div>
-                            </div>
-                            <span className="ml-2 text-sm text-gray-600">{goal.progress}%</span>
-                          </div>
-                        </div>
-                      )}
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+                <p className="mt-4 text-gray-500">Loading treatment plan...</p>
+              </div>
+            ) : error === "no_reports" ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No treatment plan available</p>
+              </div>
+            ) : error ? (
+              <div className="text-center py-8">
+                <p className="text-red-500 mb-4">Error: {error}</p>
+                <button
+                  onClick={fetchTreatmentPlan}
+                  className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                >
+                  Try Again
+                </button>
+              </div>
+            ) : treatmentReport?.content ? (
+              <div className="space-y-6">
+                {/* Summary */}
+                {treatmentReport.content.summary && (
+                  <div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      {treatmentReport.content.summary}
                     </div>
-                  ))}
-                </div>
-
-                {client.treatmentPlan.approachesUsed?.length > 0 && (
-                  <div className="mt-6">
-                    <h3 className="text-md font-medium text-gray-700 mb-2">Approaches Used</h3>
-                    <div className="bg-gray-50 p-4 rounded border border-gray-200">
-                      <ul className="list-disc list-inside text-sm text-gray-600 ml-2">
-                        {client.treatmentPlan.approachesUsed.map((approach, index) => (
-                          <li key={index}>{approach}</li>
+                  </div>
+                )}
+                {/* Interventions */}
+                {treatmentReport.content.interventions?.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Interventions</h3>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <ul className="list-disc ml-5 space-y-2">
+                        {treatmentReport.content.interventions.map((intervention, index) => (
+                          <li key={index} className="text-gray-700">
+                            {intervention}
+                          </li>
                         ))}
                       </ul>
                     </div>
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                  {client.treatmentPlan.strengthsIdentified?.length > 0 && (
-                    <div>
-                      <h3 className="text-md font-medium text-gray-700 mb-2">
-                        Strengths Identified
-                      </h3>
-                      <div className="bg-gray-50 p-4 rounded border border-gray-200">
-                        <ul className="list-disc list-inside text-sm text-gray-600 ml-2">
-                          {client.treatmentPlan.strengthsIdentified.map((strength, index) => (
-                            <li key={index}>{strength}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  )}
+                {/* Treatment Goals */}
+                {treatmentReport.content.goals && (
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Goals</h3>
+                    <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+                      {/* Short Term Goals */}
+                      {treatmentReport.content.goals.shortTerm?.length > 0 && (
+                        <div>
+                          <h4 className="text-md font-medium text-gray-700 mb-2">
+                            Short Term Goals
+                          </h4>
+                          <ul className="list-disc ml-5 space-y-2">
+                            {treatmentReport.content.goals.shortTerm.map((goal, index) => (
+                              <li key={index} className="text-gray-700">
+                                {goal}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
 
-                  {client.treatmentPlan.barriersIdentified?.length > 0 && (
-                    <div>
-                      <h3 className="text-md font-medium text-gray-700 mb-2">
-                        Barriers Identified
-                      </h3>
-                      <div className="bg-gray-50 p-4 rounded border border-gray-200">
-                        <ul className="list-disc list-inside text-sm text-gray-600 ml-2">
-                          {client.treatmentPlan.barriersIdentified.map((barrier, index) => (
-                            <li key={index}>{barrier}</li>
-                          ))}
-                        </ul>
-                      </div>
+                      {/* Long Term Goals */}
+                      {treatmentReport.content.goals.longTerm?.length > 0 && (
+                        <div>
+                          <h4 className="text-md font-medium text-gray-700 mb-2">
+                            Long Term Goals
+                          </h4>
+                          <ul className="list-disc ml-5 space-y-2">
+                            {treatmentReport.content.goals.longTerm.map((goal, index) => (
+                              <li key={index} className="text-gray-700">
+                                {goal}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
+                )}
+
+                {/* Timeline */}
+                {treatmentReport.content.timeline && (
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Timeline</h3>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <ul className="list-disc ml-5 space-y-2">
+                        {Object.entries(treatmentReport.content.timeline).map(([key, value]) => (
+                          <li key={key} className="text-gray-700">
+                            {typeof value === "object" ? (
+                              <span>
+                                {value.milestone} ({value.timeframe})
+                              </span>
+                            ) : (
+                              value
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                {/* Recommended Approaches */}
+                {treatmentReport.content.recommendedApproaches?.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      Recommended Approaches
+                    </h3>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <ul className="list-disc ml-5 space-y-2">
+                        {treatmentReport.content.recommendedApproaches.map((approach, index) => (
+                          <li key={index} className="text-gray-700">
+                            {approach}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                {/* Success Metrics */}
+                {treatmentReport.content.successMetrics?.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Success Metrics</h3>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <ul className="list-disc ml-5 space-y-2">
+                        {treatmentReport.content.successMetrics.map((metric, index) => (
+                          <li key={index} className="text-gray-700">
+                            {metric}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                {/* Potential Barriers */}
+                {treatmentReport.content.potentialBarriers?.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Potential Barriers</h3>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <ul className="list-disc ml-5 space-y-2">
+                        {treatmentReport.content.potentialBarriers.map((barrier, index) => (
+                          <li key={index} className="text-gray-700">
+                            {barrier}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                {/* Last Updated */}
+                <div className="text-sm text-gray-500">
+                  Last updated: {new Date(treatmentReport.updatedAt).toLocaleDateString()}
                 </div>
               </div>
             ) : (
               <div className="text-center py-8">
-                <p className="text-gray-500">No treatment plan has been created yet.</p>
-                <p className="text-sm text-gray-400 mt-2">
-                  Create a treatment plan to track goals and therapeutic approaches.
-                </p>
+                <p className="text-gray-500">No treatment plan available</p>
               </div>
             )}
           </div>
