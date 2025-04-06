@@ -78,6 +78,7 @@ Include in your analysis:
       type: "diagnostic",
       content: diagnosticResults,
       source: "diagnostic-analysis",
+      sessionId: clientData.sessionId,
       metadata: {
         modelVersion: "gpt-3.5-turbo",
         timestamp: new Date(),

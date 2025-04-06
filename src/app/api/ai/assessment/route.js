@@ -101,6 +101,7 @@ Remember:
       source: clientData.sessionId
         ? `session-assessment-${clientData.sessionId}`
         : "initial-assessment",
+      sessionId: clientData.sessionId,
       metadata: {
         modelVersion: "gpt-3.5-turbo",
         timestamp: new Date(),

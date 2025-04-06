@@ -85,6 +85,7 @@ Provide a comprehensive progress analysis including:
       type: "progress",
       content: progressAnalysis,
       source: "progress-monitoring",
+      sessionId: clientData.sessionId,
       metadata: {
         modelVersion: "gpt-3.5-turbo",
         timestamp: new Date(),

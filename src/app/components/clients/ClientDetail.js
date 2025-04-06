@@ -53,19 +53,19 @@ export default function ClientDetail({ clientId }) {
       const response = await fetch(`/api/reports/${clientId}`);
       if (!response.ok) {
         if (response.status === 404) {
-          setError("no_reports");
+          setTreatmentReport(null);
+          return;
         } else {
           const errorData = await response.json();
-          throw new Error(errorData.message || "Failed to fetch treatment plan");
+          console.error("Error fetching treatment plan:", errorData);
         }
-        return;
       }
 
       const reports = await response.json();
       const treatment = reports.find((r) => r.type === "treatment");
-      console.log(treatment);
-      setTreatmentReport(treatment);
+      setTreatmentReport(treatment || null);
     } catch (err) {
+      console.error("Error fetching treatment plan:", err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -103,46 +103,26 @@ export default function ClientDetail({ clientId }) {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[300px]">
+      <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
-  if (error) {
+  if (error && error !== "no_reports") {
     return (
-      <div
-        className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative"
-        role="alert"
-      >
+      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
         <strong className="font-bold">Error: </strong>
         <span className="block sm:inline">{error}</span>
-        <button
-          onClick={fetchClient}
-          className="mt-2 bg-red-100 text-red-700 px-4 py-2 rounded hover:bg-red-200"
-        >
-          Try Again
-        </button>
-        <button
-          onClick={() => router.push("/clients")}
-          className="mt-2 ml-2 bg-gray-100 text-gray-700 px-4 py-2 rounded hover:bg-gray-200"
-        >
-          Back to Clients
-        </button>
       </div>
     );
   }
 
   if (!client) {
     return (
-      <div className="text-center py-8">
-        <p className="text-gray-500">Client not found</p>
-        <button
-          onClick={() => router.push("/clients")}
-          className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-        >
-          Back to Clients
-        </button>
+      <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded relative">
+        <strong className="font-bold">Warning: </strong>
+        <span className="block sm:inline">Client not found</span>
       </div>
     );
   }
@@ -562,39 +542,61 @@ export default function ClientDetail({ clientId }) {
 
         {activeTab === "treatment" && (
           <div className="space-y-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Treatment Plan</h2>
-            </div>
-
-            {loading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-                <p className="mt-4 text-gray-500">Loading treatment plan...</p>
+            {!treatmentReport ? (
+              <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded relative">
+                <strong className="font-bold">No Treatment Plan Available</strong>
+                <p className="mt-2">
+                  This client does not have a treatment plan yet. Create a new session to generate a
+                  treatment plan.
+                </p>
               </div>
-            ) : error === "no_reports" ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500">No treatment plan available</p>
-              </div>
-            ) : error ? (
-              <div className="text-center py-8">
-                <p className="text-red-500 mb-4">Error: {error}</p>
-                <button
-                  onClick={fetchTreatmentPlan}
-                  className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-                >
-                  Try Again
-                </button>
-              </div>
-            ) : treatmentReport?.content ? (
+            ) : (
               <div className="space-y-6">
-                {/* Summary */}
-                {treatmentReport.content.summary && (
-                  <div>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      {treatmentReport.content.summary}
+                {/* Summary Section */}
+                <div className="bg-white p-4 rounded-lg shadow">
+                  <h3 className="text-lg font-semibold mb-4">Summary</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="text-md font-semibold text-gray-700 mb-2">Current Focus</h4>
+                      <p className="text-gray-600">
+                        {treatmentReport.content.currentFocus || "Not defined"}
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="text-md font-semibold text-gray-700 mb-2">Primary Goals</h4>
+                      {Array.isArray(treatmentReport.content.goals) ? (
+                        <ul className="list-disc ml-4 text-gray-600">
+                          {treatmentReport.content.goals.map((goal, i) => (
+                            <li key={i}>{goal}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-gray-600">No goals defined</p>
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="text-md font-semibold text-gray-700 mb-2">
+                        Key Interventions
+                      </h4>
+                      <ul className="list-disc ml-4 text-gray-600">
+                        {treatmentReport.content.interventions
+                          ?.slice(0, 2)
+                          .map((intervention, i) => (
+                            <li key={i}>{intervention}</li>
+                          ))}
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="text-md font-semibold text-gray-700 mb-2">Next Steps</h4>
+                      <ul className="list-disc ml-4 text-gray-600">
+                        {treatmentReport.content.nextSteps?.slice(0, 2).map((step, i) => (
+                          <li key={i}>{step}</li>
+                        ))}
+                      </ul>
                     </div>
                   </div>
-                )}
+                </div>
+
                 {/* Interventions */}
                 {treatmentReport.content.interventions?.length > 0 && (
                   <div>
@@ -727,10 +729,6 @@ export default function ClientDetail({ clientId }) {
                 <div className="text-sm text-gray-500">
                   Last updated: {new Date(treatmentReport.updatedAt).toLocaleDateString()}
                 </div>
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-500">No treatment plan available</p>
               </div>
             )}
           </div>

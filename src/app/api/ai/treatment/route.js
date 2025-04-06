@@ -73,6 +73,7 @@ Create a treatment plan including:
       type: "treatment",
       content: treatmentPlan,
       source: "treatment-planning",
+      sessionId: clientData.sessionId,
       metadata: {
         modelVersion: "gpt-3.5-turbo",
         timestamp: new Date(),
