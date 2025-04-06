@@ -43,6 +43,10 @@ export default function ProfilePage() {
     fetchUserProfile(); // Refresh the profile data
   };
 
+  const handleCancel = () => {
+    router.push("/dashboard"); // Navigate back to dashboard when cancel is clicked
+  };
+
   if (status === "loading" || loading) {
     return <div className="text-center p-4">Loading...</div>;
   }
@@ -70,7 +74,7 @@ export default function ProfilePage() {
       <h1 className="text-2xl font-bold mb-6">My Profile</h1>
       {user && (
         <div className="bg-white shadow rounded-lg p-6">
-          <UserForm user={user} onSuccess={handleSuccess} />
+          <UserForm user={user} onSuccess={handleSuccess} onCancel={handleCancel} />
         </div>
       )}
     </div>

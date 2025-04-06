@@ -338,14 +338,20 @@ export default function ClientForm({ client, onSuccess, onCancel }) {
 
       <div className="flex items-center justify-between">
         <button
+          type="button"
+          onClick={onCancel}
+          className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+          disabled={loading}
+        >
+          Cancel
+        </button>
+        <button
           type="submit"
           disabled={loading || aiProcessing}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-blue-300"
         >
           {loading ? "Saving..." : aiProcessing ? "Processing..." : "Save Client"}
         </button>
-
-        {error && <p className="text-red-500 text-sm">{error}</p>}
       </div>
 
       {aiProcessing && (

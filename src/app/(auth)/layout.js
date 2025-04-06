@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 
 export default function AuthLayout({ children }) {
   return (
@@ -9,14 +8,7 @@ export default function AuthLayout({ children }) {
       <div className="flex min-h-screen flex-col">
         <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center">
-            <Image
-              src="/logo.png"
-              alt="CogniCare Logo"
-              width={40}
-              height={40}
-              className="h-8 w-auto"
-            />
-            <span className="ml-2 text-xl font-bold text-gray-900">CogniCare</span>
+            <span className="text-2xl font-bold text-blue-600">CogniCare</span>
           </Link>
         </div>
         <main className="flex-1">{children}</main>
