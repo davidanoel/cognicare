@@ -125,29 +125,6 @@ const clientSchema = new mongoose.Schema({
     strengthsIdentified: [String],
     barriersIdentified: [String],
   },
-  aiInsights: {
-    patternAnalysis: {
-      behavioralPatterns: [String],
-      triggerPatterns: [String],
-      copingMechanisms: [String],
-      lastUpdated: Date,
-    },
-    riskAssessment: {
-      currentRiskFactors: [String],
-      protectiveFactors: [String],
-      recommendedInterventions: [String],
-      lastUpdated: Date,
-    },
-    treatmentProgress: {
-      overallTrend: {
-        type: String,
-        enum: ["improving", "stable", "declining", "fluctuating"],
-      },
-      keyInsights: [String],
-      recommendedAdjustments: [String],
-      lastUpdated: Date,
-    },
-  },
   status: {
     type: String,
     enum: ["active", "inactive", "completed", "transferred"],

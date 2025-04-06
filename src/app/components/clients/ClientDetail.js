@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ClientForm from "./ClientForm";
 import ClientInsights from "./ClientInsights";
+import ClientAnalytics from "./ClientAnalytics";
 
 export default function ClientDetail({ clientId }) {
   const [client, setClient] = useState(null);
@@ -232,6 +233,26 @@ export default function ClientDetail({ clientId }) {
             }`}
           >
             Treatment Plan
+          </button>
+          <button
+            onClick={() => setActiveTab("insights")}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === "insights"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            Insights
+          </button>
+          <button
+            onClick={() => setActiveTab("analytics")}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === "analytics"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            Analytics
           </button>
         </nav>
       </div>
@@ -543,107 +564,69 @@ export default function ClientDetail({ clientId }) {
         {activeTab === "treatment" && (
           <div className="space-y-6">
             {!treatmentReport ? (
-              <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded relative">
-                <strong className="font-bold">No Treatment Plan Available</strong>
-                <p className="mt-2">
-                  This client does not have a treatment plan yet. Create a new session to generate a
-                  treatment plan.
-                </p>
+              <div className="bg-yellow-100 p-4 rounded-lg flex items-center gap-2">
+                <span className="text-2xl">📅</span>
+                <div>
+                  <strong className="font-bold text-yellow-800">No Plan Yet!</strong>
+                  <p className="mt-2 text-yellow-700 text-sm">
+                    Looks like we need a game plan. Kick off a session to get one rolling!
+                  </p>
+                </div>
               </div>
             ) : (
-              <div className="space-y-6">
-                {/* Summary Section */}
-                <div className="bg-white p-4 rounded-lg shadow">
-                  <h3 className="text-lg font-semibold mb-4">Summary</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="text-md font-semibold text-gray-700 mb-2">Current Focus</h4>
-                      <p className="text-gray-600">
-                        {treatmentReport.content.currentFocus || "Not defined"}
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className="text-md font-semibold text-gray-700 mb-2">Primary Goals</h4>
-                      {Array.isArray(treatmentReport.content.goals) ? (
-                        <ul className="list-disc ml-4 text-gray-600">
-                          {treatmentReport.content.goals.map((goal, i) => (
-                            <li key={i}>{goal}</li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="text-gray-600">No goals defined</p>
-                      )}
-                    </div>
-                    <div>
-                      <h4 className="text-md font-semibold text-gray-700 mb-2">
-                        Key Interventions
-                      </h4>
-                      <ul className="list-disc ml-4 text-gray-600">
-                        {treatmentReport.content.interventions
-                          ?.slice(0, 2)
-                          .map((intervention, i) => (
-                            <li key={i}>{intervention}</li>
-                          ))}
-                      </ul>
-                    </div>
-                    <div>
-                      <h4 className="text-md font-semibold text-gray-700 mb-2">Next Steps</h4>
-                      <ul className="list-disc ml-4 text-gray-600">
-                        {treatmentReport.content.nextSteps?.slice(0, 2).map((step, i) => (
-                          <li key={i}>{step}</li>
-                        ))}
-                      </ul>
-                    </div>
+              <div className="bg-gradient-to-r from-white to-blue-50 p-6 rounded-xl shadow-lg border border-blue-100 space-y-6">
+                {/* Summary */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                    <span className="text-xl">🌟</span> The Big Picture
+                  </h3>
+                  <div className="bg-white p-3 rounded-lg shadow-sm text-sm text-gray-700">
+                    {treatmentReport.content.summary}
                   </div>
                 </div>
 
                 {/* Interventions */}
                 {treatmentReport.content.interventions?.length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Interventions</h3>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <ul className="list-disc ml-5 space-y-2">
-                        {treatmentReport.content.interventions.map((intervention, index) => (
-                          <li key={index} className="text-gray-700">
-                            {intervention}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                      <span className="text-xl">🛠️</span> Our Toolkit
+                    </h3>
+                    <ul className="bg-white p-3 rounded-lg shadow-sm text-sm text-gray-700 space-y-2">
+                      {treatmentReport.content.interventions.map((intervention, index) => (
+                        <li key={index} className="flex items-center gap-2">
+                          <span className="text-blue-500">➡️</span> {intervention}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
 
                 {/* Treatment Goals */}
                 {treatmentReport.content.goals && (
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Goals</h3>
-                    <div className="bg-gray-50 p-4 rounded-lg space-y-4">
-                      {/* Short Term Goals */}
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                      <span className="text-xl">🎯</span> Goals to Crush
+                    </h3>
+                    <div className="bg-white p-3 rounded-lg shadow-sm text-sm text-gray-700 space-y-4">
                       {treatmentReport.content.goals.shortTerm?.length > 0 && (
                         <div>
-                          <h4 className="text-md font-medium text-gray-700 mb-2">
-                            Short Term Goals
-                          </h4>
-                          <ul className="list-disc ml-5 space-y-2">
+                          <h4 className="font-medium text-blue-600 mb-1">Quick Wins</h4>
+                          <ul className="space-y-2">
                             {treatmentReport.content.goals.shortTerm.map((goal, index) => (
-                              <li key={index} className="text-gray-700">
-                                {goal}
+                              <li key={index} className="flex items-center gap-2">
+                                <span className="text-blue-500">➡️</span> {goal}
                               </li>
                             ))}
                           </ul>
                         </div>
                       )}
-
-                      {/* Long Term Goals */}
                       {treatmentReport.content.goals.longTerm?.length > 0 && (
                         <div>
-                          <h4 className="text-md font-medium text-gray-700 mb-2">
-                            Long Term Goals
-                          </h4>
-                          <ul className="list-disc ml-5 space-y-2">
+                          <h4 className="font-medium text-blue-600 mb-1">Big Picture Goals</h4>
+                          <ul className="space-y-2">
                             {treatmentReport.content.goals.longTerm.map((goal, index) => (
-                              <li key={index} className="text-gray-700">
-                                {goal}
+                              <li key={index} className="flex items-center gap-2">
+                                <span className="text-blue-500">➡️</span> {goal}
                               </li>
                             ))}
                           </ul>
@@ -655,94 +638,95 @@ export default function ClientDetail({ clientId }) {
 
                 {/* Timeline */}
                 {treatmentReport.content.timeline && (
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Timeline</h3>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <ul className="list-disc ml-5 space-y-2">
-                        {Object.entries(treatmentReport.content.timeline).map(([key, value]) => (
-                          <li key={key} className="text-gray-700">
-                            {typeof value === "object" ? (
-                              <span>
-                                {value.milestone} ({value.timeframe})
-                              </span>
-                            ) : (
-                              value
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                      <span className="text-xl">⏰</span> Roadmap
+                    </h3>
+                    <ul className="bg-white p-3 rounded-lg shadow-sm text-sm text-gray-700 space-y-2">
+                      {Object.entries(treatmentReport.content.timeline).map(([key, value]) => (
+                        <li key={key} className="flex items-center gap-2">
+                          <span className="text-blue-500">➡️</span>
+                          {typeof value === "object"
+                            ? `${value.milestone} (${value.timeframe})`
+                            : value}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
 
                 {/* Recommended Approaches */}
                 {treatmentReport.content.recommendedApproaches?.length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">
-                      Recommended Approaches
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                      <span className="text-xl">💡</span> Smart Moves
                     </h3>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <ul className="list-disc ml-5 space-y-2">
-                        {treatmentReport.content.recommendedApproaches.map((approach, index) => (
-                          <li key={index} className="text-gray-700">
-                            {approach}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                    <ul className="bg-white p-3 rounded-lg shadow-sm text-sm text-gray-700 space-y-2">
+                      {treatmentReport.content.recommendedApproaches.map((approach, index) => (
+                        <li key={index} className="flex items-center gap-2">
+                          <span className="text-blue-500">➡️</span> {approach}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
 
                 {/* Success Metrics */}
                 {treatmentReport.content.successMetrics?.length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Success Metrics</h3>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <ul className="list-disc ml-5 space-y-2">
-                        {treatmentReport.content.successMetrics.map((metric, index) => (
-                          <li key={index} className="text-gray-700">
-                            {metric}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                      <span className="text-xl">🏆</span> How We Win
+                    </h3>
+                    <ul className="bg-white p-3 rounded-lg shadow-sm text-sm text-gray-700 space-y-2">
+                      {treatmentReport.content.successMetrics.map((metric, index) => (
+                        <li key={index} className="flex items-center gap-2">
+                          <span className="text-blue-500">➡️</span> {metric}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
 
                 {/* Potential Barriers */}
                 {treatmentReport.content.potentialBarriers?.length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Potential Barriers</h3>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <ul className="list-disc ml-5 space-y-2">
-                        {treatmentReport.content.potentialBarriers.map((barrier, index) => (
-                          <li key={index} className="text-gray-700">
-                            {barrier}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                      <span className="text-xl">🚧</span> Watch Out For
+                    </h3>
+                    <ul className="bg-white p-3 rounded-lg shadow-sm text-sm text-gray-700 space-y-2">
+                      {treatmentReport.content.potentialBarriers.map((barrier, index) => (
+                        <li key={index} className="flex items-center gap-2">
+                          <span className="text-blue-500">➡️</span> {barrier}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
 
                 {/* Last Updated */}
-                <div className="text-sm text-gray-500">
-                  Last updated: {new Date(treatmentReport.updatedAt).toLocaleDateString()}
+                <div className="text-xs text-gray-500 flex items-center gap-2">
+                  <span className="text-blue-500">📅</span> Last tweak:{" "}
+                  {new Date(treatmentReport.updatedAt).toLocaleDateString()}
                 </div>
               </div>
             )}
           </div>
         )}
-      </div>
 
-      {/* AI Insights Section */}
-      <div className="mt-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Clinical Insights</h2>
-        <ClientInsights clientId={client._id} />
-      </div>
+        {activeTab === "insights" && (
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold text-gray-900">Clinical Insights</h2>
+            <ClientInsights clientId={client._id} />
+          </div>
+        )}
 
-      {/* Sessions Section */}
-      <div className="mt-6">{/* ... existing sessions section ... */}</div>
+        {activeTab === "analytics" && (
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold text-gray-900">Client Analytics</h2>
+            <ClientAnalytics clientId={client._id} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
