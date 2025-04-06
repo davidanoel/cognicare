@@ -22,6 +22,8 @@ export async function GET(req, context) {
 
     // Ensure clientId is a string
     const clientIdStr = typeof clientId === "object" ? clientId._id || clientId.id : clientId;
+    console.log("Client ID:", clientIdStr);
+    console.log("Session ID:", sessionId);
 
     // Fetch all AI reports for this session
     const reports = await AIReport.find({

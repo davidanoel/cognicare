@@ -213,6 +213,90 @@ export default function ClientInsights({ clientId }) {
         </div>
       )}
 
+      {treatmentContent && (
+        <div className="bg-white p-4 rounded-lg shadow">
+          <h3 className="text-lg font-semibold mb-4">Treatment Plan</h3>
+          <div className="space-y-4">
+            <div>
+              <h4 className="text-md font-semibold text-gray-700 mb-2">Current Focus</h4>
+              <p className="text-gray-600">{treatmentContent.currentFocus || "Not defined"}</p>
+            </div>
+            <div>
+              <h4 className="text-md font-semibold text-gray-700 mb-2">Treatment Goals</h4>
+              {Array.isArray(treatmentContent.goals) ? (
+                <ul className="list-disc ml-4 text-gray-600">
+                  {treatmentContent.goals.map((goal, i) => (
+                    <li key={i}>{goal}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-600">No goals defined</p>
+              )}
+            </div>
+            <div>
+              <h4 className="text-md font-semibold text-gray-700 mb-2">Interventions</h4>
+              {Array.isArray(treatmentContent.interventions) ? (
+                <ul className="list-disc ml-4 text-gray-600">
+                  {treatmentContent.interventions.map((intervention, i) => (
+                    <li key={i}>{intervention}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-600">No interventions defined</p>
+              )}
+            </div>
+            <div>
+              <h4 className="text-md font-semibold text-gray-700 mb-2">Recommended Approaches</h4>
+              {Array.isArray(treatmentContent.recommendedApproaches) ? (
+                <ul className="list-disc ml-4 text-gray-600">
+                  {treatmentContent.recommendedApproaches.map((approach, i) => (
+                    <li key={i}>{approach}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-600">No approaches defined</p>
+              )}
+            </div>
+            <div>
+              <h4 className="text-md font-semibold text-gray-700 mb-2">Success Metrics</h4>
+              {Array.isArray(treatmentContent.successMetrics) ? (
+                <ul className="list-disc ml-4 text-gray-600">
+                  {treatmentContent.successMetrics.map((metric, i) => (
+                    <li key={i}>{metric}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-600">No metrics defined</p>
+              )}
+            </div>
+            <div>
+              <h4 className="text-md font-semibold text-gray-700 mb-2">Potential Barriers</h4>
+              {Array.isArray(treatmentContent.potentialBarriers) ? (
+                <ul className="list-disc ml-4 text-gray-600">
+                  {treatmentContent.potentialBarriers.map((barrier, i) => (
+                    <li key={i}>{barrier}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-600">No barriers identified</p>
+              )}
+            </div>
+            <div>
+              <h4 className="text-md font-semibold text-gray-700 mb-2">Next Steps</h4>
+              {Array.isArray(treatmentContent.nextSteps) ? (
+                <ul className="list-disc ml-4 text-gray-600">
+                  {treatmentContent.nextSteps.map((step, i) => (
+                    <li key={i}>{step}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-600">No next steps defined</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {progressContent && (
         <div className="bg-white p-4 rounded-lg shadow">
           <h3 className="text-lg font-semibold mb-4">Progress Notes</h3>
@@ -606,91 +690,6 @@ export default function ClientInsights({ clientId }) {
               </div>
             </div>
           )}
-        </div>
-      )}
-
-      {/* Treatment Notes */}
-      {treatmentContent && (
-        <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">Treatment Plan</h3>
-          <div className="space-y-4">
-            <div>
-              <h4 className="text-md font-semibold text-gray-700 mb-2">Current Focus</h4>
-              <p className="text-gray-600">{treatmentContent.currentFocus || "Not defined"}</p>
-            </div>
-            <div>
-              <h4 className="text-md font-semibold text-gray-700 mb-2">Treatment Goals</h4>
-              {Array.isArray(treatmentContent.goals) ? (
-                <ul className="list-disc ml-4 text-gray-600">
-                  {treatmentContent.goals.map((goal, i) => (
-                    <li key={i}>{goal}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-gray-600">No goals defined</p>
-              )}
-            </div>
-            <div>
-              <h4 className="text-md font-semibold text-gray-700 mb-2">Interventions</h4>
-              {Array.isArray(treatmentContent.interventions) ? (
-                <ul className="list-disc ml-4 text-gray-600">
-                  {treatmentContent.interventions.map((intervention, i) => (
-                    <li key={i}>{intervention}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-gray-600">No interventions defined</p>
-              )}
-            </div>
-            <div>
-              <h4 className="text-md font-semibold text-gray-700 mb-2">Recommended Approaches</h4>
-              {Array.isArray(treatmentContent.recommendedApproaches) ? (
-                <ul className="list-disc ml-4 text-gray-600">
-                  {treatmentContent.recommendedApproaches.map((approach, i) => (
-                    <li key={i}>{approach}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-gray-600">No approaches defined</p>
-              )}
-            </div>
-            <div>
-              <h4 className="text-md font-semibold text-gray-700 mb-2">Success Metrics</h4>
-              {Array.isArray(treatmentContent.successMetrics) ? (
-                <ul className="list-disc ml-4 text-gray-600">
-                  {treatmentContent.successMetrics.map((metric, i) => (
-                    <li key={i}>{metric}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-gray-600">No metrics defined</p>
-              )}
-            </div>
-            <div>
-              <h4 className="text-md font-semibold text-gray-700 mb-2">Potential Barriers</h4>
-              {Array.isArray(treatmentContent.potentialBarriers) ? (
-                <ul className="list-disc ml-4 text-gray-600">
-                  {treatmentContent.potentialBarriers.map((barrier, i) => (
-                    <li key={i}>{barrier}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-gray-600">No barriers identified</p>
-              )}
-            </div>
-            <div>
-              <h4 className="text-md font-semibold text-gray-700 mb-2">Next Steps</h4>
-              {Array.isArray(treatmentContent.nextSteps) ? (
-                <ul className="list-disc ml-4 text-gray-600">
-                  {treatmentContent.nextSteps.map((step, i) => (
-                    <li key={i}>{step}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-gray-600">No next steps defined</p>
-              )}
-            </div>
-          </div>
         </div>
       )}
     </div>

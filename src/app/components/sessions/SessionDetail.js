@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import SessionForm from "./SessionForm";
+import SessionAIInsights from "./SessionAIInsights";
 
 export default function SessionDetail({ sessionId }) {
   const router = useRouter();
@@ -215,94 +216,102 @@ export default function SessionDetail({ sessionId }) {
         </div>
       </div>
 
-      <div className="bg-white shadow rounded-lg p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          {/* Basic Session Info */}
-          <div>
-            <h2 className="text-lg font-medium text-gray-900 mb-2">Session Information</h2>
-            <dl className="divide-y divide-gray-200">
-              <div className="py-2 grid grid-cols-3">
-                <dt className="text-sm font-medium text-gray-500">Client</dt>
-                <dd className="text-sm text-gray-900 col-span-2">
-                  {session.clientId ? (
-                    <Link
-                      href={`/clients/${session.clientId._id}`}
-                      className="text-blue-600 hover:text-blue-800"
+      <div className="space-y-6">
+        <div className="bg-white shadow rounded-lg p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            {/* Basic Session Info */}
+            <div>
+              <h2 className="text-lg font-medium text-gray-900 mb-2">Session Information</h2>
+              <dl className="divide-y divide-gray-200">
+                <div className="py-2 grid grid-cols-3">
+                  <dt className="text-sm font-medium text-gray-500">Client</dt>
+                  <dd className="text-sm text-gray-900 col-span-2">
+                    {session.clientId ? (
+                      <Link
+                        href={`/clients/${session.clientId._id}`}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        {session.clientId.name}
+                      </Link>
+                    ) : (
+                      "Unknown Client"
+                    )}
+                  </dd>
+                </div>
+                <div className="py-2 grid grid-cols-3">
+                  <dt className="text-sm font-medium text-gray-500">Date & Time</dt>
+                  <dd className="text-sm text-gray-900 col-span-2">{formatDate(session.date)}</dd>
+                </div>
+                <div className="py-2 grid grid-cols-3">
+                  <dt className="text-sm font-medium text-gray-500">Duration</dt>
+                  <dd className="text-sm text-gray-900 col-span-2">
+                    {formatDuration(session.duration)}
+                  </dd>
+                </div>
+                <div className="py-2 grid grid-cols-3">
+                  <dt className="text-sm font-medium text-gray-500">Type</dt>
+                  <dd className="text-sm text-gray-900 col-span-2 capitalize">{session.type}</dd>
+                </div>
+                <div className="py-2 grid grid-cols-3">
+                  <dt className="text-sm font-medium text-gray-500">Format</dt>
+                  <dd className="text-sm text-gray-900 col-span-2 capitalize">{session.format}</dd>
+                </div>
+                <div className="py-2 grid grid-cols-3">
+                  <dt className="text-sm font-medium text-gray-500">Status</dt>
+                  <dd className="text-sm col-span-2">
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeColor(
+                        session.status
+                      )}`}
                     >
-                      {session.clientId.name}
-                    </Link>
-                  ) : (
-                    "Unknown Client"
-                  )}
-                </dd>
-              </div>
-              <div className="py-2 grid grid-cols-3">
-                <dt className="text-sm font-medium text-gray-500">Date & Time</dt>
-                <dd className="text-sm text-gray-900 col-span-2">{formatDate(session.date)}</dd>
-              </div>
-              <div className="py-2 grid grid-cols-3">
-                <dt className="text-sm font-medium text-gray-500">Duration</dt>
-                <dd className="text-sm text-gray-900 col-span-2">
-                  {formatDuration(session.duration)}
-                </dd>
-              </div>
-              <div className="py-2 grid grid-cols-3">
-                <dt className="text-sm font-medium text-gray-500">Type</dt>
-                <dd className="text-sm text-gray-900 col-span-2 capitalize">{session.type}</dd>
-              </div>
-              <div className="py-2 grid grid-cols-3">
-                <dt className="text-sm font-medium text-gray-500">Format</dt>
-                <dd className="text-sm text-gray-900 col-span-2 capitalize">{session.format}</dd>
-              </div>
-              <div className="py-2 grid grid-cols-3">
-                <dt className="text-sm font-medium text-gray-500">Status</dt>
-                <dd className="text-sm col-span-2">
-                  <span
-                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeColor(
-                      session.status
-                    )}`}
-                  >
-                    {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
-                  </span>
-                </dd>
-              </div>
-            </dl>
+                      {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
+                    </span>
+                  </dd>
+                </div>
+              </dl>
+            </div>
+
+            {/* Additional Session Details */}
+            <div>
+              <h2 className="text-lg font-medium text-gray-900 mb-2">Session Details</h2>
+              <dl className="divide-y divide-gray-200">
+                {session.moodRating && (
+                  <div className="py-2 grid grid-cols-3">
+                    <dt className="text-sm font-medium text-gray-500">Client Mood Rating</dt>
+                    <dd className="text-sm text-gray-900 col-span-2">{session.moodRating}/10</dd>
+                  </div>
+                )}
+                <div className="py-2 grid grid-cols-3">
+                  <dt className="text-sm font-medium text-gray-500">Created</dt>
+                  <dd className="text-sm text-gray-900 col-span-2">
+                    {formatDate(session.createdAt)}
+                  </dd>
+                </div>
+                <div className="py-2 grid grid-cols-3">
+                  <dt className="text-sm font-medium text-gray-500">Last Updated</dt>
+                  <dd className="text-sm text-gray-900 col-span-2">
+                    {formatDate(session.updatedAt)}
+                  </dd>
+                </div>
+              </dl>
+            </div>
           </div>
 
-          {/* Additional Session Details */}
+          {/* Session Notes */}
           <div>
-            <h2 className="text-lg font-medium text-gray-900 mb-2">Session Details</h2>
-            <dl className="divide-y divide-gray-200">
-              {session.moodRating && (
-                <div className="py-2 grid grid-cols-3">
-                  <dt className="text-sm font-medium text-gray-500">Client Mood Rating</dt>
-                  <dd className="text-sm text-gray-900 col-span-2">{session.moodRating}/10</dd>
-                </div>
-              )}
-              <div className="py-2 grid grid-cols-3">
-                <dt className="text-sm font-medium text-gray-500">Created</dt>
-                <dd className="text-sm text-gray-900 col-span-2">
-                  {formatDate(session.createdAt)}
-                </dd>
-              </div>
-              <div className="py-2 grid grid-cols-3">
-                <dt className="text-sm font-medium text-gray-500">Last Updated</dt>
-                <dd className="text-sm text-gray-900 col-span-2">
-                  {formatDate(session.updatedAt)}
-                </dd>
-              </div>
-            </dl>
+            <h2 className="text-lg font-medium text-gray-900 mb-2">Session Notes</h2>
+            <div className="bg-gray-50 p-4 rounded border border-gray-200">
+              <p className="text-sm text-gray-900 whitespace-pre-line">
+                {session.notes || "No notes recorded for this session."}
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Session Notes */}
-        <div>
-          <h2 className="text-lg font-medium text-gray-900 mb-2">Session Notes</h2>
-          <div className="bg-gray-50 p-4 rounded border border-gray-200">
-            <p className="text-sm text-gray-900 whitespace-pre-line">
-              {session.notes || "No notes recorded for this session."}
-            </p>
-          </div>
+        {/* AI Insights Section */}
+        <div className="bg-white shadow rounded-lg p-6">
+          <h2 className="text-xl font-semibold mb-4">AI Insights</h2>
+          <SessionAIInsights session={session} />
         </div>
       </div>
     </div>

@@ -11,7 +11,7 @@ export async function POST(req) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { clientId, clientData, priority, riskFactor } = await req.json();
+    const { clientId, clientData, priority, riskFactor, sessionData } = await req.json();
     if (!clientId || !clientData) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
@@ -92,16 +92,15 @@ Remember:
 
     // Store the AI output
     await connectDB();
-    console.log("Creating AI Report with clientId:", clientId);
+    console.log("Creating AI Report with clientData:", clientData);
+    console.log("Creating AI Report with sessionData:", sessionData);
     const aiReport = new AIReport({
       clientId,
       counselorId: session.user.id,
       type: "assessment",
       content: assessmentResults,
-      source: clientData.sessionId
-        ? `session-assessment-${clientData.sessionId}`
-        : "initial-assessment",
-      sessionId: clientData.sessionId,
+      source: sessionData?._id ? `session-assessment-${sessionData._id}` : "initial-assessment",
+      sessionId: sessionData?._id,
       metadata: {
         modelVersion: "gpt-3.5-turbo",
         timestamp: new Date(),
