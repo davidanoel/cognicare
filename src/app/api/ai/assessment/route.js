@@ -92,8 +92,6 @@ Remember:
 
     // Store the AI output
     await connectDB();
-    console.log("Creating AI Report with clientData:", clientData);
-    console.log("Creating AI Report with sessionData:", sessionData);
     const aiReport = new AIReport({
       clientId,
       counselorId: session.user.id,
@@ -108,9 +106,7 @@ Remember:
         riskFactor: !!riskFactor,
       },
     });
-    console.log("AI Report object created:", aiReport);
     await aiReport.save();
-    console.log("AI Report saved successfully");
 
     return NextResponse.json(assessmentResults);
   } catch (error) {

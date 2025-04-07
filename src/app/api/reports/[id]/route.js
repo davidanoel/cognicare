@@ -14,8 +14,6 @@ export async function GET(req, context) {
 
     await connectDB();
     const { id: clientId } = await context.params;
-    console.log("Fetching reports for clientId:", clientId);
-    console.log("Current user (counselor) id:", user.id);
 
     // Fetch all reports for the client, sorted by creation date
     const reports = await AIReport.find({
@@ -25,16 +23,12 @@ export async function GET(req, context) {
       .sort({ "metadata.timestamp": -1 })
       .lean();
 
-    console.log("Found reports:", reports);
-
     if (!reports || reports.length === 0) {
-      console.log("No reports found for this client");
       return NextResponse.json({ message: "No reports found for this client" }, { status: 404 });
     }
 
     return NextResponse.json(reports);
   } catch (error) {
-    console.error("Reports GET error:", error);
     if (error.kind === "ObjectId") {
       return NextResponse.json({ message: "Invalid Client ID format" }, { status: 400 });
     }

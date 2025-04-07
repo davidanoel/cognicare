@@ -13,7 +13,6 @@ async function callAgent(endpoint, data) {
   }
 
   const results = await response.json();
-  console.log(`${endpoint} complete:`, results);
   return results;
 }
 
@@ -88,7 +87,6 @@ export async function handleTrigger(eventType, data) {
   try {
     switch (eventType) {
       case TRIGGER_EVENTS.NEW_CLIENT: {
-        console.log("Processing new client assessment");
         const requestData = {
           clientId: data._id,
           clientData: {
@@ -106,7 +104,6 @@ export async function handleTrigger(eventType, data) {
       }
 
       case TRIGGER_EVENTS.SESSION_COMPLETED:
-        console.log("Processing completed session");
         return await processSessionAgents(data);
 
       default:

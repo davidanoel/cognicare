@@ -26,6 +26,8 @@ export default function ClientAnalytics({ clientId }) {
       const response = await fetch(`/api/clients/${clientId}/analytics`);
       if (!response.ok) throw new Error("Failed to fetch analytics");
       const data = await response.json();
+      console.log("Analytics data:", data);
+      console.log("Risk levels data:", data.riskLevels);
       setAnalytics(data);
     } catch (err) {
       setError(err.message);
@@ -78,17 +80,11 @@ export default function ClientAnalytics({ clientId }) {
       <div className="bg-blue-100 p-4 rounded-lg flex items-center gap-2">
         <span className="text-2xl">📊</span>
         <p className="text-blue-700 text-sm">
-          No analytics yet! Let’s get some data flowing to see the magic.
+          No analytics yet! Let's get some data flowing to see the magic.
         </p>
       </div>
     );
   }
-
-  // Deduplicate risk factors
-  const uniqueRiskFactors = [...new Set(analytics.keyInsights.riskFactors)];
-
-  // Get treatment goals from the first item in the array
-  const treatmentGoals = analytics.keyInsights.treatmentGoals?.[0] || {};
 
   return (
     <div className="space-y-6">
@@ -130,15 +126,45 @@ export default function ClientAnalytics({ clientId }) {
                 <LineChart data={analytics.riskLevels}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                   <XAxis dataKey="date" tickFormatter={formatDate} tick={{ fontSize: 10 }} />
-                  <YAxis width={30} />
-                  <Tooltip content={<CustomTooltip />} />
+                  <YAxis
+                    domain={[0, 4]}
+                    width={40}
+                    tick={{ fontSize: 10 }}
+                    tickFormatter={(value) => {
+                      const labels = {
+                        0: "None",
+                        1: "Low",
+                        2: "Mod",
+                        3: "High",
+                        4: "Sev",
+                      };
+                      return labels[value] || value;
+                    }}
+                  />
+                  <Tooltip
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-white p-2 border border-blue-200 rounded shadow-lg">
+                            <p className="font-medium text-blue-600">{formatDate(label)}</p>
+                            <p className="text-gray-700">
+                              Risk Level: {payload[0].payload.levelText}
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
                   <Legend />
                   <Line
                     type="monotone"
                     dataKey="level"
                     stroke="#ff7300"
                     name="Risk Level"
-                    dot={false}
+                    strokeWidth={2}
+                    dot={{ r: 4, fill: "#ff7300" }}
+                    activeDot={{ r: 6, fill: "#ff7300" }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -146,78 +172,82 @@ export default function ClientAnalytics({ clientId }) {
           </div>
         </div>
 
-        {/* Key Insights */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Risk Factors */}
-          <div className="bg-white p-4 rounded-lg shadow-sm">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
-              <span className="text-xl">⚠️</span> Heads Up
-            </h3>
-            <ul className="text-sm text-gray-700 space-y-2">
-              {uniqueRiskFactors.length > 0 ? (
-                uniqueRiskFactors.map((factor, index) => (
-                  <li key={index} className="flex items-center gap-2">
-                    <span className="text-blue-500">➡️</span> {factor}
-                  </li>
-                ))
-              ) : (
-                <li className="text-gray-500">All clear for now!</li>
-              )}
-            </ul>
+        {/* Treatment Progress */}
+        <div className="bg-white rounded-lg shadow-sm p-4">
+          <div className="border-b pb-2 mb-4">
+            <h3 className="text-lg font-semibold">Treatment Progress</h3>
           </div>
-
-          {/* Diagnoses */}
-          <div className="bg-white p-4 rounded-lg shadow-sm">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
-              <span className="text-xl">🔍</span> What’s Cooking
-            </h3>
-            <ul className="text-sm text-gray-700 space-y-2">
-              {analytics.keyInsights.diagnoses.length > 0 ? (
-                analytics.keyInsights.diagnoses.map((diagnosis, index) => (
-                  <li key={index} className="flex items-center gap-2">
-                    <span className="text-blue-500">➡️</span> {diagnosis.name}
-                  </li>
-                ))
-              ) : (
-                <li className="text-gray-500">No diagnoses yet!</li>
-              )}
-            </ul>
-          </div>
-
-          {/* Treatment Goals */}
-          <div className="bg-white p-4 rounded-lg shadow-sm">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
-              <span className="text-xl">🎯</span> Goal Game
-            </h3>
-            <div className="text-sm text-gray-700 space-y-4">
-              {treatmentGoals.shortTerm?.length > 0 && (
-                <div>
-                  <h4 className="font-medium text-blue-600 mb-1">Quick Hits</h4>
-                  <ul className="space-y-2">
-                    {treatmentGoals.shortTerm.map((goal, index) => (
-                      <li key={index} className="flex items-center gap-2">
-                        <span className="text-blue-500">➡️</span> {goal}
-                      </li>
-                    ))}
-                  </ul>
+          <div>
+            {analytics.treatmentProgress?.length > 0 ? (
+              <>
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="space-y-2">
+                    <p className="text-sm text-gray-500">Overall Progress</p>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div
+                        className="bg-blue-600 h-2.5 rounded-full"
+                        style={{
+                          width: `${
+                            analytics.treatmentProgress[analytics.treatmentProgress.length - 1]
+                              ?.metrics?.overallProgress || 0
+                          }%`,
+                        }}
+                      ></div>
+                    </div>
+                    <p className="text-sm text-gray-500">
+                      {analytics.treatmentProgress[analytics.treatmentProgress.length - 1]?.metrics
+                        ?.overallProgress || 0}
+                      %
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm text-gray-500">Treatment Adherence</p>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div
+                        className="bg-green-600 h-2.5 rounded-full"
+                        style={{
+                          width: `${
+                            analytics.treatmentProgress[analytics.treatmentProgress.length - 1]
+                              ?.metrics?.treatmentAdherence || 0
+                          }%`,
+                        }}
+                      ></div>
+                    </div>
+                    <p className="text-sm text-gray-500">
+                      {analytics.treatmentProgress[analytics.treatmentProgress.length - 1]?.metrics
+                        ?.treatmentAdherence || 0}
+                      %
+                    </p>
+                  </div>
                 </div>
-              )}
-              {treatmentGoals.longTerm?.length > 0 && (
-                <div>
-                  <h4 className="font-medium text-blue-600 mb-1">Big Wins</h4>
-                  <ul className="space-y-2">
-                    {treatmentGoals.longTerm.map((goal, index) => (
-                      <li key={index} className="flex items-center gap-2">
-                        <span className="text-blue-500">➡️</span> {goal}
-                      </li>
-                    ))}
-                  </ul>
+                <div className="space-y-4">
+                  <h3 className="font-medium">Latest Goals</h3>
+                  {analytics.keyInsights.treatmentGoals?.map((goal, index) => (
+                    <div key={index} className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <p className="text-sm">{goal.goal}</p>
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs ${
+                            goal.status === "Achieved"
+                              ? "bg-green-100 text-green-800"
+                              : goal.status === "In Progress"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : goal.status === "Partially Achieved"
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {goal.status}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500">{goal.notes}</p>
+                    </div>
+                  ))}
                 </div>
-              )}
-              {!treatmentGoals.shortTerm?.length && !treatmentGoals.longTerm?.length && (
-                <p className="text-gray-500">No goals on the board yet!</p>
-              )}
-            </div>
+              </>
+            ) : (
+              <p className="text-sm text-gray-500">No progress data available</p>
+            )}
           </div>
         </div>
       </div>

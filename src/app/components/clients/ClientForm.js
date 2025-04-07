@@ -146,7 +146,6 @@ export default function ClientForm({ client, onSuccess, onCancel }) {
         setAiProcessing(true);
         try {
           const aiResponse = await handleTrigger(TRIGGER_EVENTS.NEW_CLIENT, savedClient);
-          console.log("AI Processing Complete:", aiResponse);
         } catch (aiError) {
           console.error("AI Processing Error:", aiError);
           // Don't block the client creation if AI processing fails

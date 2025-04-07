@@ -33,11 +33,8 @@ export default function SessionAIInsights({ session }) {
           // Don't proceed if response is not ok
           return;
         }
-        console.log("response", response);
-        console.log("session", session);
 
         const reports = await response.json();
-        console.log("All reports from API:", reports);
 
         // Find the relevant reports from the array
         const assessment = reports.find((r) => r.type === "assessment");
@@ -45,14 +42,6 @@ export default function SessionAIInsights({ session }) {
         const treatment = reports.find((r) => r.type === "treatment");
         const documentation = reports.find((r) => r.type === "documentation");
         const progress = reports.find((r) => r.type === "progress");
-
-        console.log("Filtered reports:", {
-          assessment,
-          diagnostic,
-          treatment,
-          documentation,
-          progress,
-        });
 
         // Set the reports in state
         setAssessmentReport(assessment?.content);

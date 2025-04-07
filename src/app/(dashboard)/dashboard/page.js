@@ -21,7 +21,6 @@ export default function DashboardPage() {
       try {
         const response = await fetch("/api/dashboard/stats");
         const data = await response.json();
-        console.log("Dashboard stats:", data); // Debug log
         setStats(data);
       } catch (error) {
         console.error("Error fetching dashboard stats:", error);
@@ -32,7 +31,6 @@ export default function DashboardPage() {
   }, []);
 
   const handleActivityClick = (activity) => {
-    console.log("Clicked activity:", activity); // Debug log
     if (activity.type === "session") {
       router.push(`/sessions/${activity.id}`);
     } else if (activity.type === "report") {

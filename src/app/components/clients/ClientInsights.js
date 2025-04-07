@@ -211,31 +211,17 @@ export default function ClientInsights({ clientId }) {
             <span className="text-xl">🚀</span> Next Up
           </h3>
           <ul className="list-none ml-0 text-sm text-gray-700 bg-white p-3 rounded-lg shadow-sm space-y-2">
-            {assessmentContent?.suggestedNextSteps?.length > 0 &&
+            {assessmentContent?.suggestedNextSteps?.length > 0 ? (
               assessmentContent.suggestedNextSteps.map((step, i) => (
                 <li key={i} className="flex items-center gap-2">
                   <span className="text-blue-500">➡️</span> {step}
                 </li>
-              ))}
-            {progressContent?.areasNeedingFocus?.length > 0 &&
-              progressContent.areasNeedingFocus.map((area, i) => (
-                <li key={i} className="flex items-center gap-2">
-                  <span className="text-blue-500">➡️</span> {area}
-                </li>
-              ))}
-            {treatmentContent?.potentialBarriers?.length > 0 &&
-              treatmentContent.potentialBarriers.map((barrier, i) => (
-                <li key={i} className="flex items-center gap-2">
-                  <span className="text-blue-500">➡️</span> Tackle {barrier}
-                </li>
-              ))}
-            {!assessmentContent?.suggestedNextSteps?.length &&
-              !progressContent?.areasNeedingFocus?.length &&
-              !treatmentContent?.potentialBarriers?.length && (
-                <li className="flex items-center gap-2">
-                  <span className="text-blue-500">➡️</span> All good for now!
-                </li>
-              )}
+              ))
+            ) : (
+              <li className="flex items-center gap-2">
+                <span className="text-blue-500">➡️</span> All good for now!
+              </li>
+            )}
           </ul>
         </div>
       </div>

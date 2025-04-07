@@ -8,7 +8,11 @@ export const runtime = "edge";
 // Define comprehensive schemas for each agent type
 const assessmentSchema = z
   .object({
-    summary: z.string().describe("Brief summary of key assessment findings"),
+    summary: z
+      .string()
+      .describe(
+        "Brief summary (2-3 sentences) highlighting: 1) Overall risk level and key concerns, 2) Most significant clinical observations, 3) Immediate priorities for intervention"
+      ),
     riskLevel: z.string(),
     primaryConcerns: z.array(z.string()),
     recommendedAssessmentTools: z.array(z.string()),
@@ -23,7 +27,7 @@ const diagnosticSchema = z
     summary: z
       .string()
       .describe(
-        "Brief summary including primary DSM-5 diagnosis (with code), key differential diagnoses, and severity level. Example: 'Primary: GAD (F41.1) - Moderate; Differential: MDD (F33.1), Adjustment Disorder (F43.23)'"
+        "Brief summary (2-3 sentences) highlighting: 1) Primary diagnosis and severity, 2) Key differential diagnoses, 3) Most significant clinical implications"
       ),
     primaryDiagnosis: z.object({
       code: z.string(),
@@ -43,7 +47,11 @@ const diagnosticSchema = z
 
 const treatmentSchema = z
   .object({
-    summary: z.string().describe("Brief summary of treatment plan and key interventions"),
+    summary: z
+      .string()
+      .describe(
+        "Brief summary (2-3 sentences) highlighting: 1) Primary treatment approach, 2) Key short-term goals, 3) Most critical interventions"
+      ),
     goals: z.object({
       shortTerm: z.array(z.string()),
       longTerm: z.array(z.string()),
@@ -65,8 +73,11 @@ const treatmentSchema = z
 
 const progressSchema = z
   .object({
-    summary: z.string().describe("Brief summary of progress and key observations"),
-    progressSummary: z.string(),
+    summary: z
+      .string()
+      .describe(
+        "Brief summary (2-3 sentences) highlighting: 1) Overall progress status with metrics, 2) Key changes since last session, 3) Most significant achievement or concern"
+      ),
     goalAchievementStatus: z.array(
       z.object({
         goal: z.string(),
@@ -82,12 +93,22 @@ const progressSchema = z
     recommendations: z.array(z.string()),
     nextSteps: z.array(z.string()),
     treatmentPlanAdjustments: z.array(z.string()),
+    metrics: z.object({
+      overallProgress: z.number(),
+      symptomSeverity: z.number(),
+      treatmentAdherence: z.number(),
+      riskLevel: z.number(),
+    }),
   })
   .passthrough();
 
 const documentationSchema = z
   .object({
-    summary: z.string().describe("Brief summary of overall session and key documentation points"),
+    summary: z
+      .string()
+      .describe(
+        "Brief summary (2-3 sentences) highlighting: 1) Key session events, 2) Most significant clinical observations, 3) Critical follow-up actions"
+      ),
     soap: z.object({
       subjective: z.string(),
       objective: z.string(),

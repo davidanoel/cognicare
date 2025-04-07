@@ -128,7 +128,6 @@ export default function SessionForm({ session, onSuccess, onCancel, initialClien
       }
 
       const savedSession = await response.json();
-      console.log("Session saved successfully:", savedSession);
 
       // If session is completed, trigger AI documentation
       if (formData.status === "completed") {
@@ -141,7 +140,6 @@ export default function SessionForm({ session, onSuccess, onCancel, initialClien
           }
           const clientDataResponse = await clientResponse.json();
           const clientData = clientDataResponse.client; // Extract the client object
-          console.log("Client data fetched:", clientData);
 
           // Ensure we have all required data
           if (!savedSession._id) {
@@ -155,7 +153,6 @@ export default function SessionForm({ session, onSuccess, onCancel, initialClien
             sessionData: savedSession,
             clientData: clientData,
           });
-          console.log("AI Documentation Complete:", aiResponse);
         } catch (aiError) {
           console.error("AI Documentation Error:", aiError);
           setError(aiError.message || "Failed to generate AI documentation");

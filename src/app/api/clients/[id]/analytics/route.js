@@ -4,6 +4,15 @@ import { connectDB } from "@/lib/mongodb";
 import AIReport from "@/models/aiReport";
 import Session from "@/models/session";
 
+// Map risk levels to numerical values for charting
+const riskLevelMap = {
+  none: 0,
+  low: 1,
+  moderate: 2,
+  high: 3,
+  severe: 4,
+};
+
 export async function GET(req, context) {
   try {
     const session = await getSession();
@@ -35,18 +44,36 @@ export async function GET(req, context) {
       })),
       riskLevels: reports
         .filter((r) => r.type === "assessment")
-        .map((r) => ({
-          date: r.metadata.timestamp,
-          level: r.content.riskLevel,
-          sessionId: r.sessionId,
-        })),
+        .map((r) => {
+          const riskLevelMap = {
+            none: 0,
+            low: 1,
+            moderate: 2,
+            high: 3,
+            severe: 4,
+          };
+          const riskData = {
+            date: new Date(r.metadata.timestamp).toISOString(),
+            level: riskLevelMap[r.content.riskLevel?.toLowerCase()] ?? 0,
+            levelText: r.content.riskLevel,
+            sessionId: r.sessionId,
+          };
+          return riskData;
+        }),
       treatmentProgress: reports
         .filter((r) => r.type === "progress")
         .map((r) => ({
           date: r.metadata.timestamp,
-          status: r.content.treatmentProgress?.status,
-          goals: r.content.treatmentProgress?.goalProgress,
-          sessionId: r.sessionId,
+          metrics: {
+            overallProgress: r.content.metrics?.overallProgress || 0,
+            treatmentAdherence: r.content.metrics?.treatmentAdherence || 0,
+            symptomSeverity: r.content.metrics?.symptomSeverity || 0,
+            riskLevel: r.content.metrics?.riskLevel || 0,
+          },
+          goals: r.content.goalAchievementStatus || [],
+          keyObservations: r.content.keyObservations || [],
+          treatmentEffectiveness: r.content.treatmentEffectiveness || "",
+          recommendations: r.content.recommendations || [],
         })),
       keyInsights: {
         riskFactors: reports
@@ -56,14 +83,16 @@ export async function GET(req, context) {
           .filter((r) => r.type === "diagnostic")
           .flatMap((r) => r.content.primaryDiagnosis || []),
         treatmentGoals: reports
-          .filter((r) => r.type === "treatment")
-          .flatMap((r) => r.content.goals || []),
+          .filter((r) => r.type === "progress")
+          .flatMap((r) => r.content.goalAchievementStatus || [])
+          .slice(-3), // Get the latest 3 goals
       },
     };
 
+    console.log("Processed analytics:", analytics);
     return NextResponse.json(analytics);
   } catch (error) {
     console.error("Analytics error:", error);
-    return NextResponse.json({ error: "Failed to fetch analytics" }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
