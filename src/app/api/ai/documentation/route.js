@@ -30,42 +30,53 @@ export async function POST(req) {
       role: "system",
       content: `You are an expert mental health documentation specialist who creates comprehensive clinical documentation by synthesizing information from multiple sources.
 
+IMPORTANT: You must ALWAYS include:
+1. All relevant metrics (risk levels, symptom severity, progress scores)
+2. Diagnostic codes and criteria
+3. Treatment adherence percentages
+4. Progress indicators with numerical values
+
 Your response MUST follow this exact JSON structure:
 {
   "soap": {
-    "subjective": "Client's reported experiences",
-    "objective": "Clinical observations",
-    "assessment": "Clinical judgment",
-    "plan": "Treatment recommendations"
+    "subjective": "Client's reported experiences with metrics",
+    "objective": "Clinical observations with measurements",
+    "assessment": "Clinical judgment with diagnostic codes",
+    "plan": "Treatment recommendations with metrics"
   },
   "clinicalDocumentation": {
-    "initialObservations": "Initial clinical observations",
-    "riskAssessmentSummary": "Summary of risk assessment",
-    "diagnosticConsiderations": "Diagnostic considerations",
-    "treatmentGoalsAndInterventions": ["Array of goals and interventions"],
-    "progressIndicators": ["Array of progress indicators"],
-    "treatmentEffectivenessAnalysis": "Analysis of treatment effectiveness",
-    "followUpRecommendations": ["Array of follow-up recommendations"]
+    "initialObservations": "Initial clinical observations with measurements",
+    "riskAssessmentSummary": "Summary of risk assessment with levels",
+    "diagnosticConsiderations": "Diagnostic considerations with codes",
+    "treatmentGoalsAndInterventions": ["Array of goals and interventions with metrics"],
+    "progressIndicators": ["Array of progress indicators with numerical values"],
+    "treatmentEffectivenessAnalysis": "Analysis of treatment effectiveness with percentages",
+    "followUpRecommendations": ["Array of follow-up recommendations with metrics"]
   },
   "additionalComponents": {
-    "areasRequiringImmediateAttention": ["Array of immediate concerns"],
-    "recommendedAssessmentTools": ["Array of assessment tools"],
-    "specificInterventions": ["Array of specific interventions"],
-    "progressMetrics": ["Array of progress metrics"],
-    "nextSessionFocus": "Focus for next session"
+    "areasRequiringImmediateAttention": ["Array of immediate concerns with risk levels"],
+    "recommendedAssessmentTools": ["Array of assessment tools with scores"],
+    "specificInterventions": ["Array of specific interventions with metrics"],
+    "progressMetrics": ["Array of progress metrics with numerical values"],
+    "nextSessionFocus": "Focus for next session with measurable goals"
   },
   "progressSummary": {
     "treatmentGoalsProgress": [
       {
         "goal": "Treatment goal",
-        "progress": "Progress description"
+        "progress": "Progress description with percentage",
+        "metrics": {
+          "currentScore": "numerical value",
+          "targetScore": "numerical value",
+          "progressPercentage": "percentage"
+        }
       }
     ],
-    "outcomesMeasurement": ["Array of outcome measurements"],
-    "areasOfImprovement": ["Array of improvement areas"],
-    "challengesAndBarriers": ["Array of challenges"],
-    "treatmentPlanAdjustments": ["Array of adjustments"],
-    "longTermProgressIndicators": ["Array of long-term indicators"]
+    "outcomesMeasurement": ["Array of outcome measurements with scores"],
+    "areasOfImprovement": ["Array of improvement areas with metrics"],
+    "challengesAndBarriers": ["Array of challenges with severity ratings"],
+    "treatmentPlanAdjustments": ["Array of adjustments with impact metrics"],
+    "longTermProgressIndicators": ["Array of long-term indicators with measurements"]
   }
 }`,
     };

@@ -107,7 +107,7 @@ const documentationSchema = z
     summary: z
       .string()
       .describe(
-        "Brief summary (2-3 sentences) highlighting: 1) Key session events, 2) Most significant clinical observations, 3) Critical follow-up actions"
+        "Brief summary (2-3 sentences) highlighting: 1) Key session events, 2) Most significant clinical observations, 3) Critical follow-up actions, 4) Highlight key metrics and progress indicators"
       ),
     soap: z.object({
       subjective: z.string(),

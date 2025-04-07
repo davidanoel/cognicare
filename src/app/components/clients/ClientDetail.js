@@ -589,7 +589,7 @@ export default function ClientDetail({ clientId }) {
                 {treatmentReport.content.interventions?.length > 0 && (
                   <div className="mb-6">
                     <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                      <span className="text-xl">🛠️</span> Our Toolkit
+                      <span className="text-xl">🛠️</span> Our Toolkit (Interventions)
                     </h3>
                     <ul className="bg-white p-3 rounded-lg shadow-sm text-sm text-gray-700 space-y-2">
                       {treatmentReport.content.interventions.map((intervention, index) => (
