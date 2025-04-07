@@ -119,28 +119,14 @@ export default function ClientAnalytics({ clientId }) {
           {/* Risk Level Trends */}
           <div className="bg-white p-4 rounded-lg shadow-sm">
             <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-              <span className="text-xl">🚨</span> Risk Radar
+              <span className="text-xl">🚨</span> Symptoms
             </h3>
             <div className="h-48">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={analytics.riskLevels}>
+                <LineChart data={analytics.treatmentProgress}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                   <XAxis dataKey="date" tickFormatter={formatDate} tick={{ fontSize: 10 }} />
-                  <YAxis
-                    domain={[0, 4]}
-                    width={40}
-                    tick={{ fontSize: 10 }}
-                    tickFormatter={(value) => {
-                      const labels = {
-                        0: "None",
-                        1: "Low",
-                        2: "Mod",
-                        3: "High",
-                        4: "Sev",
-                      };
-                      return labels[value] || value;
-                    }}
-                  />
+                  <YAxis domain={[0, 10]} width={30} />
                   <Tooltip
                     content={({ active, payload, label }) => {
                       if (active && payload && payload.length) {
@@ -148,7 +134,7 @@ export default function ClientAnalytics({ clientId }) {
                           <div className="bg-white p-2 border border-blue-200 rounded shadow-lg">
                             <p className="font-medium text-blue-600">{formatDate(label)}</p>
                             <p className="text-gray-700">
-                              Risk Level: {payload[0].payload.levelText}
+                              Severity: {payload[0].payload.metrics?.symptomSeverity || 0}/10
                             </p>
                           </div>
                         );
@@ -159,95 +145,190 @@ export default function ClientAnalytics({ clientId }) {
                   <Legend />
                   <Line
                     type="monotone"
-                    dataKey="level"
-                    stroke="#ff7300"
-                    name="Risk Level"
+                    dataKey="metrics.symptomSeverity"
+                    stroke="#9333ea"
+                    name="Symptom Severity"
                     strokeWidth={2}
-                    dot={{ r: 4, fill: "#ff7300" }}
-                    activeDot={{ r: 6, fill: "#ff7300" }}
+                    dot={{ r: 4, fill: "#9333ea" }}
+                    activeDot={{ r: 6, fill: "#9333ea" }}
                   />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </div>
-        </div>
 
-        {/* Treatment Progress */}
-        <div className="bg-white rounded-lg shadow-sm p-4">
-          <div className="border-b pb-2 mb-4">
-            <h3 className="text-lg font-semibold">Treatment Progress</h3>
+          {/* Risk Level Charts */}
+          <div className="bg-white rounded-lg shadow-sm p-4">
+            <div className="border-b pb-2 mb-4">
+              <h3 className="text-lg font-semibold">Risk Analysis</h3>
+            </div>
+            <div className="space-y-6">
+              {/* Assessment Risk Level */}
+              <div>
+                <h4 className="text-sm font-medium mb-2">Assessment Risk Level</h4>
+                <ResponsiveContainer width="100%" height={200}>
+                  <LineChart data={analytics.riskLevels}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" tickFormatter={formatDate} tick={{ fontSize: 10 }} />
+                    <YAxis
+                      domain={[0, 4]}
+                      width={40}
+                      tick={{ fontSize: 10 }}
+                      tickFormatter={(value) => {
+                        const labels = {
+                          0: "None",
+                          1: "Low",
+                          2: "Mod",
+                          3: "High",
+                          4: "Sev",
+                        };
+                        return labels[value] || value;
+                      }}
+                    />
+                    <Tooltip
+                      content={({ active, payload, label }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-white p-2 border border-blue-200 rounded shadow-lg">
+                              <p className="font-medium text-blue-600">{formatDate(label)}</p>
+                              <p className="text-gray-700">
+                                Risk Level: {payload[0].payload.levelText || "Unknown"}
+                              </p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="level"
+                      stroke="#ff7300"
+                      name="Risk Level"
+                      strokeWidth={2}
+                      dot={{ r: 4, fill: "#ff7300" }}
+                      activeDot={{ r: 6, fill: "#ff7300" }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Progress Risk Level */}
+              <div>
+                <h4 className="text-sm font-medium mb-2">Progress Risk Level</h4>
+                <ResponsiveContainer width="100%" height={200}>
+                  <LineChart data={analytics.treatmentProgress}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" tickFormatter={formatDate} tick={{ fontSize: 10 }} />
+                    <YAxis domain={[0, 10]} width={40} tick={{ fontSize: 10 }} />
+                    <Tooltip
+                      content={({ active, payload, label }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-white p-2 border border-blue-200 rounded shadow-lg">
+                              <p className="font-medium text-blue-600">{formatDate(label)}</p>
+                              <p className="text-gray-700">
+                                Risk Level: {payload[0].payload.metrics?.riskLevel || 0}/10
+                              </p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="metrics.riskLevel"
+                      stroke="#4f46e5"
+                      name="Risk Level"
+                      strokeWidth={2}
+                      dot={{ r: 4, fill: "#4f46e5" }}
+                      activeDot={{ r: 6, fill: "#4f46e5" }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           </div>
-          <div>
-            {analytics.treatmentProgress?.length > 0 ? (
-              <>
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="space-y-2">
-                    <p className="text-sm text-gray-500">Overall Progress</p>
-                    <div className="w-full bg-gray-200 rounded-full h-2.5">
-                      <div
-                        className="bg-blue-600 h-2.5 rounded-full"
-                        style={{
-                          width: `${
-                            analytics.treatmentProgress[analytics.treatmentProgress.length - 1]
-                              ?.metrics?.overallProgress || 0
-                          }%`,
-                        }}
-                      ></div>
-                    </div>
-                    <p className="text-sm text-gray-500">
-                      {analytics.treatmentProgress[analytics.treatmentProgress.length - 1]?.metrics
-                        ?.overallProgress || 0}
-                      %
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-sm text-gray-500">Treatment Adherence</p>
-                    <div className="w-full bg-gray-200 rounded-full h-2.5">
-                      <div
-                        className="bg-green-600 h-2.5 rounded-full"
-                        style={{
-                          width: `${
-                            analytics.treatmentProgress[analytics.treatmentProgress.length - 1]
-                              ?.metrics?.treatmentAdherence || 0
-                          }%`,
-                        }}
-                      ></div>
-                    </div>
-                    <p className="text-sm text-gray-500">
-                      {analytics.treatmentProgress[analytics.treatmentProgress.length - 1]?.metrics
-                        ?.treatmentAdherence || 0}
-                      %
-                    </p>
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <h3 className="font-medium">Latest Goals</h3>
-                  {analytics.keyInsights.treatmentGoals?.map((goal, index) => (
-                    <div key={index} className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <p className="text-sm">{goal.goal}</p>
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs ${
-                            goal.status === "Achieved"
-                              ? "bg-green-100 text-green-800"
-                              : goal.status === "In Progress"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : goal.status === "Partially Achieved"
-                              ? "bg-blue-100 text-blue-800"
-                              : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {goal.status}
-                        </span>
+          {/* Treatment Progress */}
+          <div className="bg-white rounded-lg shadow-sm p-4">
+            <div className="border-b pb-2 mb-4">
+              <h3 className="text-lg font-semibold">Treatment Progress</h3>
+            </div>
+            <div>
+              {analytics.treatmentProgress?.length > 0 ? (
+                <>
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="space-y-2">
+                      <p className="text-sm text-gray-500">Overall Progress</p>
+                      <div className="w-full bg-gray-200 rounded-full h-2.5">
+                        <div
+                          className="bg-blue-600 h-2.5 rounded-full"
+                          style={{
+                            width: `${
+                              analytics.treatmentProgress[analytics.treatmentProgress.length - 1]
+                                ?.metrics?.overallProgress || 0
+                            }%`,
+                          }}
+                        ></div>
                       </div>
-                      <p className="text-xs text-gray-500">{goal.notes}</p>
+                      <p className="text-sm text-gray-500">
+                        {analytics.treatmentProgress[analytics.treatmentProgress.length - 1]
+                          ?.metrics?.overallProgress || 0}
+                        %
+                      </p>
                     </div>
-                  ))}
+                    <div className="space-y-2">
+                      <p className="text-sm text-gray-500">Treatment Adherence</p>
+                      <div className="w-full bg-gray-200 rounded-full h-2.5">
+                        <div
+                          className="bg-green-600 h-2.5 rounded-full"
+                          style={{
+                            width: `${
+                              analytics.treatmentProgress[analytics.treatmentProgress.length - 1]
+                                ?.metrics?.treatmentAdherence || 0
+                            }%`,
+                          }}
+                        ></div>
+                      </div>
+                      <p className="text-sm text-gray-500">
+                        {analytics.treatmentProgress[analytics.treatmentProgress.length - 1]
+                          ?.metrics?.treatmentAdherence || 0}
+                        %
+                      </p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-gray-500">No progress data available</p>
+              )}
+            </div>
+            <div className="space-y-4">
+              <h3 className="font-medium">Latest Goals</h3>
+              {analytics.keyInsights.treatmentGoals?.map((goal, index) => (
+                <div key={index} className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <p className="text-sm">{goal.goal}</p>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs ${
+                        goal.status === "Achieved"
+                          ? "bg-green-100 text-green-800"
+                          : goal.status === "In Progress"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : goal.status === "Partially Achieved"
+                          ? "bg-blue-100 text-blue-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {goal.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500">{goal.notes}</p>
                 </div>
-              </>
-            ) : (
-              <p className="text-sm text-gray-500">No progress data available</p>
-            )}
+              ))}
+            </div>
           </div>
         </div>
       </div>

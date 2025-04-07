@@ -188,16 +188,33 @@ export default function ClientInsights({ clientId }) {
               {progressContent.goalAchievementStatus?.length > 0 && (
                 <div>
                   {progressContent.goalAchievementStatus.map((goal, i) => (
-                    <p key={i}>
-                      <span className="font-medium text-blue-600">{goal.goal}: </span>
-                      <span className={getProgressStatusColor(goal.status)}>{goal.status}</span>
-                    </p>
+                    <div key={i} className="mb-2 last:mb-0">
+                      <p className="text-sm text-gray-700">
+                        <span className="font-medium text-blue-600">{goal.goal}</span>
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs ${
+                            goal.status === "Achieved"
+                              ? "bg-green-100 text-green-800"
+                              : goal.status === "In Progress"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : goal.status === "Partially Achieved"
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {goal.status}
+                        </span>
+                        {goal.notes && <p className="text-xs text-gray-500 italic">{goal.notes}</p>}
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}
               {progressContent.treatmentEffectiveness && (
                 <p>
-                  <span className="font-medium text-blue-600">How It’s Working: </span>
+                  <span className="font-medium text-blue-600">How It's Working: </span>
                   {progressContent.treatmentEffectiveness}
                 </p>
               )}
