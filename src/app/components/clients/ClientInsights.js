@@ -71,11 +71,29 @@ export default function ClientInsights({ clientId }) {
     (!assessmentReport && !diagnosticReport && !treatmentReport && !progressReport)
   ) {
     return (
-      <div className="bg-blue-100 p-4 rounded-lg flex items-center gap-2">
-        <span className="text-2xl">🌙</span>
-        <p className="text-blue-700 text-sm">
-          No insights yet! They'll pop up here once we have some assessments or sessions to chew on.
-        </p>
+      <div className="bg-blue-100 p-4 rounded-lg">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">🌙</span>
+          <div>
+            <h3 className="font-medium text-blue-700">No insights yet!</h3>
+            <p className="text-blue-700 text-sm mt-1">
+              To get started, go to the <strong>AI Assistant</strong> tab and click{" "}
+              <strong>Run Initial Assessment</strong>. This will analyze the client information and
+              generate AI insights.
+            </p>
+          </div>
+        </div>
+        <div className="mt-3 flex justify-end">
+          <button
+            onClick={() => {
+              const currentUrl = window.location.pathname;
+              window.location.href = `${currentUrl}?tab=ai-assistant`;
+            }}
+            className="text-xs bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+          >
+            Go to AI Assistant
+          </button>
+        </div>
       </div>
     );
   }

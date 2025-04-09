@@ -1,10 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { handleTrigger } from "@/lib/ai/triggers";
-import { TRIGGER_EVENTS } from "@/constants";
 
 export default function SessionForm({ session, onSuccess, onCancel, initialClientId }) {
   const [clients, setClients] = useState([]);
@@ -149,10 +147,32 @@ export default function SessionForm({ session, onSuccess, onCancel, initialClien
             throw new Error("Client ID is missing from client data");
           }
 
-          const aiResponse = await handleTrigger(TRIGGER_EVENTS.SESSION_COMPLETED, {
-            sessionData: savedSession,
-            clientData: clientData,
+          // Use the new agent workflow API instead of the old trigger function
+          const aiResponse = await fetch("/api/ai/agent-workflow", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              stage: "post-session",
+              clientId: clientData._id,
+              clientData: clientData,
+              sessionId: savedSession._id,
+            }),
           });
+
+          if (!aiResponse.ok) {
+            const errorData = await aiResponse.json();
+            throw new Error(errorData.error || "AI workflow processing failed");
+          }
+
+          const aiResult = await aiResponse.json();
+          console.log("Session documentation completed:", aiResult.message);
+
+          // Check if reassessment is recommended
+          if (aiResult.recommendReassessment) {
+            console.log("Reassessment recommended:", aiResult.reassessmentRationale);
+          }
         } catch (aiError) {
           console.error("AI Documentation Error:", aiError);
           setError(aiError.message || "Failed to generate AI documentation");

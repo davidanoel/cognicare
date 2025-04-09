@@ -8,7 +8,7 @@ export default function SessionAIInsights({ session }) {
   const [treatmentReport, setTreatmentReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState("assessment");
+  const [activeTab, setActiveTab] = useState("progress");
 
   useEffect(() => {
     const fetchReport = async () => {
@@ -21,7 +21,7 @@ export default function SessionAIInsights({ session }) {
       setTreatmentReport(null);
       try {
         const response = await fetch(
-          `/api/reports/${session.clientId._id}/sessions/${session._id}`
+          `/api/clients/${session.clientId._id}/sessions/${session._id}/reports`
         );
         if (!response.ok) {
           if (response.status === 404) {
@@ -880,16 +880,67 @@ export default function SessionAIInsights({ session }) {
                   )}
 
                   {/* Treatment Plan Adjustments */}
-                  {progressReport.treatmentPlanAdjustments?.length > 0 && (
-                    <div>
+                  {progressReport.adjustmentsToTreatmentPlan?.length > 0 && (
+                    <div className="mb-6">
                       <h4 className="text-md font-semibold text-gray-700 mb-2">
                         Treatment Plan Adjustments
                       </h4>
                       <ul className="list-disc ml-8 space-y-2 text-gray-600">
-                        {progressReport.treatmentPlanAdjustments.map((adjustment, i) => (
+                        {progressReport.adjustmentsToTreatmentPlan.map((adjustment, i) => (
                           <li key={i}>{adjustment}</li>
                         ))}
                       </ul>
+                    </div>
+                  )}
+
+                  {/* Reassessment Recommendation */}
+                  {progressReport.recommendReassessment !== undefined && (
+                    <div
+                      className={`p-4 mb-6 rounded-lg ${
+                        progressReport.recommendReassessment
+                          ? "bg-yellow-50 border border-yellow-200"
+                          : "bg-green-50 border border-green-200"
+                      }`}
+                    >
+                      <h4 className="text-md font-semibold mb-2">
+                        {progressReport.recommendReassessment
+                          ? "🔔 Reassessment Recommended"
+                          : "✅ No Reassessment Needed"}
+                      </h4>
+                      {progressReport.reassessmentRationale && (
+                        <p className="text-gray-700">{progressReport.reassessmentRationale}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Metrics */}
+                  {progressReport.metrics && (
+                    <div className="mb-6">
+                      <h4 className="text-md font-semibold text-gray-700 mb-2">Progress Metrics</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        {/* Convert metrics object to array if needed */}
+                        {Array.isArray(progressReport.metrics)
+                          ? progressReport.metrics.map((metric, i) => (
+                              <div key={i} className="flex items-center">
+                                <span className="font-medium mr-2">{metric.name}:</span>
+                                <span className={getChangeColor(metric.change)}>
+                                  {metric.value}
+                                </span>
+                              </div>
+                            ))
+                          : /* Handle metrics as an object */
+                            Object.entries(progressReport.metrics).map(([key, value]) => (
+                              <div key={key} className="flex items-center">
+                                <span className="font-medium mr-2">
+                                  {key
+                                    .replace(/([A-Z])/g, " $1")
+                                    .replace(/^./, (str) => str.toUpperCase())}
+                                  :
+                                </span>
+                                <span>{value}</span>
+                              </div>
+                            ))}
+                      </div>
                     </div>
                   )}
                 </div>

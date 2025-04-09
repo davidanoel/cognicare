@@ -33,6 +33,9 @@ const diagnosticSchema = z
       code: z.string(),
       name: z.string(),
       description: z.string().optional(),
+      confidence: z.string(),
+      criteria: z.array(z.string()),
+      rationale: z.string(),
     }),
     differentialDiagnoses: z.array(z.string()),
     ruleOutConditions: z.array(z.string()),
@@ -115,27 +118,38 @@ const documentationSchema = z
       assessment: z.string(),
       plan: z.string(),
     }),
-    clinicalDocumentation: z.object({
-      initialObservations: z.string(),
-      riskAssessmentSummary: z.string(),
-      diagnosticConsiderations: z.string(),
-      treatmentGoalsAndInterventions: z.array(z.string()),
-      progressIndicators: z.array(z.string()),
-      treatmentEffectivenessAnalysis: z.string(),
-      followUpRecommendations: z.array(z.string()),
-    }),
-    additionalComponents: z.object({
-      areasRequiringImmediateAttention: z.array(z.string()).optional(),
-      recommendedAssessmentTools: z.array(z.string()),
-      specificInterventions: z.array(z.string()),
-      progressMetrics: z.array(z.string()),
-      nextSessionFocus: z.string(),
-    }),
+    clinicalDocumentation: z
+      .object({
+        initialObservations: z.string(),
+        riskAssessmentSummary: z.string(),
+        diagnosticConsiderations: z.string(),
+        treatmentGoalsAndInterventions: z.array(z.string()),
+        progressIndicators: z.array(z.string()),
+        treatmentEffectivenessAnalysis: z.string(),
+        followUpRecommendations: z.array(z.string()),
+      })
+      .passthrough(),
+    additionalComponents: z
+      .object({
+        areasRequiringImmediateAttention: z.array(z.string()).optional(),
+        recommendedAssessmentTools: z.array(z.string()),
+        specificInterventions: z.array(z.string()),
+        progressMetrics: z.array(z.string()),
+        nextSessionFocus: z.string(),
+      })
+      .optional(),
     progressSummary: z.object({
       treatmentGoalsProgress: z.array(
         z.object({
           goal: z.string(),
           progress: z.string(),
+          metrics: z
+            .object({
+              currentScore: z.union([z.string(), z.number()]),
+              targetScore: z.union([z.string(), z.number()]),
+              progressPercentage: z.string(),
+            })
+            .optional(),
         })
       ),
       outcomesMeasurement: z.array(z.string()),

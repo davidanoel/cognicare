@@ -34,8 +34,6 @@ async function processSessionAgents(data) {
         clientId: data.clientData._id,
         clientData: data.clientData,
         sessionData: data.sessionData,
-        priority: prevResults.assessmentResults?.riskLevel === "high" ? "high" : "normal",
-        riskFactor: prevResults.assessmentResults?.riskLevel === "high",
       }),
     },
     {

@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import SessionForm from "./SessionForm";
+import { useSession } from "next-auth/react";
 
 export default function SessionList({ initialStatusFilter = "" }) {
   const [allSessions, setAllSessions] = useState([]);
@@ -14,11 +15,14 @@ export default function SessionList({ initialStatusFilter = "" }) {
   const [typeFilter, setTypeFilter] = useState("");
   const [showAddSession, setShowAddSession] = useState(false);
   const router = useRouter();
+  const { data: session } = useSession();
 
-  // Only fetch all sessions once on component mount
+  // Only fetch all sessions once on component mount and when session is available
   useEffect(() => {
-    fetchAllSessions();
-  }, []);
+    if (session) {
+      fetchAllSessions();
+    }
+  }, [session]);
 
   // Update status filter when initialStatusFilter changes
   useEffect(() => {
@@ -28,14 +32,31 @@ export default function SessionList({ initialStatusFilter = "" }) {
   const fetchAllSessions = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/sessions");
+
+      console.log("Fetching sessions...");
+      const response = await fetch("/api/sessions", {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include", // Include cookies for authentication
+      });
+
+      // Debug information
+      console.log("Response status:", response.status);
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to fetch sessions");
+        let errorMessage = "Failed to fetch sessions";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (parseError) {
+          console.error("Error parsing error response:", parseError);
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
+      console.log("Fetched sessions:", data.length);
       setAllSessions(data);
       setError(null);
     } catch (err) {
@@ -68,9 +89,14 @@ export default function SessionList({ initialStatusFilter = "" }) {
     });
   }, [allSessions, searchTerm, statusFilter, typeFilter]);
 
-  const handleSessionAdded = () => {
+  const handleSessionAdded = (newSession) => {
     setShowAddSession(false);
     fetchAllSessions(); // Refresh all sessions
+
+    // Navigate to the session details page if we have a session ID
+    if (newSession && newSession._id) {
+      router.push(`/sessions/${newSession._id}`);
+    }
   };
 
   const handleDeleteSession = async (sessionId) => {
@@ -122,6 +148,15 @@ export default function SessionList({ initialStatusFilter = "" }) {
         return "bg-gray-100 text-gray-800";
     }
   };
+
+  // Show loading when session is loading or not yet available
+  if (!session) {
+    return (
+      <div className="flex justify-center items-center min-h-[300px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

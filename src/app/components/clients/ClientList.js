@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ClientForm from "./ClientForm";
+import { useSession } from "next-auth/react";
 
 export default function ClientList() {
   const [allClients, setAllClients] = useState([]);
@@ -13,23 +14,43 @@ export default function ClientList() {
   const [statusFilter, setStatusFilter] = useState("");
   const [showAddClient, setShowAddClient] = useState(false);
   const router = useRouter();
+  const { data: session } = useSession();
 
   // Only fetch all clients once on component mount
   useEffect(() => {
-    fetchAllClients();
-  }, []);
+    if (session) {
+      fetchAllClients();
+    }
+  }, [session]);
 
   const fetchAllClients = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/clients");
+
+      console.log("Fetching clients...");
+      const response = await fetch("/api/clients", {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include", // Include cookies for authentication
+      });
+
+      // Debug information
+      console.log("Response status:", response.status);
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to fetch clients");
+        let errorMessage = "Failed to fetch clients";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (parseError) {
+          console.error("Error parsing error response:", parseError);
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
+      console.log("Fetched clients:", data.length);
       setAllClients(data);
       setError(null);
     } catch (err) {
@@ -55,10 +76,23 @@ export default function ClientList() {
     });
   }, [allClients, searchTerm, statusFilter]);
 
-  const handleClientAdded = () => {
+  const handleClientAdded = (newClient) => {
     setShowAddClient(false);
     fetchAllClients(); // Refresh all clients
+    // Navigate to client details with insights tab active
+    if (newClient && newClient._id) {
+      router.push(`/clients/${newClient._id}?tab=insights`);
+    }
   };
+
+  // Show loading when session is loading or not yet available
+  if (!session) {
+    return (
+      <div className="flex justify-center items-center min-h-[300px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

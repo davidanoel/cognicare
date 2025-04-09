@@ -31,7 +31,13 @@ export default function NewSessionPage() {
       <div className="max-w-2xl mx-auto">
         <h1 className="text-2xl font-bold mb-6">New Session</h1>
         <SessionForm
-          onSuccess={() => router.push("/sessions")}
+          onSuccess={(newSession) => {
+            if (newSession && newSession._id) {
+              router.push(`/sessions/${newSession._id}`);
+            } else {
+              router.push("/sessions");
+            }
+          }}
           onCancel={() => router.push("/sessions")}
           initialClientId={clientId}
         />

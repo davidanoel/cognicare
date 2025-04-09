@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import SessionForm from "./SessionForm";
 import SessionAIInsights from "./SessionAIInsights";
+import AIWorkflow from "../clients/AIWorkflow";
+import AIWorkflowTest from "../clients/AIWorkflowTest";
+import SessionPrepView from "../clients/SessionPrepView";
 
 export default function SessionDetail({ sessionId }) {
   const router = useRouter();
@@ -309,9 +312,41 @@ export default function SessionDetail({ sessionId }) {
         </div>
 
         {/* AI Insights Section */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">AI Insights</h2>
-          <SessionAIInsights session={session} />
+        <div id="ai-insights-section" className="bg-white shadow rounded-lg p-6">
+          <div className="flex items-center mb-4">
+            <h2 className="text-xl font-semibold">AI Insights</h2>
+            {session.documented && (
+              <span className="ml-2 px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
+                Analysis Available
+              </span>
+            )}
+          </div>
+          <SessionAIInsights
+            key={`session-insights-${session._id}-${session.updatedAt}`}
+            session={session}
+          />
+
+          <div className="mt-8 border-t pt-6">
+            <h3 className="text-lg font-semibold mb-4">AI Assistant</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <AIWorkflowTest title="AI Service Status" />
+                <AIWorkflow
+                  client={session.clientId}
+                  session={session}
+                  updateFunction={() => {
+                    fetchSession();
+                  }}
+                />
+              </div>
+              <div>
+                <SessionPrepView
+                  clientId={session.clientId?._id || session.clientId}
+                  sessionId={session._id}
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -11,94 +11,81 @@ export async function POST(req) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { clientId, clientData, priority, riskFactor, sessionData } = await req.json();
+    const { clientId, clientData, priority, riskFactor, sessionData, sessionSummaries } =
+      await req.json();
     if (!clientId || !clientData) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    const systemPrompt = {
+    // Determine the assessment type (initial or follow-up)
+    const isFollowUp = !!sessionData || (sessionSummaries && sessionSummaries.length > 0);
+    const assessmentSource = isFollowUp ? "follow-up-assessment" : "initial-assessment";
+
+    // Build the system prompt
+    let systemPrompt = {
       role: "system",
-      content: `You are an expert mental health assessment specialist with deep knowledge of clinical assessment protocols.
-      
-Key Responsibilities:
-1. Initial client assessment
-2. Proportional risk evaluation
-3. Clinical observation documentation
-4. Treatment priority determination
+      content: `You are an expert mental health assessment specialist. Analyze the client information provided and assess their current mental health state, risk factors, and treatment priorities.
 
-Assessment Guidelines:
-- Evaluate risk levels proportionally to the presented symptoms
-- Do not assume severe conditions without clear indicators
-- Base recommendations on the actual information provided
-- Consider the context and severity of reported symptoms
-- Avoid over-escalating minor concerns
-- Only suggest suicide assessment tools when there are clear risk indicators
-
-Risk Level Definitions:
-- none: No clinical risks identified (e.g., routine wellness check)
-- low: Common concerns with minimal impact (e.g., mild sleep issues, stress)
-- moderate: Notable concerns requiring attention (e.g., persistent anxiety, moderate depression)
-- high: ONLY for serious concerns (e.g., active suicidal ideation, severe depression)
-- severe: ONLY for immediate danger (e.g., current suicide attempt, active psychosis)
-
-Sleep Issues Guidelines:
-- Insomnia alone is typically a low-risk concern unless accompanied by other symptoms
-- Sleep problems should be assessed as high-risk only if accompanied by clear indicators of severe depression or other serious conditions
-- Focus on sleep hygiene and routine assessment tools before escalating
-
-Provide structured assessment in JSON format.`,
+IMPORTANT: Your response must be in this exact JSON format:
+{
+  "riskLevel": "none|low|minimal|mild|moderate|high|severe|extreme|critical",
+  "primaryConcerns": ["List of primary mental health concerns"],
+  "riskFactors": ["List of risk factors identified"],
+  "assessmentSummary": "Brief summary of your overall assessment",
+  "recommendedAssessmentTools": ["List specific assessment tools that would be helpful"],
+  "initialClinicalObservations": "Brief clinical observations based on available information",
+  "suggestedNextSteps": ["Specific next steps for treatment planning"],
+  "areasRequiringImmediateAttention": ["List of areas requiring immediate attention"],
+}`,
     };
+
+    // Add context about prior sessions if available
+    if (sessionSummaries && sessionSummaries.length > 0) {
+      systemPrompt.content += `\n\nYou have access to summaries of the client's previous sessions. Use this information to identify patterns, progress, or changes in their condition. Pay special attention to any new risk factors or changes in existing concerns.`;
+    }
+
+    // Build the user prompt
+    let userPromptContent = `Perform a mental health assessment for this client based on the information provided.`;
+
+    // Add client data
+    userPromptContent += `\n\nClient Information:\n${JSON.stringify(clientData, null, 2)}`;
+
+    // Add session data if available
+    if (sessionData) {
+      userPromptContent += `\n\nCurrent Session Information:\n${JSON.stringify(
+        sessionData,
+        null,
+        2
+      )}`;
+    }
+
+    // Add prior session summaries if available
+    if (sessionSummaries && sessionSummaries.length > 0) {
+      userPromptContent += `\n\nPrior Session Summaries (${
+        sessionSummaries.length
+      }):\n${JSON.stringify(sessionSummaries, null, 2)}`;
+    }
+
+    // Add risk factor information if present
+    if (riskFactor) {
+      userPromptContent += `\n\nNOTE: Potential risk factors were detected in this client's information. Please carefully evaluate suicide risk, self-harm risk, and harm to others.`;
+    }
 
     const userPrompt = {
       role: "user",
-      content: `Perform a proportional initial assessment for the following client data:
-Name: ${clientData.name}
-Age: ${clientData.age}
-Gender: ${clientData.gender}
-Status: ${clientData.status}
-
-Initial Assessment Notes:
-${clientData.initialAssessment}
-
-Context: This is the client's initial presentation. Assess based ONLY on the information provided.
-${
-  priority === "high"
-    ? "Note: This case has been flagged for review due to potential concerns."
-    : ""
-}
-${
-  riskFactor
-    ? "Note: Some risk-related terms were detected, but please assess independently based on the actual content."
-    : ""
-}
-
-Provide a proportional assessment including:
-1. Risk Level (must match the defined risk levels and be based solely on presented information)
-2. Primary Concerns (list only concerns directly mentioned or clearly implied)
-3. Recommended Assessment Tools (appropriate and proportional to the symptoms)
-4. Initial Clinical Observations (stick to factual observations, avoid speculation)
-5. Suggested Next Steps (must be proportional to the actual concerns identified)
-6. Areas Requiring Immediate Attention (include ONLY if there are genuinely urgent issues)
-
-Remember:
-- Base assessment ONLY on explicitly provided information
-- Do not assume additional symptoms or risks
-- Keep recommendations proportional to the actual presented concerns
-- For sleep issues, start with basic sleep assessment tools unless other serious symptoms are reported`,
+      content: userPromptContent,
     };
 
     const response = await createStructuredResponse([systemPrompt, userPrompt], null, "assessment");
-    const assessmentResults = response;
 
-    // Store the AI output
+    // Store the AI assessment
     await connectDB();
     const aiReport = new AIReport({
       clientId,
       counselorId: session.user.id,
       type: "assessment",
-      content: assessmentResults,
-      source: sessionData?._id ? `session-assessment-${sessionData._id}` : "initial-assessment",
-      sessionId: sessionData?._id,
+      content: response,
+      source: assessmentSource,
       metadata: {
         modelVersion: "gpt-3.5-turbo",
         timestamp: new Date(),
@@ -108,9 +95,9 @@ Remember:
     });
     await aiReport.save();
 
-    return NextResponse.json(assessmentResults);
+    return NextResponse.json(response);
   } catch (error) {
     console.error("Assessment Agent Error:", error);
-    return NextResponse.json({ error: "Assessment processing failed" }, { status: 500 });
+    return NextResponse.json({ error: "Assessment generation failed" }, { status: 500 });
   }
 }

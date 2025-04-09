@@ -14,13 +14,14 @@ export async function POST(req) {
     const {
       clientId,
       sessionId,
-      progressData,
       sessionData,
       clientData,
       assessmentResults,
       diagnosticResults,
       treatmentResults,
       progressResults,
+      previousDocumentation,
+      sessionNumber,
     } = await req.json();
     if (!clientId || !sessionId || !sessionData) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -30,14 +31,22 @@ export async function POST(req) {
       role: "system",
       content: `You are an expert mental health documentation specialist who creates comprehensive clinical documentation by synthesizing information from multiple sources.
 
+${
+  sessionNumber ? `This is session number ${sessionNumber} in the client's treatment sequence.` : ""
+}
+
 IMPORTANT: You must ALWAYS include:
 1. All relevant metrics (risk levels, symptom severity, progress scores)
 2. Diagnostic codes and criteria
 3. Treatment adherence percentages
 4. Progress indicators with numerical values
 
-Your response MUST follow this exact JSON structure:
+Your documentation should primarily focus on THIS SPECIFIC SESSION, while maintaining continuity with previous care.
+
+Your response MUST follow this exact JSON structure with these top-level keys: "summary", "soap", "clinicalDocumentation", "additionalComponents", "progressSummary".
+
 {
+  "summary": "Brief summary focusing on this session's key observations and metrics",
   "soap": {
     "subjective": "Client's reported experiences with metrics",
     "objective": "Clinical observations with measurements",
@@ -54,7 +63,6 @@ Your response MUST follow this exact JSON structure:
     "followUpRecommendations": ["Array of follow-up recommendations with metrics"]
   },
   "additionalComponents": {
-    "areasRequiringImmediateAttention": ["Array of immediate concerns with risk levels"],
     "recommendedAssessmentTools": ["Array of assessment tools with scores"],
     "specificInterventions": ["Array of specific interventions with metrics"],
     "progressMetrics": ["Array of progress metrics with numerical values"],
@@ -64,12 +72,7 @@ Your response MUST follow this exact JSON structure:
     "treatmentGoalsProgress": [
       {
         "goal": "Treatment goal",
-        "progress": "Progress description with percentage",
-        "metrics": {
-          "currentScore": "numerical value",
-          "targetScore": "numerical value",
-          "progressPercentage": "percentage"
-        }
+        "progress": "Progress description with percentage"
       }
     ],
     "outcomesMeasurement": ["Array of outcome measurements with scores"],
@@ -81,29 +84,59 @@ Your response MUST follow this exact JSON structure:
 }`,
     };
 
-    const userPrompt = {
-      role: "user",
-      content: `Create comprehensive clinical documentation for this session using the exact schema structure specified. Include all required fields.
+    // Construct user prompt content with conditional sections
+    let userPromptContent = `Create comprehensive clinical documentation for this session using the exact schema structure specified. Include all required fields.
 
 Client Info:
 ${JSON.stringify(clientData)}
 
 Session Info:
-${JSON.stringify(sessionData)}
+${JSON.stringify(sessionData)}`;
 
-Assessment Results:
-${JSON.stringify(assessmentResults || {})}
+    // Add assessment results if available
+    if (assessmentResults) {
+      userPromptContent += `\n\nAssessment Results:
+${JSON.stringify(assessmentResults)}`;
+    }
 
-Diagnostic Results:
-${JSON.stringify(diagnosticResults || {})}
+    // Add diagnostic results if available
+    if (diagnosticResults) {
+      userPromptContent += `\n\nDiagnostic Results:
+${JSON.stringify(diagnosticResults)}`;
+    }
 
-Treatment Results:
-${JSON.stringify(treatmentResults || {})}
+    // Add treatment results if available
+    if (treatmentResults) {
+      userPromptContent += `\n\nTreatment Results:
+${JSON.stringify(treatmentResults)}`;
+    }
 
-Progress Results:
-${JSON.stringify(progressResults || {})}
+    // Add current progress results
+    userPromptContent += `\n\nProgress Results:
+${JSON.stringify(progressResults || {})}`;
 
-Ensure your response includes all required fields and follows the exact schema structure provided.`,
+    // Add previous documentation if available
+    if (previousDocumentation) {
+      userPromptContent += `\n\nPrevious Documentation:
+${JSON.stringify(previousDocumentation)}`;
+    }
+
+    // Add session-specific context
+    if (sessionNumber) {
+      if (sessionNumber === 1) {
+        userPromptContent += `\n\nThis is the FIRST session. Focus on initial observations, treatment planning, and establishing therapeutic alliance.`;
+      } else if (sessionNumber === 2) {
+        userPromptContent += `\n\nThis is the SECOND session. Focus on initial therapeutic progress, refining the treatment plan, and addressing initial challenges.`;
+      } else {
+        userPromptContent += `\n\nThis is session ${sessionNumber}. Focus primarily on this session's content, progress since last session, and next steps.`;
+      }
+    }
+
+    userPromptContent += `\n\nYour documentation should primarily focus on THIS SPECIFIC SESSION's content and progress, while providing appropriate context from previous treatment. Ensure your response includes all required fields and follows the exact schema structure provided.`;
+
+    const userPrompt = {
+      role: "user",
+      content: userPromptContent,
     };
 
     const response = await createStructuredResponse(
@@ -121,10 +154,11 @@ Ensure your response includes all required fields and follows the exact schema s
       counselorId: session.user.id,
       type: "documentation",
       content: documentationResults,
-      source: "session-documentation",
+      source: sessionNumber === 1 ? "initial-session" : "follow-up-session",
       metadata: {
         modelVersion: "gpt-3.5-turbo",
         timestamp: new Date(),
+        sessionNumber: sessionNumber || null,
       },
     });
     await aiReport.save();

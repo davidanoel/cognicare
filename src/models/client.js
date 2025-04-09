@@ -134,6 +134,18 @@ const clientSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  // AI Assessment tracking fields
+  lastIntakeAssessment: {
+    type: Date,
+  },
+  lastReassessment: {
+    type: Date,
+  },
+  riskLevel: {
+    type: String,
+    enum: ["none", "low", "moderate", "high", "severe", "unknown"],
+    default: "unknown",
+  },
   consentForms: [
     {
       type: {

@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import ClientForm from "./ClientForm";
 import ClientInsights from "./ClientInsights";
 import ClientAnalytics from "./ClientAnalytics";
+import AIWorkflow from "./AIWorkflow";
+import AIWorkflowTest from "./AIWorkflowTest";
+import SessionPrepView from "./SessionPrepView";
 
 export default function ClientDetail({ clientId }) {
   const [client, setClient] = useState(null);
@@ -23,6 +26,28 @@ export default function ClientDetail({ clientId }) {
       fetchTreatmentPlan();
     }
   }, [clientId]);
+
+  // Check for tab parameter in URL on component mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab");
+      if (
+        tabParam &&
+        [
+          "overview",
+          "sessions",
+          "reports",
+          "treatment",
+          "insights",
+          "analytics",
+          "ai-assistant",
+        ].includes(tabParam)
+      ) {
+        setActiveTab(tabParam);
+      }
+    }
+  }, []);
 
   const fetchClient = async () => {
     try {
@@ -253,6 +278,16 @@ export default function ClientDetail({ clientId }) {
             }`}
           >
             Analytics
+          </button>
+          <button
+            onClick={() => setActiveTab("ai-assistant")}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === "ai-assistant"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            AI Assistant
           </button>
         </nav>
       </div>
@@ -724,6 +759,31 @@ export default function ClientDetail({ clientId }) {
           <div className="space-y-6">
             <h2 className="text-xl font-semibold text-gray-900">Client Analytics</h2>
             <ClientAnalytics clientId={client._id} />
+          </div>
+        )}
+
+        {activeTab === "ai-assistant" && (
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold text-gray-900">AI Assistant</h2>
+            <p className="text-gray-600 mb-4">
+              Use AI tools to help with assessment, treatment planning, and progress tracking.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <AIWorkflowTest title="AI Service Status" />
+                <AIWorkflow
+                  client={client}
+                  updateFunction={() => {
+                    fetchClient();
+                    fetchTreatmentPlan();
+                  }}
+                />
+              </div>
+              <div>
+                <SessionPrepView clientId={client._id} />
+              </div>
+            </div>
           </div>
         )}
       </div>

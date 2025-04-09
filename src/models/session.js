@@ -45,7 +45,15 @@ const sessionSchema = new mongoose.Schema({
     min: 1,
     max: 10,
   },
-
+  // Session documentation status
+  documented: {
+    type: Boolean,
+    default: false,
+  },
+  // When the session was marked as completed by AI processing
+  completedAt: {
+    type: Date,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
