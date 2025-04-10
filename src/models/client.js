@@ -152,13 +152,19 @@ const clientSchema = new mongoose.Schema({
         type: String,
         enum: ["treatment", "information-release", "privacy-policy"],
       },
+      version: String,
       dateSigned: Date,
       status: {
         type: String,
         enum: ["active", "expired", "revoked"],
         default: "active",
       },
-      document: String, // URL or reference to document
+      document: String,
+      electronicSignature: {
+        signature: String,
+        ipAddress: String,
+        timestamp: Date,
+      },
     },
   ],
   createdAt: {

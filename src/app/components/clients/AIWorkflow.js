@@ -6,7 +6,6 @@ import { useAIWorkflow } from "@/app/context/AIWorkflowContext";
 export default function AIWorkflow({ client, session, updateFunction }) {
   const { status, setStatus, results, setResults, activeStage, setActiveStage, error, setError } =
     useAIWorkflow();
-  const [apiStatus, setApiStatus] = useState("unknown");
   const [reassessmentRecommended, setReassessmentRecommended] = useState(false);
   const [reassessmentRationale, setReassessmentRationale] = useState("");
 
@@ -104,26 +103,6 @@ export default function AIWorkflow({ client, session, updateFunction }) {
       setStatus("error");
     }
   };
-
-  if (apiStatus !== "available") {
-    return (
-      <div className="mb-4 p-4 bg-blue-50 rounded-lg">
-        <h3 className="text-lg font-semibold mb-2">AI Assistant</h3>
-        <div className="text-sm text-gray-600">
-          {apiStatus === "unknown" ? (
-            <div className="flex items-center space-x-2">
-              <div className="animate-spin h-4 w-4 border-2 border-blue-500 rounded-full border-t-transparent"></div>
-              <span>Checking AI system availability...</span>
-            </div>
-          ) : apiStatus === "error" || apiStatus === "unavailable" ? (
-            <p>AI system is currently unavailable.</p>
-          ) : (
-            <p>AI system status: {apiStatus}</p>
-          )}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="mb-4 p-4 bg-blue-50 rounded-lg">

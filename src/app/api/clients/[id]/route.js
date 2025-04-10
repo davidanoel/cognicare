@@ -42,11 +42,14 @@ export async function GET(req, context) {
     // Get recent reports
     const recentReports = await Report.find({
       clientId: id,
-      counselorId: user.id,
+      createdBy: user.id,
     })
       .sort({ createdAt: -1 })
       .limit(5)
+      .populate("createdBy", "name")
       .lean();
+
+    console.log("Found reports:", recentReports);
 
     return NextResponse.json({
       client,

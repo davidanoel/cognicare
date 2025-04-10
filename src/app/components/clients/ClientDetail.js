@@ -18,6 +18,13 @@ export default function ClientDetail({ clientId }) {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [isEditing, setIsEditing] = useState(false);
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [reportType, setReportType] = useState("progress");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -26,6 +33,18 @@ export default function ClientDetail({ clientId }) {
       fetchTreatmentPlan();
     }
   }, [clientId]);
+
+  // Set default dates to last 30 days
+  useEffect(() => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - 30);
+
+    setEndDate(end.toISOString().split("T")[0]);
+    setStartDate(start.toISOString().split("T")[0]);
+  }, []);
+
+  console.log(selectedReport);
 
   // Check for tab parameter in URL on component mount
   useEffect(() => {
@@ -54,6 +73,7 @@ export default function ClientDetail({ clientId }) {
       setLoading(true);
       setError(null);
 
+      console.log("Fetching client data for:", clientId);
       const response = await fetch(`/api/clients/${clientId}`);
       if (!response.ok) {
         const errorData = await response.json();
@@ -61,6 +81,8 @@ export default function ClientDetail({ clientId }) {
       }
 
       const data = await response.json();
+      console.log("Client data received:", data);
+
       setClient(data.client);
       setRecentSessions(data.recentSessions || []);
       setRecentReports(data.recentReports || []);
@@ -124,6 +146,64 @@ export default function ClientDetail({ clientId }) {
       console.error("Error deleting client:", err);
       setError(err.message || "Error deleting client");
       setLoading(false);
+    }
+  };
+
+  const getReportTitle = (report) => {
+    const type = report.type.charAt(0).toUpperCase() + report.type.slice(1);
+    const date = formatDate(report.createdAt);
+    return `${type} Report - ${date}`;
+  };
+
+  const handleViewReport = (report) => {
+    setSelectedReport(report);
+    setShowReportModal(true);
+  };
+
+  const handleGenerateReport = async () => {
+    if (!startDate || !endDate) {
+      alert("Please select both start and end dates");
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const response = await fetch(`/api/clients/${clientId}/reports`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type: reportType,
+          startDate,
+          endDate,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate report");
+      }
+
+      const data = await response.json();
+
+      // Fetch the complete report with populated createdBy
+      const reportResponse = await fetch(`/api/clients/${clientId}/reports/${data.report._id}`);
+      if (!reportResponse.ok) {
+        throw new Error("Failed to fetch report details");
+      }
+
+      const reportData = await reportResponse.json();
+      setSelectedReport(reportData.report);
+      setShowGenerateModal(false);
+      setShowReportModal(true);
+
+      // Refresh the reports list
+      fetchClient();
+    } catch (error) {
+      console.error("Error generating report:", error);
+      alert("Failed to generate report. Please try again.");
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -454,10 +534,10 @@ export default function ClientDetail({ clientId }) {
                   <p className="text-sm text-gray-500">No recent reports found.</p>
                 )}
                 <button
-                  onClick={() => router.push(`/clients/${clientId}/reports/new`)}
+                  onClick={() => setShowGenerateModal(true)}
                   className="mt-4 text-sm text-blue-600 hover:text-blue-800"
                 >
-                  + Generate New Report
+                  Generate Report
                 </button>
               </div>
             </div>
@@ -535,7 +615,7 @@ export default function ClientDetail({ clientId }) {
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-medium text-gray-900">Reports</h2>
               <button
-                onClick={() => router.push(`/clients/${clientId}/reports/new`)}
+                onClick={() => setShowGenerateModal(true)}
                 className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
               >
                 Generate Report
@@ -564,21 +644,21 @@ export default function ClientDetail({ clientId }) {
                     {recentReports.map((report) => (
                       <tr key={report._id}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {report.title}
+                          {getReportTitle(report)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {formatDate(report.createdAt)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {report.type}
+                          {report.type.charAt(0).toUpperCase() + report.type.slice(1)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <a
-                            href={`/reports/${report._id}`}
+                          <button
+                            onClick={() => handleViewReport(report)}
                             className="text-blue-600 hover:text-blue-900 mr-4"
                           >
                             View
-                          </a>
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -591,6 +671,156 @@ export default function ClientDetail({ clientId }) {
                 <p className="text-sm text-gray-400 mt-2">
                   Generate a new report to document assessment findings or treatment progress.
                 </p>
+              </div>
+            )}
+
+            {/* Generate Report Modal */}
+            {showGenerateModal && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+                <div className="bg-white rounded-lg w-1/2 p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-semibold">Generate New Report</h3>
+                    <button
+                      onClick={() => setShowGenerateModal(false)}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      <svg
+                        className="w-6 h-6"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Report Type</label>
+                      <select
+                        value={reportType}
+                        onChange={(e) => setReportType(e.target.value)}
+                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                      >
+                        <option value="progress">Progress Report</option>
+                        <option value="documentation">Documentation Report</option>
+                        <option value="assessment">Assessment Report</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Start Date</label>
+                      <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">End Date</label>
+                      <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                      />
+                    </div>
+                    <div className="flex justify-end space-x-3">
+                      <button
+                        onClick={() => setShowGenerateModal(false)}
+                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleGenerateReport}
+                        disabled={isGenerating}
+                        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isGenerating ? "Generating..." : "Generate Report"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Report View Modal */}
+            {showReportModal && selectedReport && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+                <div className="bg-white rounded-lg w-3/4 max-h-[80vh] overflow-y-auto p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-semibold">{getReportTitle(selectedReport)}</h3>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => window.print()}
+                        className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-1"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+                          />
+                        </svg>
+                        Print
+                      </button>
+                      <button
+                        onClick={() => setShowReportModal(false)}
+                        className="text-gray-500 hover:text-gray-700"
+                      >
+                        <svg
+                          className="w-6 h-6"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div className="prose max-w-none print:prose-sm">
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <strong>Date Created:</strong> {formatDate(selectedReport.createdAt)}
+                      </div>
+                      <div>
+                        <strong>Created By:</strong> {selectedReport.createdBy?.name || "Unknown"}
+                      </div>
+                      <div>
+                        <strong>Report Period:</strong> {formatDate(selectedReport.startDate)} to{" "}
+                        {formatDate(selectedReport.endDate)}
+                      </div>
+                      <div>
+                        <strong>Type:</strong>{" "}
+                        {selectedReport.type.charAt(0).toUpperCase() + selectedReport.type.slice(1)}
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <strong>Content:</strong>
+                      <pre className="mt-2 p-4 bg-gray-50 rounded overflow-x-auto print:bg-white print:border print:border-gray-200">
+                        {JSON.stringify(selectedReport.content, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
