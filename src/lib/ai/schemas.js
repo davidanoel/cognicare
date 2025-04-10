@@ -1,12 +1,7 @@
-import { openai } from "@ai-sdk/openai";
-import { streamText, generateObject } from "ai";
-import { NextResponse } from "next/server";
 import { z } from "zod";
 
-export const runtime = "edge";
-
-// Define comprehensive schemas for each agent type
-const assessmentSchema = z
+// Assessment schema
+export const assessmentSchema = z
   .object({
     summary: z
       .string()
@@ -22,7 +17,8 @@ const assessmentSchema = z
   })
   .passthrough();
 
-const diagnosticSchema = z
+// Diagnostic schema
+export const diagnosticSchema = z
   .object({
     summary: z
       .string()
@@ -48,7 +44,8 @@ const diagnosticSchema = z
   })
   .passthrough();
 
-const treatmentSchema = z
+// Treatment schema
+export const treatmentSchema = z
   .object({
     summary: z
       .string()
@@ -74,7 +71,8 @@ const treatmentSchema = z
   })
   .passthrough();
 
-const progressSchema = z
+// Progress schema
+export const progressSchema = z
   .object({
     summary: z
       .string()
@@ -105,7 +103,8 @@ const progressSchema = z
   })
   .passthrough();
 
-const documentationSchema = z
+// Documentation schema
+export const documentationSchema = z
   .object({
     summary: z
       .string()
@@ -162,7 +161,7 @@ const documentationSchema = z
   .passthrough();
 
 // Combined schema that can handle any agent type
-const combinedSchema = z.union([
+export const combinedSchema = z.union([
   assessmentSchema,
   diagnosticSchema,
   treatmentSchema,
@@ -170,76 +169,20 @@ const combinedSchema = z.union([
   documentationSchema,
 ]);
 
-export async function POST(req) {
-  try {
-    const { messages, responseType, agentType } = await req.json();
-
-    if (responseType === "stream") {
-      const result = await streamText({
-        model: openai("gpt-3.5-turbo"),
-        messages: messages.map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-        })),
-        temperature: 0.7,
-      });
-
-      return result.toAIStreamResponse();
-    }
-
-    // Handle JSON responses using generateObject with appropriate schema
-    if (responseType === "json") {
-      let schema;
-      switch (agentType) {
-        case "assessment":
-          schema = assessmentSchema;
-          break;
-        case "diagnostic":
-          schema = diagnosticSchema;
-          break;
-        case "treatment":
-          schema = treatmentSchema;
-          break;
-        case "progress":
-          schema = progressSchema;
-          break;
-        case "documentation":
-          schema = documentationSchema;
-          break;
-        default:
-          schema = combinedSchema;
-      }
-
-      const result = await generateObject({
-        model: openai("gpt-3.5-turbo"),
-        schema,
-        messages: messages.map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-        })),
-        temperature: 0.7,
-      });
-
-      return new Response(JSON.stringify(result.object), {
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    return new Response(JSON.stringify({ error: "Invalid responseType specified" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (error) {
-    console.error("AI Processing Error:", error);
-    return new Response(
-      JSON.stringify({
-        error: "AI processing failed",
-        details: error.message,
-      }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+// Helper function to get schema by agent type
+export function getSchemaByType(agentType) {
+  switch (agentType) {
+    case "assessment":
+      return assessmentSchema;
+    case "diagnostic":
+      return diagnosticSchema;
+    case "treatment":
+      return treatmentSchema;
+    case "progress":
+      return progressSchema;
+    case "documentation":
+      return documentationSchema;
+    default:
+      return combinedSchema;
   }
 }

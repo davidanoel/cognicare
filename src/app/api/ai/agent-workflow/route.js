@@ -10,7 +10,6 @@ import { getSession } from "@/lib/auth";
  * - intake: Assessment & Diagnostic agents (new clients)
  * - pre-session: Treatment planning & Session prep
  * - post-session: Progress tracking & Documentation
- * - periodic-assessment: Scheduled reassessments
  */
 export async function POST(req) {
   try {
@@ -40,8 +39,6 @@ export async function POST(req) {
         return handlePreSession(clientId, sessionId, authSession, shouldReassess, cookieHeader);
       case "post-session":
         return handlePostSession(clientId, sessionId, cookieHeader);
-      case "periodic-assessment":
-        return handlePeriodicAssessment(clientId, clientData, cookieHeader);
       default:
         return NextResponse.json({ error: "Invalid workflow stage" }, { status: 400 });
     }
@@ -547,96 +544,5 @@ async function handlePostSession(clientId, therapySessionId, cookieHeader) {
   } catch (error) {
     console.error("Post-Session Error:", error);
     return NextResponse.json({ error: "Post-session processing failed" }, { status: 500 });
-  }
-}
-
-/**
- * Handle scheduled periodic reassessment outside normal session workflow
- */
-async function handlePeriodicAssessment(clientId, clientData, cookieHeader) {
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-
-    // Get prior sessions for context
-    const priorSessions = await Session.find({
-      clientId,
-      documented: true,
-    })
-      .sort({ date: -1 })
-      .limit(5)
-      .lean();
-
-    // Create a summarized version of prior sessions to avoid prompt overload
-    const sessionSummaries = priorSessions.map((session) => ({
-      id: session._id.toString(),
-      date: session.date,
-      moodRating: session.moodRating,
-      notes: session.notes
-        ? session.notes.length > 200
-          ? session.notes.substring(0, 200) + "..."
-          : session.notes
-        : "",
-      documented: session.documented,
-    }));
-
-    // Call the assessment agent for a fresh evaluation
-    const assessmentResponse = await fetch(`${baseUrl}/api/ai/assessment`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Cookie: cookieHeader, // Forward the cookie for authentication
-      },
-      body: JSON.stringify({
-        clientId,
-        clientData,
-        priority: "normal",
-        riskFactor: shouldTriggerRiskAssessment(clientData),
-        sessionData: null,
-        sessionSummaries: sessionSummaries.length > 0 ? sessionSummaries : undefined,
-      }),
-    });
-
-    if (!assessmentResponse.ok) {
-      throw new Error("Periodic assessment failed");
-    }
-
-    const assessmentResults = await assessmentResponse.json();
-
-    // Call the diagnostic agent with fresh assessment
-    const diagnosticResponse = await fetch(`${baseUrl}/api/ai/diagnostic`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Cookie: cookieHeader, // Forward the cookie for authentication
-      },
-      body: JSON.stringify({
-        clientId,
-        clientData,
-        assessmentResults,
-        sessionData: null,
-        sessionSummaries: sessionSummaries.length > 0 ? sessionSummaries : undefined,
-      }),
-    });
-
-    if (!diagnosticResponse.ok) {
-      throw new Error("Diagnostic reassessment failed");
-    }
-
-    const diagnosticResults = await diagnosticResponse.json();
-
-    // Update the client's last reassessment date
-    await Client.findByIdAndUpdate(clientId, {
-      lastReassessment: new Date(),
-      riskLevel: assessmentResults.riskLevel || clientData.riskLevel || "unknown",
-    });
-
-    return NextResponse.json({
-      assessmentResults,
-      diagnosticResults,
-      message: "Periodic reassessment completed successfully",
-    });
-  } catch (error) {
-    console.error("Periodic Assessment Error:", error);
-    return NextResponse.json({ error: "Periodic assessment failed" }, { status: 500 });
   }
 }

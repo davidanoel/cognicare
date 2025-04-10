@@ -16,32 +16,6 @@ export default function AIWorkflow({ client, session, updateFunction }) {
       clientId: client?._id,
       sessionId: session?._id,
     });
-
-    // Create a debug element to show in the DOM
-    const debugDiv = document.createElement("div");
-    debugDiv.id = "ai-workflow-rendered";
-    debugDiv.style.position = "fixed";
-    debugDiv.style.bottom = "30px";
-    debugDiv.style.right = "10px";
-    debugDiv.style.backgroundColor = "rgba(255, 255, 0, 0.8)";
-    debugDiv.style.padding = "5px";
-    debugDiv.style.borderRadius = "3px";
-    debugDiv.style.fontSize = "12px";
-    debugDiv.style.zIndex = "9999";
-    debugDiv.textContent = "AIWorkflow rendered";
-
-    document.body.appendChild(debugDiv);
-
-    // Check API status
-    checkApiStatus();
-
-    // Clean up on unmount
-    return () => {
-      const existingDebug = document.getElementById("ai-workflow-rendered");
-      if (existingDebug) {
-        document.body.removeChild(existingDebug);
-      }
-    };
   }, []);
 
   // Check if the client has a reassessment recommendation
@@ -63,21 +37,6 @@ export default function AIWorkflow({ client, session, updateFunction }) {
 
     checkForReassessmentRecommendation();
   }, [client?._id, results]);
-
-  // Check if the API is available
-  const checkApiStatus = async () => {
-    try {
-      const response = await fetch("/api/ai/workflow-check");
-      if (response.ok) {
-        setApiStatus("available");
-      } else {
-        setApiStatus("unavailable");
-      }
-    } catch (err) {
-      console.error("API status check error:", err);
-      setApiStatus("error");
-    }
-  };
 
   // Trigger different workflow stages
   const triggerWorkflow = async (stage, options = {}) => {
