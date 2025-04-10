@@ -8,8 +8,10 @@ import ClientAnalytics from "./ClientAnalytics";
 import AIWorkflow from "./AIWorkflow";
 import AIWorkflowTest from "./AIWorkflowTest";
 import SessionPrepView from "./SessionPrepView";
+import { useAIWorkflow } from "@/app/context/AIWorkflowContext";
 
 export default function ClientDetail({ clientId }) {
+  const { status, results, activeStage } = useAIWorkflow();
   const [client, setClient] = useState(null);
   const [recentSessions, setRecentSessions] = useState([]);
   const [recentReports, setRecentReports] = useState([]);
@@ -175,7 +177,7 @@ export default function ClientDetail({ clientId }) {
   };
 
   return (
-    <div>
+    <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">

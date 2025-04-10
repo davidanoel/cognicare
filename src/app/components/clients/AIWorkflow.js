@@ -1,13 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAIWorkflow } from "@/app/context/AIWorkflowContext";
 
 export default function AIWorkflow({ client, session, updateFunction }) {
-  const [status, setStatus] = useState("idle");
+  const { status, setStatus, results, setResults, activeStage, setActiveStage, error, setError } =
+    useAIWorkflow();
   const [apiStatus, setApiStatus] = useState("unknown");
-  const [activeStage, setActiveStage] = useState(null);
-  const [results, setResults] = useState(null);
-  const [error, setError] = useState(null);
   const [reassessmentRecommended, setReassessmentRecommended] = useState(false);
   const [reassessmentRationale, setReassessmentRationale] = useState("");
 
@@ -87,12 +86,14 @@ export default function AIWorkflow({ client, session, updateFunction }) {
       return;
     }
 
+    console.log("Starting workflow:", { stage, options });
     setStatus("loading");
     setActiveStage(stage);
     setError(null);
     setResults(null);
 
     try {
+      console.log("Triggering workflow:", { stage, options, client, session });
       const response = await fetch("/api/ai/agent-workflow", {
         method: "POST",
         headers: {
@@ -113,20 +114,31 @@ export default function AIWorkflow({ client, session, updateFunction }) {
       }
 
       const data = await response.json();
-      setResults(data);
+      console.log("Workflow response:", data);
 
-      // Check if we got a reassessment recommendation from post-session
-      if (data.recommendReassessment !== undefined) {
-        setReassessmentRecommended(data.recommendReassessment);
-        setReassessmentRationale(data.reassessmentRationale || "");
+      // Only call update function if we have a session and it's a post-session workflow
+      if (
+        updateFunction &&
+        typeof updateFunction === "function" &&
+        session &&
+        stage === "post-session"
+      ) {
+        console.log("Calling update function to refresh session data...");
+        await updateFunction();
       }
 
+      // Now set the results and status
+      const newResults = {
+        ...data,
+        message: data.message || "Workflow completed successfully",
+        recommendReassessment: data.recommendReassessment,
+        reassessmentRationale: data.reassessmentRationale,
+        progressResults: data.progressResults,
+        documentationResults: data.documentationResults,
+      };
+      console.log("Setting results:", newResults);
+      setResults(newResults);
       setStatus("success");
-
-      // Call the update function if provided
-      if (updateFunction && typeof updateFunction === "function") {
-        updateFunction();
-      }
     } catch (err) {
       console.error("Workflow error:", err);
       setError(err.message);
@@ -252,10 +264,13 @@ export default function AIWorkflow({ client, session, updateFunction }) {
         </div>
       )}
 
+      {console.log("Rendering AIWorkflow component:", { status, results, activeStage })}
+
       {status === "success" && results && (
         <div className="p-3 bg-green-50 text-green-700 rounded text-sm">
           <p className="font-medium">Success!</p>
           <p>{results.message}</p>
+          {console.log("Rendering success section:", { status, results, activeStage })}
 
           {/* Show reassessment recommendation after post-session processing */}
           {results.recommendReassessment !== undefined && (
@@ -278,12 +293,16 @@ export default function AIWorkflow({ client, session, updateFunction }) {
               <div className="flex flex-col space-y-2">
                 <button
                   onClick={() => {
+                    console.log("View AI Analysis clicked");
                     // Refresh the session data first
                     updateFunction();
-                    // Scroll to AI Insights section - using ID instead of text content
+                    // Scroll to AI Insights section
                     const aiInsightsSection = document.getElementById("ai-insights-section");
                     if (aiInsightsSection) {
+                      console.log("Scrolling to AI Insights section");
                       aiInsightsSection.scrollIntoView({ behavior: "smooth" });
+                    } else {
+                      console.log("AI Insights section not found");
                     }
                   }}
                   className="text-left text-blue-600 hover:text-blue-800 flex items-center"

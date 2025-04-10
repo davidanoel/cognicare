@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
+import { useAIWorkflow } from "@/app/context/AIWorkflowContext";
 
 export default function SessionAIInsights({ session }) {
+  const { status, results, activeStage } = useAIWorkflow();
   const [assessmentReport, setAssessmentReport] = useState(null);
   const [diagnosticReport, setDiagnosticReport] = useState(null);
   const [documentationReport, setDocumentationReport] = useState(null);
@@ -21,7 +23,7 @@ export default function SessionAIInsights({ session }) {
       setTreatmentReport(null);
       try {
         const response = await fetch(
-          `/api/clients/${session.clientId._id}/sessions/${session._id}/reports`
+          `/api/clients/${session.clientId._id}/reports?sessionId=${session._id}`
         );
         if (!response.ok) {
           if (response.status === 404) {
@@ -34,7 +36,8 @@ export default function SessionAIInsights({ session }) {
           return;
         }
 
-        const reports = await response.json();
+        const data = await response.json();
+        const reports = data.reports || [];
 
         // Find the relevant reports from the array
         const assessment = reports.find((r) => r.type === "assessment");
@@ -64,6 +67,31 @@ export default function SessionAIInsights({ session }) {
       fetchReport();
     }
   }, [session]);
+
+  // Update active tab based on AIWorkflow stage
+  useEffect(() => {
+    if (activeStage) {
+      switch (activeStage) {
+        case "assessment":
+          setActiveTab("assessment");
+          break;
+        case "diagnostic":
+          setActiveTab("diagnostic");
+          break;
+        case "treatment":
+          setActiveTab("treatment");
+          break;
+        case "progress":
+          setActiveTab("progress");
+          break;
+        case "documentation":
+          setActiveTab("documentation");
+          break;
+        default:
+          setActiveTab("progress");
+      }
+    }
+  }, [activeStage]);
 
   if (loading) return <div className="p-4">Loading insights...</div>;
 

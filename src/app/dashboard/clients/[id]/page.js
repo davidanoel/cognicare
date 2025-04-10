@@ -1,3 +1,4 @@
+"use client";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import ClientSessionsList from "@/app/components/clients/ClientSessionsList";

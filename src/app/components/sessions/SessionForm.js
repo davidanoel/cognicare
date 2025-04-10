@@ -23,7 +23,6 @@ export default function SessionForm({ session, onSuccess, onCancel, initialClien
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [validationErrors, setValidationErrors] = useState({});
-  const [aiProcessing, setAiProcessing] = useState(false);
 
   // Fetch all clients for the dropdown
   useEffect(() => {
@@ -98,21 +97,15 @@ export default function SessionForm({ session, onSuccess, onCancel, initialClien
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
+
     setLoading(true);
     setError(null);
 
-    // Validate form before submission
-    if (!validateForm()) {
-      setLoading(false);
-      return;
-    }
-
     try {
-      // Determine if this is a create or update operation
-      const method = session ? "PATCH" : "POST";
-      const url = session ? `/api/sessions/${session._id}` : "/api/sessions";
+      const url = session?._id ? `/api/sessions/${session._id}` : "/api/sessions";
+      const method = session?._id ? "PATCH" : "POST";
 
-      // Save session data
       const response = await fetch(url, {
         method,
         headers: {
@@ -122,70 +115,19 @@ export default function SessionForm({ session, onSuccess, onCancel, initialClien
       });
 
       if (!response.ok) {
-        throw new Error(session ? "Failed to update session" : "Failed to create session");
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to save session");
       }
 
       const savedSession = await response.json();
+      console.log("Session saved successfully:", savedSession);
 
-      // If session is completed, trigger AI documentation
-      if (formData.status === "completed") {
-        setAiProcessing(true);
-        try {
-          // First fetch the client data
-          const clientResponse = await fetch(`/api/clients/${formData.clientId}`);
-          if (!clientResponse.ok) {
-            throw new Error("Failed to fetch client data");
-          }
-          const clientDataResponse = await clientResponse.json();
-          const clientData = clientDataResponse.client; // Extract the client object
-
-          // Ensure we have all required data
-          if (!savedSession._id) {
-            throw new Error("Session ID is missing from saved session");
-          }
-          if (!clientData?._id) {
-            throw new Error("Client ID is missing from client data");
-          }
-
-          // Use the new agent workflow API instead of the old trigger function
-          const aiResponse = await fetch("/api/ai/agent-workflow", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              stage: "post-session",
-              clientId: clientData._id,
-              clientData: clientData,
-              sessionId: savedSession._id,
-            }),
-          });
-
-          if (!aiResponse.ok) {
-            const errorData = await aiResponse.json();
-            throw new Error(errorData.error || "AI workflow processing failed");
-          }
-
-          const aiResult = await aiResponse.json();
-          console.log("Session documentation completed:", aiResult.message);
-
-          // Check if reassessment is recommended
-          if (aiResult.recommendReassessment) {
-            console.log("Reassessment recommended:", aiResult.reassessmentRationale);
-          }
-        } catch (aiError) {
-          console.error("AI Documentation Error:", aiError);
-          setError(aiError.message || "Failed to generate AI documentation");
-          // Don't block the session creation if AI processing fails
-        }
-        setAiProcessing(false);
-      }
-
+      // Call the success callback with the saved session
       if (onSuccess) {
         onSuccess(savedSession);
       }
     } catch (err) {
-      console.error("Error:", err);
+      console.error("Error saving session:", err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -320,19 +262,18 @@ export default function SessionForm({ session, onSuccess, onCancel, initialClien
         </div>
 
         {/* Session Status */}
-        <div>
+        <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
           <select
             name="status"
             value={formData.status}
             onChange={handleChange}
-            className="w-full p-2 border border-gray-300 rounded"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="scheduled">Scheduled</option>
             <option value="in-progress">In Progress</option>
             <option value="completed">Completed</option>
             <option value="cancelled">Cancelled</option>
-            <option value="no-show">No Show</option>
           </select>
         </div>
 
@@ -386,19 +327,11 @@ export default function SessionForm({ session, onSuccess, onCancel, initialClien
         <button
           type="submit"
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
-          disabled={loading || aiProcessing}
+          disabled={loading}
         >
-          {loading ? "Saving..." : aiProcessing ? "Processing..." : "Save Session"}
+          {loading ? "Saving..." : "Save Session"}
         </button>
       </div>
-
-      {aiProcessing && (
-        <div className="mt-4 p-4 bg-blue-50 text-blue-700 rounded">
-          <p className="text-sm">
-            Generating session documentation... This may take a few moments.
-          </p>
-        </div>
-      )}
     </form>
   );
 }

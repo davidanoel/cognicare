@@ -5,16 +5,28 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import SessionForm from "./SessionForm";
 import SessionAIInsights from "./SessionAIInsights";
+import { useAIWorkflow } from "@/app/context/AIWorkflowContext";
 import AIWorkflow from "../clients/AIWorkflow";
 import AIWorkflowTest from "../clients/AIWorkflowTest";
 import SessionPrepView from "../clients/SessionPrepView";
 
 export default function SessionDetail({ sessionId }) {
+  const { status, results, activeStage } = useAIWorkflow();
   const router = useRouter();
   const [session, setSession] = useState(null);
+  const [client, setClient] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState("details");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [showAIWorkflow, setShowAIWorkflow] = useState(false);
+  const [aiWorkflowStatus, setAiWorkflowStatus] = useState("idle");
+  const [aiWorkflowResults, setAiWorkflowResults] = useState(null);
+  const [aiWorkflowActiveStage, setAiWorkflowActiveStage] = useState(null);
+  const [aiWorkflowError, setAiWorkflowError] = useState(null);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -47,6 +59,7 @@ export default function SessionDetail({ sessionId }) {
         throw new Error(data.message || "Failed to fetch session");
       }
 
+      console.log("Session data updated:", data);
       setSession(data);
     } catch (err) {
       console.error("Error fetching session:", err);
@@ -194,7 +207,7 @@ export default function SessionDetail({ sessionId }) {
   }
 
   return (
-    <div className="p-4">
+    <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Session Details</h1>
         <div className="space-x-4">
@@ -321,10 +334,7 @@ export default function SessionDetail({ sessionId }) {
               </span>
             )}
           </div>
-          <SessionAIInsights
-            key={`session-insights-${session._id}-${session.updatedAt}`}
-            session={session}
-          />
+          {!isEditing && <SessionAIInsights session={session} />}
 
           <div className="mt-8 border-t pt-6">
             <h3 className="text-lg font-semibold mb-4">AI Assistant</h3>
@@ -334,9 +344,7 @@ export default function SessionDetail({ sessionId }) {
                 <AIWorkflow
                   client={session.clientId}
                   session={session}
-                  updateFunction={() => {
-                    fetchSession();
-                  }}
+                  updateFunction={fetchSession}
                 />
               </div>
               <div>
