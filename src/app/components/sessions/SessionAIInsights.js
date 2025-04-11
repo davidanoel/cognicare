@@ -23,7 +23,7 @@ export default function SessionAIInsights({ session }) {
       setTreatmentReport(null);
       try {
         const response = await fetch(
-          `/api/clients/${session.clientId._id}/reports?sessionId=${session._id}`
+          `/api/clients/${session.clientId._id}/ai-reports?sessionId=${session._id}`
         );
         if (!response.ok) {
           if (response.status === 404) {
@@ -45,6 +45,8 @@ export default function SessionAIInsights({ session }) {
         const treatment = reports.find((r) => r.type === "treatment");
         const documentation = reports.find((r) => r.type === "documentation");
         const progress = reports.find((r) => r.type === "progress");
+
+        debugger;
 
         // Set the reports in state
         setAssessmentReport(assessment?.content);

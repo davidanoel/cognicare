@@ -710,6 +710,8 @@ export default function ClientDetail({ clientId }) {
                         <option value="progress">Progress Report</option>
                         <option value="documentation">Documentation Report</option>
                         <option value="assessment">Assessment Report</option>
+                        <option value="diagnostic">Diagnostic Report</option>
+                        <option value="treatment">Treatment Report</option>
                       </select>
                     </div>
                     <div>

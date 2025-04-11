@@ -18,7 +18,7 @@ export default function ClientInsights({ clientId }) {
       setProgressReport(null);
 
       try {
-        const response = await fetch(`/api/reports/${clientId}`);
+        const response = await fetch(`/api/clients/${clientId}/ai-reports`);
         if (!response.ok) {
           if (response.status === 404) {
             setError("no_reports");
@@ -29,14 +29,22 @@ export default function ClientInsights({ clientId }) {
           return;
         }
 
-        const reports = await response.json();
+        const data = await response.json();
+        const reports = data.reports || [];
 
-        const assessment = reports.find(
-          (r) => r.type === "assessment" && r.source === "initial-assessment"
-        );
-        const diagnostic = reports.find((r) => r.type === "diagnostic");
-        const treatment = reports.find((r) => r.type === "treatment");
-        const progress = reports.find((r) => r.type === "progress");
+        // Find the most recent report of each type
+        const assessment = reports
+          .filter((r) => r.type === "assessment")
+          .sort((a, b) => new Date(b.metadata.timestamp) - new Date(a.metadata.timestamp))[0];
+        const diagnostic = reports
+          .filter((r) => r.type === "diagnostic")
+          .sort((a, b) => new Date(b.metadata.timestamp) - new Date(a.metadata.timestamp))[0];
+        const treatment = reports
+          .filter((r) => r.type === "treatment")
+          .sort((a, b) => new Date(b.metadata.timestamp) - new Date(a.metadata.timestamp))[0];
+        const progress = reports
+          .filter((r) => r.type === "progress")
+          .sort((a, b) => new Date(b.metadata.timestamp) - new Date(a.metadata.timestamp))[0];
 
         setAssessmentReport(assessment);
         setDiagnosticReport(diagnostic);

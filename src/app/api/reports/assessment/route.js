@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import { getSession } from "@/lib/auth";
-import { generateDocumentationReport } from "@/lib/reports/documentation";
+import { generateAssessmentReport } from "@/lib/reports/assessment";
 import Report from "@/models/report";
 
 export async function GET(request) {
@@ -27,7 +27,7 @@ export async function GET(request) {
     // Build query
     const query = {
       clientId,
-      type: "documentation",
+      type: "assessment",
     };
 
     // Add date range if provided
@@ -55,8 +55,8 @@ export async function GET(request) {
 
     return NextResponse.json({ reports });
   } catch (error) {
-    console.error("Error fetching documentation reports:", error);
-    return NextResponse.json({ error: "Failed to fetch documentation reports" }, { status: 500 });
+    console.error("Error fetching assessment reports:", error);
+    return NextResponse.json({ error: "Failed to fetch assessment reports" }, { status: 500 });
   }
 }
 
@@ -69,13 +69,13 @@ export async function POST(request) {
 
     const { clientId, startDate, endDate, sessionId } = await request.json();
 
-    if (!clientId || !startDate || !endDate) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    if (!clientId) {
+      return NextResponse.json({ error: "Client ID is required" }, { status: 400 });
     }
 
     await connectDB();
 
-    const reportContent = await generateDocumentationReport(
+    const reportContent = await generateAssessmentReport(
       clientId,
       startDate,
       endDate,
@@ -84,7 +84,7 @@ export async function POST(request) {
 
     const report = new Report({
       clientId,
-      type: "documentation",
+      type: "assessment",
       startDate,
       endDate,
       sessionId,
@@ -97,7 +97,7 @@ export async function POST(request) {
 
     return NextResponse.json({ report }, { status: 201 });
   } catch (error) {
-    console.error("Error saving documentation report:", error);
-    return NextResponse.json({ error: "Failed to save documentation report" }, { status: 500 });
+    console.error("Error saving assessment report:", error);
+    return NextResponse.json({ error: "Failed to save assessment report" }, { status: 500 });
   }
 }

@@ -1,79 +1,98 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import { getSession } from "@/lib/auth";
-import { requireCounselor } from "@/lib/auth";
-import {
-  getClientReports,
-  getClientSessions,
-  getClientInfo,
-  generateReportMetadata,
-} from "@/lib/report-utils";
+import { generateTreatmentReport } from "@/lib/reports/treatment";
+import Report from "@/models/report";
 
-/**
- * Generate a treatment summary report for a client
- */
-async function generateTreatmentReport(clientId, startDate, endDate, user) {
-  // Get all relevant data
-  const [reports, sessions, client] = await Promise.all([
-    getClientReports(clientId, startDate, endDate, ["treatment", "progress", "assessment"]),
-    getClientSessions(clientId, startDate, endDate),
-    getClientInfo(clientId),
-  ]);
-
-  // Structure the report
-  const report = {
-    metadata: generateReportMetadata("treatment", user),
-    clientInfo: {
-      name: client.name,
-      age: client.age,
-      riskLevel: client.riskLevel,
-      diagnosis: client.diagnosis,
-    },
-    timeframe: {
-      start: startDate,
-      end: endDate,
-    },
-    treatmentPlan: {
-      goals: client.treatmentPlan?.goals || [],
-      interventions: client.treatmentPlan?.interventions || [],
-      progress: reports.filter((r) => r.type === "progress").map((r) => r.content),
-    },
-    sessionSummary: {
-      totalSessions: sessions.length,
-      sessionTypes: sessions.reduce((acc, session) => {
-        acc[session.type] = (acc[session.type] || 0) + 1;
-        return acc;
-      }, {}),
-      averageMoodRating:
-        sessions.reduce((acc, session) => acc + (session.moodRating || 0), 0) / sessions.length,
-    },
-    treatmentUpdates: reports.filter((r) => r.type === "treatment").map((r) => r.content),
-    assessments: reports.filter((r) => r.type === "assessment").map((r) => r.content),
-  };
-
-  return report;
-}
-
-export const POST = requireCounselor(async (req) => {
+export async function GET(request) {
   try {
     const session = await getSession();
-    if (!session?.user) {
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await connectDB();
-
-    const { clientId, startDate, endDate } = await req.json();
+    const { searchParams } = new URL(request.url);
+    const clientId = searchParams.get("clientId");
+    const startDate = searchParams.get("startDate");
+    const endDate = searchParams.get("endDate");
+    const sessionId = searchParams.get("sessionId");
+    const limit = searchParams.get("limit");
 
     if (!clientId) {
       return NextResponse.json({ error: "Client ID is required" }, { status: 400 });
     }
 
-    const report = await generateTreatmentReport(clientId, startDate, endDate, session.user);
+    await connectDB();
 
-    return NextResponse.json(report);
+    // Build query
+    const query = {
+      clientId,
+      type: "treatment",
+    };
+
+    // Add date range if provided
+    if (startDate && endDate) {
+      query["metadata.timestamp"] = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
+    }
+
+    // Add session ID if provided
+    if (sessionId) {
+      query.sessionId = sessionId;
+    }
+
+    // Get reports
+    let reports = await Report.find(query)
+      .sort({ "metadata.timestamp": -1 })
+      .populate("createdBy", "name");
+
+    // Apply limit if specified
+    if (limit) {
+      reports = reports.slice(0, parseInt(limit));
+    }
+
+    return NextResponse.json({ reports });
   } catch (error) {
-    console.error("Treatment Report Error:", error);
-    return NextResponse.json({ error: "Failed to generate treatment report" }, { status: 500 });
+    console.error("Error fetching treatment reports:", error);
+    return NextResponse.json({ error: "Failed to fetch treatment reports" }, { status: 500 });
   }
-});
+}
+
+export async function POST(request) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { clientId, startDate, endDate, sessionId } = await request.json();
+
+    if (!clientId || !startDate || !endDate) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    await connectDB();
+
+    const reportContent = await generateTreatmentReport(clientId, startDate, endDate, session.user);
+
+    const report = new Report({
+      clientId,
+      type: "treatment",
+      startDate,
+      endDate,
+      sessionId,
+      content: reportContent,
+      createdBy: session.user.id,
+      status: "completed",
+    });
+
+    await report.save();
+
+    return NextResponse.json({ report }, { status: 201 });
+  } catch (error) {
+    console.error("Error saving treatment report:", error);
+    return NextResponse.json({ error: "Failed to save treatment report" }, { status: 500 });
+  }
+}

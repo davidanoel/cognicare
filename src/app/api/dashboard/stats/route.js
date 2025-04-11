@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuth, getCurrentUser } from "@/lib/auth";
+import { connectDB } from "@/lib/mongodb";
 import Client from "@/models/client";
 import Session from "@/models/session";
 import Report from "@/models/report";
@@ -8,6 +9,8 @@ export const GET = requireAuth(async (req) => {
   try {
     const user = await getCurrentUser();
     const counselorId = user.id;
+
+    await connectDB();
 
     // Get total clients
     const totalClients = await Client.countDocuments({ counselorId });

@@ -9,7 +9,7 @@ const reportSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["progress", "documentation", "assessment"],
+      enum: ["progress", "documentation", "assessment", "diagnostic", "treatment"],
       required: true,
     },
     startDate: {

@@ -15,10 +15,10 @@ export default function SessionPrepView({ clientId, sessionId }) {
       setError(null);
 
       try {
-        // First try to get session-specific treatment report
+        // First try to get session-specific AI treatment report
         let url = sessionId
-          ? `/api/clients/${clientId}/reports?type=treatment&sessionId=${sessionId}&limit=1`
-          : `/api/clients/${clientId}/reports?type=treatment&limit=1`;
+          ? `/api/clients/${clientId}/ai-reports?type=treatment&sessionId=${sessionId}&limit=1`
+          : `/api/clients/${clientId}/ai-reports?type=treatment&limit=1`;
 
         let response = await fetch(url);
         let data;
@@ -28,9 +28,9 @@ export default function SessionPrepView({ clientId, sessionId }) {
         }
 
         // If no session-specific report found and we were looking for one,
-        // fall back to the most recent treatment report for this client
+        // fall back to the most recent AI treatment report for this client
         if ((!data || !data.reports || data.reports.length === 0) && sessionId) {
-          const fallbackUrl = `/api/clients/${clientId}/reports?type=treatment&limit=1`;
+          const fallbackUrl = `/api/clients/${clientId}/ai-reports?type=treatment&limit=1`;
           const fallbackResponse = await fetch(fallbackUrl);
 
           if (fallbackResponse.ok) {
