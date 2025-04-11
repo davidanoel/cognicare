@@ -28,7 +28,10 @@ export const GET = requireAuth(async (req) => {
     });
 
     // Get total reports
-    const reportsGenerated = await Report.countDocuments({ counselorId });
+    const reportsGenerated = await Report.countDocuments({
+      createdBy: counselorId,
+      status: "completed",
+    });
 
     // Get recent activity (last 5 items of each type)
     const [recentSessions, recentReports] = await Promise.all([

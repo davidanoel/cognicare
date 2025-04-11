@@ -16,7 +16,7 @@ export const GET = requireAuth(async (req) => {
     const endDate = searchParams.get("endDate");
 
     // Build query based on filters
-    const query = { counselorId: user.id };
+    const query = { createdBy: user.id };
     if (clientId) query.clientId = clientId;
     if (type) query.type = type;
     if (startDate || endDate) {
@@ -27,7 +27,6 @@ export const GET = requireAuth(async (req) => {
 
     const reports = await Report.find(query)
       .populate("clientId", "name")
-      .populate("sessionId", "date type")
       .sort({ createdAt: -1 })
       .lean();
 
@@ -47,7 +46,7 @@ export const POST = requireAuth(async (req) => {
     const body = await req.json();
     const newReport = {
       ...body,
-      counselorId: user.id,
+      createdBy: user.id,
       createdAt: new Date(),
     };
 

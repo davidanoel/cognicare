@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Report from "@/models/report";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, getSession } from "@/lib/auth";
 import AIReport from "@/models/aiReport";
 
 // Get all AI reports for a specific client
@@ -88,67 +88,23 @@ export async function PATCH(req, context) {
 }
 
 // Delete a report (Refactored)
-export async function DELETE(req, context) {
-  try {
-    // Check authentication directly
-    const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
-
-    await connectDB();
-    const { id } = await context.params; // Get id from context
-
-    // Find and delete the report, ensuring it belongs to the counselor
-    // Note: This currently operates on the standard 'Report' model, not AIReport.
-    const deletedReport = await Report.findOneAndDelete({
-      _id: id,
-      counselorId: user.id,
-    });
-
-    if (!deletedReport) {
-      // Consider checking AIReport as well if DELETE should apply to both?
-      return NextResponse.json({ message: "Report not found" }, { status: 404 });
-    }
-
-    return NextResponse.json({ message: "Report deleted successfully" }, { status: 200 });
-  } catch (error) {
-    console.error("Report DELETE error:", error);
-    if (error.kind === "ObjectId") {
-      return NextResponse.json({ message: "Invalid Report ID format" }, { status: 400 });
-    }
-    return NextResponse.json({ message: "Error deleting report" }, { status: 500 });
-  }
-}
-
-export async function getReports(req, { params }) {
+export async function DELETE(request, { params }) {
   try {
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id: clientId } = params;
-    if (!clientId) {
-      return NextResponse.json({ error: "Client ID is required" }, { status: 400 });
-    }
-
     await connectDB();
 
-    // Fetch the latest report of each type for this client
-    const reports = await AIReport.find({ clientId }).sort({ "metadata.timestamp": -1 });
+    const report = await Report.findByIdAndDelete(params.id);
+    if (!report) {
+      return NextResponse.json({ error: "Report not found" }, { status: 404 });
+    }
 
-    // Group reports by type, keeping only the latest of each
-    const latestReports = reports.reduce((acc, report) => {
-      if (!acc[report.type] || report.metadata.timestamp > acc[report.type].metadata.timestamp) {
-        acc[report.type] = report;
-      }
-      return acc;
-    }, {});
-
-    return NextResponse.json(latestReports);
+    return NextResponse.json({ message: "Report deleted successfully" });
   } catch (error) {
-    console.error("Error fetching reports:", error);
-    return NextResponse.json({ error: "Failed to fetch reports" }, { status: 500 });
+    console.error("Error deleting report:", error);
+    return NextResponse.json({ error: "Failed to delete report" }, { status: 500 });
   }
 }
