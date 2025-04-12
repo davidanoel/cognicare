@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { isAuthenticated } from "@/lib/client-auth";
 import SessionList from "../components/sessions/SessionList";
 
-export default function SessionsPage() {
+function SessionsContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -30,5 +30,13 @@ export default function SessionsPage() {
     <div className="container mx-auto px-4 py-8">
       <SessionList initialStatusFilter={statusFilter} />
     </div>
+  );
+}
+
+export default function SessionsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SessionsContent />
+    </Suspense>
   );
 }

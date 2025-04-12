@@ -125,7 +125,7 @@ export default function ClientInsights({ clientId }) {
         {/* Current Status */}
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
-            <span className="text-xl">🌡️</span> How They're Doing
+            <span className="text-xl">🌡️</span> How They&apos;re Doing
           </h3>
           <div className="space-y-2 text-sm text-gray-700 bg-white p-3 rounded-lg shadow-sm">
             {assessmentContent?.primaryConcerns && (
@@ -155,7 +155,7 @@ export default function ClientInsights({ clientId }) {
         {diagnosticContent && (
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
-              <span className="text-xl">🔍</span> What's the Diagnosis?
+              <span className="text-xl">🔍</span> What&apos;s the Diagnosis?
             </h3>
             <div className="space-y-2 text-sm text-gray-700 bg-white p-3 rounded-lg shadow-sm">
               {diagnosticContent.primaryDiagnosis && (
@@ -240,7 +240,7 @@ export default function ClientInsights({ clientId }) {
               )}
               {progressContent.treatmentEffectiveness && (
                 <p>
-                  <span className="font-medium text-blue-600">How It's Working: </span>
+                  <span className="font-medium text-blue-600">How It&apos;s Working: </span>
                   {progressContent.treatmentEffectiveness}
                 </p>
               )}

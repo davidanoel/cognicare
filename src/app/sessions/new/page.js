@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { isAuthenticated } from "@/lib/client-auth";
 import SessionForm from "../../components/sessions/SessionForm";
 
-export default function NewSessionPage() {
+function NewSessionContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -43,5 +43,13 @@ export default function NewSessionPage() {
         />
       </div>
     </div>
+  );
+}
+
+export default function NewSessionPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <NewSessionContent />
+    </Suspense>
   );
 }
