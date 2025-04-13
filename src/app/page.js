@@ -26,7 +26,7 @@ export default function LandingPage() {
             Try CogniCare Free
           </Link>
           <Link
-            href="#features"
+            href="#how-it-works"
             className="bg-white text-indigo-600 px-8 py-3 rounded-full font-medium border border-indigo-200 hover:bg-indigo-50 transition-colors"
           >
             See How It Works
@@ -124,7 +124,7 @@ export default function LandingPage() {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-16 px-4 bg-indigo-50">
+      <section id="how-it-works" className="py-16 px-4 bg-indigo-50">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-center text-indigo-900 mb-12">
             How CogniCare Works
