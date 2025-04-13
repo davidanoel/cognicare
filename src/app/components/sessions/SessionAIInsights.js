@@ -46,8 +46,6 @@ export default function SessionAIInsights({ session }) {
         const documentation = reports.find((r) => r.type === "documentation");
         const progress = reports.find((r) => r.type === "progress");
 
-        debugger;
-
         // Set the reports in state
         setAssessmentReport(assessment?.content);
         setDiagnosticReport(diagnostic?.content);
