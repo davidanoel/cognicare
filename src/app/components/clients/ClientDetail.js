@@ -13,7 +13,6 @@ export default function ClientDetail({ clientId }) {
   const [client, setClient] = useState(null);
   const [recentSessions, setRecentSessions] = useState([]);
   const [recentReports, setRecentReports] = useState([]);
-  const [treatmentReport, setTreatmentReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("overview");
@@ -30,7 +29,6 @@ export default function ClientDetail({ clientId }) {
   useEffect(() => {
     if (clientId) {
       fetchClient();
-      fetchTreatmentPlan();
     }
   }, [clientId]);
 
@@ -94,32 +92,6 @@ export default function ClientDetail({ clientId }) {
     }
   };
 
-  const fetchTreatmentPlan = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await fetch(`/api/reports/${clientId}`);
-      if (!response.ok) {
-        if (response.status === 404) {
-          setTreatmentReport(null);
-          return;
-        } else {
-          const errorData = await response.json();
-          console.error("Error fetching treatment plan:", errorData);
-        }
-      }
-
-      const reports = await response.json();
-      const treatment = reports.find((r) => r.type === "treatment");
-      setTreatmentReport(treatment || null);
-    } catch (err) {
-      console.error("Error fetching treatment plan:", err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleEditSuccess = () => {
     setIsEditing(false);
     fetchClient();
@@ -156,8 +128,7 @@ export default function ClientDetail({ clientId }) {
   };
 
   const handleViewReport = (report) => {
-    setSelectedReport(report);
-    setShowReportModal(true);
+    window.open(`/clients/${clientId}/reports/${report._id}/view`, "_blank");
   };
 
   const handleGenerateReport = async () => {
@@ -328,16 +299,6 @@ export default function ClientDetail({ clientId }) {
             }`}
           >
             Reports
-          </button>
-          <button
-            onClick={() => setActiveTab("treatment")}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === "treatment"
-                ? "border-blue-500 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            }`}
-          >
-            Treatment Plan
           </button>
           <button
             onClick={() => setActiveTab("insights")}
@@ -521,7 +482,9 @@ export default function ClientDetail({ clientId }) {
                     {recentReports.map((report) => (
                       <li key={report._id} className="py-2">
                         <a
-                          href={`/reports/${report._id}`}
+                          href={`/clients/${clientId}/reports/${report._id}/view`}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="block hover:bg-gray-50 transition duration-150 ease-in-out"
                         >
                           <p className="text-sm font-medium text-blue-600">{report.title}</p>
@@ -534,7 +497,7 @@ export default function ClientDetail({ clientId }) {
                   <p className="text-sm text-gray-500">No recent reports found.</p>
                 )}
                 <button
-                  onClick={() => setShowGenerateModal(true)}
+                  onClick={() => setShowGenerateModal(true)} //TODO: fix or remove
                   className="mt-4 text-sm text-blue-600 hover:text-blue-800"
                 >
                   Generate Report
@@ -828,158 +791,6 @@ export default function ClientDetail({ clientId }) {
           </div>
         )}
 
-        {activeTab === "treatment" && (
-          <div className="space-y-6">
-            {!treatmentReport ? (
-              <div className="bg-yellow-100 p-4 rounded-lg flex items-center gap-2">
-                <span className="text-2xl">📅</span>
-                <div>
-                  <strong className="font-bold text-yellow-800">No Plan Yet!</strong>
-                  <p className="mt-2 text-yellow-700 text-sm">
-                    Looks like we need a game plan. Kick off a session to get one rolling!
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-gradient-to-r from-white to-blue-50 p-6 rounded-xl shadow-lg border border-blue-100 space-y-6">
-                {/* Summary */}
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                    <span className="text-xl">🌟</span> The Big Picture
-                  </h3>
-                  <div className="bg-white p-3 rounded-lg shadow-sm text-sm text-gray-700">
-                    {treatmentReport.content.summary}
-                  </div>
-                </div>
-
-                {/* Interventions */}
-                {treatmentReport.content.interventions?.length > 0 && (
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                      <span className="text-xl">🛠️</span> Our Toolkit (Interventions)
-                    </h3>
-                    <ul className="bg-white p-3 rounded-lg shadow-sm text-sm text-gray-700 space-y-2">
-                      {treatmentReport.content.interventions.map((intervention, index) => (
-                        <li key={index} className="flex items-center gap-2">
-                          <span className="text-blue-500">➡️</span> {intervention}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Treatment Goals */}
-                {treatmentReport.content.goals && (
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                      <span className="text-xl">🎯</span> Goals to Crush
-                    </h3>
-                    <div className="bg-white p-3 rounded-lg shadow-sm text-sm text-gray-700 space-y-4">
-                      {treatmentReport.content.goals.shortTerm?.length > 0 && (
-                        <div>
-                          <h4 className="font-medium text-blue-600 mb-1">Quick Wins</h4>
-                          <ul className="space-y-2">
-                            {treatmentReport.content.goals.shortTerm.map((goal, index) => (
-                              <li key={index} className="flex items-center gap-2">
-                                <span className="text-blue-500">➡️</span> {goal}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      {treatmentReport.content.goals.longTerm?.length > 0 && (
-                        <div>
-                          <h4 className="font-medium text-blue-600 mb-1">Big Picture Goals</h4>
-                          <ul className="space-y-2">
-                            {treatmentReport.content.goals.longTerm.map((goal, index) => (
-                              <li key={index} className="flex items-center gap-2">
-                                <span className="text-blue-500">➡️</span> {goal}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Timeline */}
-                {treatmentReport.content.timeline && (
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                      <span className="text-xl">⏰</span> Roadmap
-                    </h3>
-                    <ul className="bg-white p-3 rounded-lg shadow-sm text-sm text-gray-700 space-y-2">
-                      {Object.entries(treatmentReport.content.timeline).map(([key, value]) => (
-                        <li key={key} className="flex items-center gap-2">
-                          <span className="text-blue-500">➡️</span>
-                          {typeof value === "object"
-                            ? `${value.milestone} (${value.timeframe})`
-                            : value}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Recommended Approaches */}
-                {treatmentReport.content.recommendedApproaches?.length > 0 && (
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                      <span className="text-xl">💡</span> Smart Moves
-                    </h3>
-                    <ul className="bg-white p-3 rounded-lg shadow-sm text-sm text-gray-700 space-y-2">
-                      {treatmentReport.content.recommendedApproaches.map((approach, index) => (
-                        <li key={index} className="flex items-center gap-2">
-                          <span className="text-blue-500">➡️</span> {approach}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Success Metrics */}
-                {treatmentReport.content.successMetrics?.length > 0 && (
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                      <span className="text-xl">🏆</span> How We Win
-                    </h3>
-                    <ul className="bg-white p-3 rounded-lg shadow-sm text-sm text-gray-700 space-y-2">
-                      {treatmentReport.content.successMetrics.map((metric, index) => (
-                        <li key={index} className="flex items-center gap-2">
-                          <span className="text-blue-500">➡️</span> {metric}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Potential Barriers */}
-                {treatmentReport.content.potentialBarriers?.length > 0 && (
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                      <span className="text-xl">🚧</span> Watch Out For
-                    </h3>
-                    <ul className="bg-white p-3 rounded-lg shadow-sm text-sm text-gray-700 space-y-2">
-                      {treatmentReport.content.potentialBarriers.map((barrier, index) => (
-                        <li key={index} className="flex items-center gap-2">
-                          <span className="text-blue-500">➡️</span> {barrier}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Last Updated */}
-                <div className="text-xs text-gray-500 flex items-center gap-2">
-                  <span className="text-blue-500">📅</span> Last tweak:{" "}
-                  {new Date(treatmentReport.updatedAt).toLocaleDateString()}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
         {activeTab === "insights" && (
           <div className="space-y-6">
             <h2 className="text-xl font-semibold text-gray-900">Clinical Insights</h2>
@@ -1007,7 +818,6 @@ export default function ClientDetail({ clientId }) {
                   client={client}
                   updateFunction={() => {
                     fetchClient();
-                    fetchTreatmentPlan();
                   }}
                 />
               </div>

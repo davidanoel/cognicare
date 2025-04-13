@@ -122,118 +122,6 @@ export default function ClientInsights({ clientId }) {
   const treatmentContent = treatmentReport?.content;
   const progressContent = progressReport?.content;
 
-  const renderAssessmentDetails = (assessment) => {
-    if (!assessment) return null;
-
-    return (
-      <div className="space-y-6">
-        {/* Summary Section */}
-        <div className="bg-white p-6 rounded-lg shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Assessment Summary</h3>
-          <p className="text-gray-700">{assessment.summary}</p>
-        </div>
-
-        {/* Risk Level Section */}
-        <div className="bg-white p-6 rounded-lg shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Risk Level</h3>
-          <div className="space-y-4">
-            <div className="flex items-center space-x-3">
-              <div
-                className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  assessment.riskLevel === "low"
-                    ? "bg-green-100 text-green-800"
-                    : assessment.riskLevel === "moderate"
-                    ? "bg-yellow-100 text-yellow-800"
-                    : assessment.riskLevel === "high"
-                    ? "bg-red-100 text-red-800"
-                    : "bg-gray-100 text-gray-800"
-                }`}
-              >
-                {assessment.riskLevel.charAt(0).toUpperCase() + assessment.riskLevel.slice(1)} Risk
-              </div>
-            </div>
-
-            {assessment.riskFactors && assessment.riskFactors.length > 0 && (
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="text-sm font-medium text-gray-700 mb-2">Identified Risk Factors</h4>
-                <ul className="space-y-2 text-gray-700">
-                  {assessment.riskFactors.map((factor, index) => (
-                    <li key={index} className="flex items-start">
-                      <span className="text-red-500 mr-2">•</span>
-                      <span>{factor}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Primary Concerns Section */}
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h4 className="text-lg font-medium text-gray-900 mb-3">Primary Concerns</h4>
-          <ul className="space-y-2 text-gray-700">
-            {assessment.primaryConcerns?.map((concern, index) => (
-              <li key={index} className="flex items-start">
-                <span className="text-blue-500 mr-2">•</span>
-                <span>{concern}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Recommended Assessment Tools Section */}
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h4 className="text-lg font-medium text-gray-900 mb-3">Recommended Assessment Tools</h4>
-          <ul className="space-y-2 text-gray-700">
-            {assessment.recommendedAssessmentTools?.map((tool, index) => (
-              <li key={index} className="flex items-start">
-                <span className="text-blue-500 mr-2">•</span>
-                <span>{tool}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Clinical Observations Section */}
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h4 className="text-lg font-medium text-gray-900 mb-3">Clinical Observations</h4>
-          <p className="text-gray-700 leading-relaxed">{assessment.initialClinicalObservations}</p>
-        </div>
-
-        {/* Suggested Next Steps Section */}
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h4 className="text-lg font-medium text-gray-900 mb-3">Suggested Next Steps</h4>
-          <ul className="space-y-2 text-gray-700">
-            {assessment.suggestedNextSteps?.map((step, index) => (
-              <li key={index} className="flex items-start">
-                <span className="text-blue-500 mr-2">•</span>
-                <span>{step}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Areas Requiring Immediate Attention Section */}
-        {assessment.areasRequiringImmediateAttention?.length > 0 && (
-          <div className="bg-red-50 p-4 rounded-lg border border-red-100">
-            <h4 className="text-lg font-medium text-red-900 mb-3">
-              Areas Requiring Immediate Attention
-            </h4>
-            <ul className="space-y-2 text-red-700">
-              {assessment.areasRequiringImmediateAttention.map((area, index) => (
-                <li key={index} className="flex items-start">
-                  <span className="text-red-500 mr-2">•</span>
-                  <span>{area}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-    );
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4 border-b border-gray-200">
@@ -255,7 +143,7 @@ export default function ClientInsights({ clientId }) {
               : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
           }`}
         >
-          Assessments
+          Assessment
         </button>
         <button
           onClick={() => setActiveTab("diagnostics")}
@@ -265,7 +153,27 @@ export default function ClientInsights({ clientId }) {
               : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
           }`}
         >
-          Diagnostics
+          Diagnostic
+        </button>
+        <button
+          onClick={() => setActiveTab("treatment")}
+          className={`py-2 px-1 border-b-2 font-medium text-sm ${
+            activeTab === "treatment"
+              ? "border-blue-500 text-blue-600"
+              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+          }`}
+        >
+          Treatment
+        </button>
+        <button
+          onClick={() => setActiveTab("progress")}
+          className={`py-2 px-1 border-b-2 font-medium text-sm ${
+            activeTab === "progress"
+              ? "border-blue-500 text-blue-600"
+              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+          }`}
+        >
+          Progress
         </button>
       </div>
 
@@ -453,43 +361,167 @@ export default function ClientInsights({ clientId }) {
       )}
 
       {activeTab === "assessments" && assessmentContent && (
-        <div className="bg-white shadow rounded-lg p-6">
-          <div className="flex justify-between items-start mb-6">
+        <div className="bg-white shadow-lg rounded-xl p-8">
+          <div className="flex justify-between items-start mb-8">
             <div>
-              <h3 className="text-xl font-semibold text-gray-900">Assessment Report</h3>
-              <p className="text-sm text-gray-500 mt-1">
-                {formatDate(assessmentReport?.metadata?.timestamp)}
+              <h3 className="text-2xl font-bold text-gray-900">Assessment Report</h3>
+              <p className="text-sm text-gray-500 mt-2">
+                Last updated: {formatDate(assessmentReport?.metadata?.timestamp)}
               </p>
             </div>
           </div>
 
-          <div className="space-y-8">{renderAssessmentDetails(assessmentContent)}</div>
+          <div className="space-y-8">
+            {/* Summary Section */}
+            <div className="bg-gradient-to-r from-blue-50 to-white p-6 rounded-xl shadow-sm border border-blue-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-xl">📋</span> Assessment Summary
+              </h3>
+              <p className="text-gray-700 leading-relaxed">{assessmentContent.summary}</p>
+            </div>
+
+            {/* Risk Level Section */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-xl">⚠️</span> Risk Level
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <div
+                    className={`px-4 py-2 rounded-full text-sm font-medium ${
+                      assessmentContent.riskLevel === "low"
+                        ? "bg-green-100 text-green-800"
+                        : assessmentContent.riskLevel === "moderate"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : assessmentContent.riskLevel === "high"
+                        ? "bg-red-100 text-red-800"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
+                    {assessmentContent.riskLevel.charAt(0).toUpperCase() +
+                      assessmentContent.riskLevel.slice(1)}{" "}
+                    Risk
+                  </div>
+                </div>
+
+                {assessmentContent.riskFactors && assessmentContent.riskFactors.length > 0 && (
+                  <div className="bg-red-50 p-4 rounded-lg border border-red-100">
+                    <h4 className="text-sm font-medium text-red-700 mb-2">
+                      Identified Risk Factors
+                    </h4>
+                    <ul className="space-y-2 text-red-700">
+                      {assessmentContent.riskFactors.map((factor, index) => (
+                        <li key={index} className="flex items-start gap-3">
+                          <span className="flex-shrink-0 w-2 h-2 mt-2 rounded-full bg-red-500"></span>
+                          <span>{factor}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Primary Concerns Section */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-xl">🔍</span> Primary Concerns
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {assessmentContent.primaryConcerns?.map((concern, index) => (
+                  <div key={index} className="bg-blue-50 p-4 rounded-lg">
+                    <p className="text-gray-700">{concern}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Recommended Assessment Tools Section */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-xl">🛠️</span> Recommended Assessment Tools
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {assessmentContent.recommendedAssessmentTools?.map((tool, index) => (
+                  <div key={index} className="bg-purple-50 p-4 rounded-lg">
+                    <p className="text-gray-700">{tool}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Clinical Observations Section */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-xl">📝</span> Clinical Observations
+              </h3>
+              <p className="text-gray-700 leading-relaxed bg-gray-50 p-4 rounded-lg">
+                {assessmentContent.initialClinicalObservations}
+              </p>
+            </div>
+
+            {/* Suggested Next Steps Section */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-xl">➡️</span> Suggested Next Steps
+              </h3>
+              <div className="space-y-3">
+                {assessmentContent.suggestedNextSteps?.map((step, index) => (
+                  <div key={index} className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-2 h-2 mt-2 rounded-full bg-blue-500"></span>
+                    <span className="text-gray-700">{step}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Areas Requiring Immediate Attention Section */}
+            {assessmentContent.areasRequiringImmediateAttention?.length > 0 && (
+              <div className="bg-red-50 p-6 rounded-xl shadow-sm border border-red-100">
+                <h3 className="text-lg font-semibold text-red-900 mb-4 flex items-center gap-2">
+                  <span className="text-xl">🚨</span> Areas Requiring Immediate Attention
+                </h3>
+                <div className="space-y-3">
+                  {assessmentContent.areasRequiringImmediateAttention.map((area, index) => (
+                    <div key={index} className="flex items-start gap-3">
+                      <span className="flex-shrink-0 w-2 h-2 mt-2 rounded-full bg-red-500"></span>
+                      <span className="text-red-700">{area}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
       {activeTab === "diagnostics" && diagnosticContent && (
-        <div className="bg-white shadow rounded-lg p-6">
-          <div className="flex justify-between items-start mb-6">
+        <div className="bg-white shadow-lg rounded-xl p-8">
+          <div className="flex justify-between items-start mb-8">
             <div>
-              <h3 className="text-xl font-semibold text-gray-900">Diagnostic Report</h3>
-              <p className="text-sm text-gray-500 mt-1">
-                {formatDate(diagnosticReport?.metadata?.timestamp)}
+              <h3 className="text-2xl font-bold text-gray-900">Diagnostic Report</h3>
+              <p className="text-sm text-gray-500 mt-2">
+                Last updated: {formatDate(diagnosticReport?.metadata?.timestamp)}
               </p>
             </div>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-8">
             {/* Summary Section */}
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Diagnostic Summary</h3>
-              <p className="text-gray-700">{diagnosticContent.diagnosticSummary}</p>
+            <div className="bg-gradient-to-r from-blue-50 to-white p-6 rounded-xl shadow-sm border border-blue-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-xl">📋</span> Diagnostic Summary
+              </h3>
+              <p className="text-gray-700 leading-relaxed">{diagnosticContent.diagnosticSummary}</p>
             </div>
 
             {/* Primary Diagnosis Section */}
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Primary Diagnosis</h3>
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-xl">🔍</span> Primary Diagnosis
+              </h3>
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between bg-blue-50 p-4 rounded-lg">
                   <div>
                     <h4 className="text-lg font-medium text-gray-800">
                       {diagnosticContent.primaryDiagnosis.name}
@@ -499,7 +531,7 @@ export default function ClientInsights({ clientId }) {
                     </p>
                   </div>
                   <div
-                    className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    className={`px-4 py-2 rounded-full text-sm font-medium ${
                       diagnosticContent.primaryDiagnosis.confidence === "high"
                         ? "bg-green-100 text-green-800"
                         : diagnosticContent.primaryDiagnosis.confidence === "moderate"
@@ -512,82 +544,459 @@ export default function ClientInsights({ clientId }) {
                     Confidence
                   </div>
                 </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Diagnostic Criteria</h4>
-                  <ul className="space-y-2 text-gray-700">
-                    {diagnosticContent.primaryDiagnosis.criteria.map((criterion, index) => (
-                      <li key={index} className="flex items-start">
-                        <span className="text-blue-500 mr-2">•</span>
-                        <span>{criterion}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Clinical Rationale</h4>
-                  <p className="text-gray-700">{diagnosticContent.primaryDiagnosis.rationale}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Diagnostic Criteria</h4>
+                    <ul className="space-y-2 text-gray-700">
+                      {diagnosticContent.primaryDiagnosis.criteria.map((criterion, index) => (
+                        <li key={index} className="flex items-start gap-3">
+                          <span className="flex-shrink-0 w-2 h-2 mt-2 rounded-full bg-blue-500"></span>
+                          <span>{criterion}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Clinical Rationale</h4>
+                    <p className="text-gray-700">{diagnosticContent.primaryDiagnosis.rationale}</p>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Risk Factors Section */}
             {diagnosticContent.riskFactors && diagnosticContent.riskFactors.length > 0 && (
-              <div className="bg-white p-6 rounded-lg shadow-sm">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Risk Factors</h3>
-                <ul className="space-y-2 text-gray-700">
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <span className="text-xl">⚠️</span> Risk Factors
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {diagnosticContent.riskFactors.map((factor, index) => (
-                    <li key={index} className="flex items-start">
-                      <span className="text-blue-500 mr-2">•</span>
-                      <span>{factor}</span>
-                    </li>
+                    <div key={index} className="bg-red-50 p-4 rounded-lg">
+                      <p className="text-red-700">{factor}</p>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
             )}
 
             {/* Rule Out Conditions Section */}
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Rule Out Conditions</h3>
-              <ul className="space-y-2 text-gray-700">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-xl">❌</span> Rule Out Conditions
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {diagnosticContent.ruleOutConditions.map((condition, index) => (
-                  <li key={index} className="flex items-start">
-                    <span className="text-blue-500 mr-2">•</span>
-                    <span>{condition}</span>
-                  </li>
+                  <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-gray-700">{condition}</p>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
 
             {/* Severity Indicators Section */}
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Severity Indicators</h3>
-              <ul className="space-y-2 text-gray-700">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-xl">📊</span> Severity Indicators
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {diagnosticContent.severityIndicators.map((indicator, index) => (
-                  <li key={index} className="flex items-start">
-                    <span className="text-blue-500 mr-2">•</span>
-                    <span>{indicator}</span>
-                  </li>
+                  <div key={index} className="bg-yellow-50 p-4 rounded-lg">
+                    <p className="text-gray-700">{indicator}</p>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
 
             {/* Treatment Implications Section */}
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Treatment Implications</h3>
-              <ul className="space-y-2 text-gray-700">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-xl">💡</span> Treatment Implications
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {diagnosticContent.treatmentImplications.map((implication, index) => (
-                  <li key={index} className="flex items-start">
-                    <span className="text-blue-500 mr-2">•</span>
-                    <span>{implication}</span>
-                  </li>
+                  <div key={index} className="bg-green-50 p-4 rounded-lg">
+                    <p className="text-gray-700">{implication}</p>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
 
             {/* Clinical Justification Section */}
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Clinical Justification</h3>
-              <p className="text-gray-700">{diagnosticContent.clinicalJustification}</p>
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-xl">📝</span> Clinical Justification
+              </h3>
+              <p className="text-gray-700 leading-relaxed bg-gray-50 p-4 rounded-lg">
+                {diagnosticContent.clinicalJustification}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "treatment" && treatmentContent && (
+        <div className="bg-white shadow-lg rounded-xl p-8">
+          <div className="flex justify-between items-start mb-8">
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900">Treatment Plan</h3>
+              <p className="text-sm text-gray-500 mt-2">
+                Last updated: {formatDate(treatmentReport?.metadata?.timestamp)}
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-8">
+            {/* Summary Section */}
+            <div className="bg-gradient-to-r from-blue-50 to-white p-6 rounded-xl shadow-sm border border-blue-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-xl">📋</span> Treatment Summary
+              </h3>
+              <p className="text-gray-700 leading-relaxed">{treatmentContent.summary}</p>
+            </div>
+
+            {/* Goals Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <span className="text-xl">🎯</span> Short-term Goals
+                </h3>
+                <ul className="space-y-3">
+                  {treatmentContent.goals?.shortTerm?.map((goal, index) => (
+                    <li key={index} className="flex items-start gap-3">
+                      <span className="flex-shrink-0 w-2 h-2 mt-2 rounded-full bg-blue-500"></span>
+                      <span className="text-gray-700">{goal}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              {treatmentContent.goals?.longTerm?.length > 0 && (
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <span className="text-xl">🌟</span> Long-term Goals
+                  </h3>
+                  <ul className="space-y-3">
+                    {treatmentContent.goals.longTerm.map((goal, index) => (
+                      <li key={index} className="flex items-start gap-3">
+                        <span className="flex-shrink-0 w-2 h-2 mt-2 rounded-full bg-blue-500"></span>
+                        <span className="text-gray-700">{goal}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            {/* Interventions Section */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-xl">🛠️</span> Interventions
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {treatmentContent.interventions?.map((intervention, index) => (
+                  <div key={index} className="bg-blue-50 p-4 rounded-lg">
+                    <p className="text-gray-700">{intervention}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Timeline Section */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-xl">📅</span> Treatment Timeline
+              </h3>
+              <div className="relative">
+                <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-blue-200"></div>
+                <div className="space-y-6 pl-8">
+                  {treatmentContent.timeline?.map((item, index) => (
+                    <div key={index} className="relative">
+                      <div className="absolute -left-8 top-0 w-4 h-4 rounded-full bg-blue-500 border-4 border-white"></div>
+                      <div className="bg-blue-50 p-4 rounded-lg">
+                        <p className="font-medium text-gray-800">{item.milestone}</p>
+                        <p className="text-sm text-gray-500 mt-1">{item.timeframe}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Outcomes and Metrics Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <span className="text-xl">📊</span> Measurable Outcomes
+                </h3>
+                <ul className="space-y-3">
+                  {treatmentContent.measurableOutcomes?.map((outcome, index) => (
+                    <li key={index} className="flex items-start gap-3">
+                      <span className="flex-shrink-0 w-2 h-2 mt-2 rounded-full bg-blue-500"></span>
+                      <span className="text-gray-700">{outcome}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <span className="text-xl">📈</span> Progress Indicators
+                </h3>
+                <ul className="space-y-3">
+                  {treatmentContent.progressIndicators?.map((indicator, index) => (
+                    <li key={index} className="flex items-start gap-3">
+                      <span className="flex-shrink-0 w-2 h-2 mt-2 rounded-full bg-blue-500"></span>
+                      <span className="text-gray-700">{indicator}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* Approaches and Barriers Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <span className="text-xl">💡</span> Recommended Approaches
+                </h3>
+                <div className="space-y-3">
+                  {treatmentContent.recommendedApproaches?.map((approach, index) => (
+                    <div key={index} className="bg-green-50 p-3 rounded-lg">
+                      <p className="text-gray-700">{approach}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <span className="text-xl">⚠️</span> Potential Barriers
+                </h3>
+                <div className="space-y-3">
+                  {treatmentContent.potentialBarriers?.map((barrier, index) => (
+                    <div key={index} className="bg-yellow-50 p-3 rounded-lg">
+                      <p className="text-gray-700">{barrier}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Success Metrics Section */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-xl">✅</span> Success Metrics
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {treatmentContent.successMetrics?.map((metric, index) => (
+                  <div key={index} className="bg-purple-50 p-4 rounded-lg">
+                    <p className="text-gray-700">{metric}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "progress" && progressContent && (
+        <div className="bg-white shadow-lg rounded-xl p-8">
+          <div className="flex justify-between items-start mb-8">
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900">Progress Report</h3>
+              <p className="text-sm text-gray-500 mt-2">
+                Last updated: {formatDate(progressReport?.metadata?.timestamp)}
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-8">
+            {/* Summary Section */}
+            <div className="bg-gradient-to-r from-blue-50 to-white p-6 rounded-xl shadow-sm border border-blue-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-xl">📋</span> Progress Summary
+              </h3>
+              <p className="text-gray-700 leading-relaxed">{progressContent.summary}</p>
+            </div>
+
+            {/* Metrics Section */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-xl">📊</span> Progress Metrics
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="text-sm font-medium text-gray-700 mb-1">Overall Progress</h4>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {progressContent.metrics.overallProgress}%
+                  </p>
+                </div>
+                <div className="bg-yellow-50 p-4 rounded-lg">
+                  <h4 className="text-sm font-medium text-gray-700 mb-1">Symptom Severity</h4>
+                  <p className="text-2xl font-bold text-yellow-600">
+                    {progressContent.metrics.symptomSeverity}/10
+                  </p>
+                </div>
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <h4 className="text-sm font-medium text-gray-700 mb-1">Treatment Adherence</h4>
+                  <p className="text-2xl font-bold text-green-600">
+                    {progressContent.metrics.treatmentAdherence}%
+                  </p>
+                </div>
+                <div className="bg-red-50 p-4 rounded-lg">
+                  <h4 className="text-sm font-medium text-gray-700 mb-1">Risk Level</h4>
+                  <p className="text-2xl font-bold text-red-600">
+                    {progressContent.metrics.riskLevel}/10
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Goal Achievement Section */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-xl">🎯</span> Goal Achievement Status
+              </h3>
+              <div className="space-y-4">
+                {progressContent.goalAchievementStatus.map((goal, index) => (
+                  <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                    <div className="flex justify-between items-start">
+                      <p className="text-gray-700 font-medium">{goal.goal}</p>
+                      <span
+                        className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          goal.status === "Achieved"
+                            ? "bg-green-100 text-green-800"
+                            : goal.status === "In Progress"
+                            ? "bg-blue-100 text-blue-800"
+                            : goal.status === "On track"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {goal.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Key Observations Section */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-xl">🔍</span> Key Observations
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {progressContent.keyObservations.map((observation, index) => (
+                  <div key={index} className="bg-purple-50 p-4 rounded-lg">
+                    <p className="text-gray-700">{observation}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Treatment Effectiveness Section */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-xl">💡</span> Treatment Effectiveness
+              </h3>
+              <p className="text-gray-700 leading-relaxed bg-gray-50 p-4 rounded-lg">
+                {progressContent.treatmentEffectiveness}
+              </p>
+            </div>
+
+            {/* Areas of Improvement Section */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-xl">📈</span> Areas of Improvement
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {progressContent.areasOfImprovement.map((area, index) => (
+                  <div key={index} className="bg-blue-50 p-4 rounded-lg">
+                    <p className="text-gray-700">{area}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Areas Needing Focus Section */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-xl">⚠️</span> Areas Needing Focus
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {progressContent.areasNeedingFocus.map((area, index) => (
+                  <div key={index} className="bg-yellow-50 p-4 rounded-lg">
+                    <p className="text-gray-700">{area}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Recommendations Section */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-xl">✅</span> Recommendations
+              </h3>
+              <div className="space-y-3">
+                {progressContent.recommendations.map((recommendation, index) => (
+                  <div key={index} className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-2 h-2 mt-2 rounded-full bg-green-500"></span>
+                    <span className="text-gray-700">{recommendation}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Next Steps Section */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-xl">➡️</span> Next Steps
+              </h3>
+              <div className="space-y-3">
+                {progressContent.nextSteps.map((step, index) => (
+                  <div key={index} className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-2 h-2 mt-2 rounded-full bg-blue-500"></span>
+                    <span className="text-gray-700">{step}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Treatment Plan Adjustments Section */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-xl">🔄</span> Treatment Plan Adjustments
+              </h3>
+              <div className="space-y-3">
+                {progressContent.treatmentPlanAdjustments.map((adjustment, index) => (
+                  <div key={index} className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-2 h-2 mt-2 rounded-full bg-purple-500"></span>
+                    <span className="text-gray-700">{adjustment}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Reassessment Section */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-xl">📝</span> Reassessment Status
+              </h3>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="flex items-center gap-3 mb-3">
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      progressContent.recommendReassessment
+                        ? "bg-yellow-100 text-yellow-800"
+                        : "bg-green-100 text-green-800"
+                    }`}
+                  >
+                    {progressContent.recommendReassessment
+                      ? "Reassessment Recommended"
+                      : "No Reassessment Needed"}
+                  </span>
+                </div>
+                <p className="text-gray-700">{progressContent.reassessmentRationale}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -605,17 +1014,6 @@ function getRiskLevelColor(level) {
     severe: "text-red-600",
   };
   return colors[level?.toLowerCase()] || "text-gray-600";
-}
-
-function getProgressStatusColor(status) {
-  const colors = {
-    completed: "text-green-600",
-    "in progress": "text-blue-600",
-    "not started": "text-gray-600",
-    delayed: "text-yellow-600",
-    "needs revision": "text-orange-600",
-  };
-  return colors[status?.toLowerCase()] || "text-gray-600";
 }
 
 function formatDate(timestamp) {

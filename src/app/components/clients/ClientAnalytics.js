@@ -59,6 +59,29 @@ export default function ClientAnalytics({ clientId }) {
     return null;
   };
 
+  const getGoalStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case "achieved":
+        return "bg-green-100 text-green-800";
+      case "in progress":
+        return "bg-yellow-100 text-yellow-800";
+      case "partially achieved":
+        return "bg-blue-100 text-blue-800";
+      case "not started":
+        return "bg-gray-100 text-gray-800";
+      case "Cancelled":
+        return "bg-red-100 text-red-800";
+      case "completed":
+        return "bg-purple-100 text-purple-800";
+      case "failed":
+        return "bg-red-100 text-red-800";
+      case "on track":
+        return "bg-purple-100 text-purple-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-4 text-gray-600 flex items-center gap-2">
@@ -80,7 +103,7 @@ export default function ClientAnalytics({ clientId }) {
       <div className="bg-blue-100 p-4 rounded-lg flex items-center gap-2">
         <span className="text-2xl">📊</span>
         <p className="text-blue-700 text-sm">
-          No analytics yet! Let's get some data flowing to see the magic.
+          No analytics yet! Let&apos;s get some data flowing to see the magic.
         </p>
       </div>
     );
@@ -307,27 +330,23 @@ export default function ClientAnalytics({ clientId }) {
             </div>
             <div className="space-y-4">
               <h3 className="font-medium">Latest Goals</h3>
-              {analytics.keyInsights.treatmentGoals?.map((goal, index) => (
-                <div key={index} className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <p className="text-sm">{goal.goal}</p>
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${
-                        goal.status === "Achieved"
-                          ? "bg-green-100 text-green-800"
-                          : goal.status === "In Progress"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : goal.status === "Partially Achieved"
-                          ? "bg-blue-100 text-blue-800"
-                          : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {goal.status}
-                    </span>
+              {analytics.treatmentProgress[analytics.treatmentProgress.length - 1]?.goals?.map(
+                (goal, index) => (
+                  <div key={index} className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm">{goal.goal}</p>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs ${getGoalStatusColor(
+                          goal.status
+                        )}`}
+                      >
+                        {goal.status}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500">{goal.notes}</p>
                   </div>
-                  <p className="text-xs text-gray-500">{goal.notes}</p>
-                </div>
-              ))}
+                )
+              )}
             </div>
           </div>
         </div>
