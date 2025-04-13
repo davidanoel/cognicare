@@ -635,6 +635,32 @@ export default function ClientInsights({ clientId }) {
         </div>
       )}
 
+      {activeTab === "treatment" && !treatmentContent && (
+        <div className="bg-blue-100 p-4 rounded-lg">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🛠️</span>
+            <div>
+              <h3 className="font-medium text-blue-700">No treatment plan available</h3>
+              <p className="text-blue-700 text-sm mt-1">
+                To generate a treatment plan, go to the <strong>AI Assistant</strong> tab and click{" "}
+                <strong>Prepare for Session</strong>.
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 flex justify-end">
+            <button
+              onClick={() => {
+                const currentUrl = window.location.pathname;
+                window.location.href = `${currentUrl}?tab=ai-assistant`;
+              }}
+              className="text-xs bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+            >
+              Go to AI Assistant
+            </button>
+          </div>
+        </div>
+      )}
+
       {activeTab === "treatment" && treatmentContent && (
         <div className="bg-white shadow-lg rounded-xl p-8">
           <div className="flex justify-between items-start mb-8">
@@ -793,6 +819,32 @@ export default function ClientInsights({ clientId }) {
                 ))}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "progress" && !progressContent && (
+        <div className="bg-blue-100 p-4 rounded-lg">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">📊</span>
+            <div>
+              <h3 className="font-medium text-blue-700">No progress data available</h3>
+              <p className="text-blue-700 text-sm mt-1">
+                To generate progress insights, go to the <strong>AI Assistant</strong> tab and click{" "}
+                <strong>Process Session Results</strong>.
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 flex justify-end">
+            <button
+              onClick={() => {
+                const currentUrl = window.location.pathname;
+                window.location.href = `${currentUrl}?tab=ai-assistant`;
+              }}
+              className="text-xs bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+            >
+              Go to AI Assistant
+            </button>
           </div>
         </div>
       )}
