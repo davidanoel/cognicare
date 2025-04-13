@@ -10,6 +10,7 @@ export const assessmentSchema = z
       ),
     riskLevel: z.string(),
     primaryConcerns: z.array(z.string()),
+    riskFactors: z.array(z.string()),
     recommendedAssessmentTools: z.array(z.string()),
     initialClinicalObservations: z.string(),
     suggestedNextSteps: z.array(z.string()),
@@ -33,7 +34,16 @@ export const diagnosticSchema = z
       criteria: z.array(z.string()),
       rationale: z.string(),
     }),
-    differentialDiagnoses: z.array(z.string()),
+    differentialDiagnoses: z.array(
+      z.object({
+        code: z.string(),
+        name: z.string(),
+        description: z.string().optional(),
+        confidence: z.string(),
+        criteria: z.array(z.string()),
+        rationale: z.string(),
+      })
+    ),
     ruleOutConditions: z.array(z.string()),
     severityIndicators: z.array(z.string()),
     riskFactors: z.array(z.string()),
@@ -41,6 +51,22 @@ export const diagnosticSchema = z
     recommendedAssessments: z.array(z.string()),
     clinicalJustification: z.string(),
     treatmentImplications: z.array(z.string()),
+    comorbidityAssessment: z.object({
+      present: z.boolean(),
+      conditions: z
+        .array(
+          z.object({
+            code: z.string(),
+            name: z.string(),
+            confidence: z.string(),
+            criteria: z.array(z.string()),
+            rationale: z.string(),
+          })
+        )
+        .optional(),
+      overallImpact: z.string().optional(),
+      managementStrategy: z.string().optional(),
+    }),
   })
   .passthrough();
 

@@ -51,6 +51,20 @@ IMPORTANT: Your response must be in this exact JSON format:
   "culturalConsiderations": ["List of cultural factors relevant to diagnosis"],
   "treatmentImplications": ["Specific implications for treatment planning"],
   "clinicalJustification": "Detailed clinical justification for the diagnostic conclusion",
+  "comorbidityAssessment": {
+    "present": true|false,
+    "conditions": [
+      {
+        "code": "DSM-5/ICD-10 code",
+        "name": "Full diagnostic name",
+        "confidence": "high|moderate|low",
+        "criteria": ["List of specific criteria met"],
+        "rationale": "Explanation of comorbidity diagnosis"
+      }
+    ],
+    "overallImpact": "Summary of how comorbidities affect overall clinical picture",
+    "managementStrategy": "General approach to managing multiple conditions"
+  }
 }`,
     };
 
