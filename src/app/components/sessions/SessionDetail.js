@@ -333,12 +333,12 @@ export default function SessionDetail({ sessionId }) {
                   updateFunction={fetchSession}
                 />
               </div>
-              <div>
+              {/* <div>
                 <SessionPrepView
                   clientId={session.clientId?._id || session.clientId}
                   sessionId={session._id}
                 />
-              </div>
+              </div> */}
             </div>
           </div>
         </div>

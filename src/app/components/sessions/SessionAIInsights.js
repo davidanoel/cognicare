@@ -13,7 +13,9 @@ export default function SessionAIInsights({ session }) {
   const [activeTab, setActiveTab] = useState("progress");
 
   useEffect(() => {
-    const fetchReport = async () => {
+    const fetchReports = async () => {
+      if (!session?.clientId?._id || !session?._id) return;
+
       setLoading(true);
       setError(null);
       setAssessmentReport(null);
@@ -21,51 +23,52 @@ export default function SessionAIInsights({ session }) {
       setDocumentationReport(null);
       setProgressReport(null);
       setTreatmentReport(null);
+
       try {
-        const response = await fetch(
+        // Fetch session-specific reports
+        const sessionResponse = await fetch(
           `/api/clients/${session.clientId._id}/ai-reports?sessionId=${session._id}`
         );
-        if (!response.ok) {
-          if (response.status === 404) {
-            setError("no_reports");
-          } else {
-            const errorData = await response.json();
-            throw new Error(errorData.message || "Failed to fetch insights");
-          }
-          // Don't proceed if response is not ok
-          return;
+        if (!sessionResponse.ok) {
+          throw new Error("Failed to fetch session reports");
         }
+        const sessionData = await sessionResponse.json();
+        const sessionReports = sessionData.reports || [];
 
-        const data = await response.json();
-        const reports = data.reports || [];
+        // Fetch client-level reports
+        const clientResponse = await fetch(`/api/clients/${session.clientId._id}/ai-reports`);
+        if (!clientResponse.ok) {
+          throw new Error("Failed to fetch client reports");
+        }
+        const clientData = await clientResponse.json();
+        const clientReports = clientData.reports || [];
 
-        // Find the relevant reports from the array
-        const assessment = reports.find((r) => r.type === "assessment");
-        const diagnostic = reports.find((r) => r.type === "diagnostic");
-        const treatment = reports.find((r) => r.type === "treatment");
-        const documentation = reports.find((r) => r.type === "documentation");
-        const progress = reports.find((r) => r.type === "progress");
-
-        // Set the reports in state
-        setAssessmentReport(assessment?.content);
-        setDiagnosticReport(diagnostic?.content);
+        // Set session-specific reports (get most recent)
+        const documentation = sessionReports.find((r) => r.type === "documentation");
+        const progress = sessionReports.find((r) => r.type === "progress");
         setDocumentationReport(documentation?.content);
         setProgressReport(progress?.content);
+
+        // Set client-level reports (get most recent)
+        const assessment = clientReports.find((r) => r.type === "assessment");
+        const diagnostic = clientReports.find((r) => r.type === "diagnostic");
+        const treatment = clientReports.find((r) => r.type === "treatment");
+        setAssessmentReport(assessment?.content);
+        setDiagnosticReport(diagnostic?.content);
         setTreatmentReport(treatment?.content);
 
-        if (!assessment && !diagnostic && !treatment && !documentation && !progress) {
+        if (!documentation && !progress && !assessment && !diagnostic && !treatment) {
           setError("no_reports");
         }
-      } catch (err) {
-        setError(err.message);
+      } catch (error) {
+        console.error("Error fetching reports:", error);
+        setError(error.message);
       } finally {
         setLoading(false);
       }
     };
 
-    if (session?.clientId?._id && session?._id) {
-      fetchReport();
-    }
+    fetchReports();
   }, [session]);
 
   // Update active tab based on AIWorkflow stage
@@ -186,7 +189,7 @@ export default function SessionAIInsights({ session }) {
           } bg-white rounded-lg shadow`}
         >
           <div className="p-6">
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-6">
               <span className="text-2xl">📝</span>
               <div>
                 <h3 className="text-lg font-semibold">Documentation</h3>
@@ -198,280 +201,260 @@ export default function SessionAIInsights({ session }) {
 
             {documentationReport && (
               <div className="space-y-6">
-                {/* Summary Section */}
-                {documentationReport.summary && (
-                  <div className="mb-4">
-                    <h4 className="text-md font-semibold text-gray-700 mb-2">Summary</h4>
-                    <p className="text-gray-600">{documentationReport.summary}</p>
-                  </div>
-                )}
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                  <h3 className="text-lg font-semibold mb-6 text-gray-800">
+                    Session Documentation
+                  </h3>
 
-                {/* SOAP Notes Section */}
-                {documentationReport.soap && (
-                  <div className="mb-6">
-                    <h4 className="text-md font-semibold text-gray-700 mb-2">SOAP Notes</h4>
-                    <div className="space-y-4">
-                      <div>
-                        <h5 className="font-medium text-gray-700">Subjective</h5>
-                        <p className="mt-1 text-gray-600 pl-4">
-                          {documentationReport.soap.subjective}
-                        </p>
-                      </div>
-                      <div>
-                        <h5 className="font-medium text-gray-700">Objective</h5>
-                        <p className="mt-1 text-gray-600 pl-4">
-                          {documentationReport.soap.objective}
-                        </p>
-                      </div>
-                      <div>
-                        <h5 className="font-medium text-gray-700">Assessment</h5>
-                        <p className="mt-1 text-gray-600 pl-4">
-                          {documentationReport.soap.assessment}
-                        </p>
-                      </div>
-                      <div>
-                        <h5 className="font-medium text-gray-700">Plan</h5>
-                        <p className="mt-1 text-gray-600 pl-4">{documentationReport.soap.plan}</p>
+                  {/* Summary */}
+                  {documentationReport.summary && (
+                    <div className="mb-8 bg-blue-50 p-4 rounded-lg">
+                      <h4 className="text-md font-semibold text-gray-700 mb-2">Summary</h4>
+                      <p className="text-gray-600 leading-relaxed">{documentationReport.summary}</p>
+                    </div>
+                  )}
+
+                  {/* SOAP Notes */}
+                  {documentationReport.soap && (
+                    <div className="mb-8">
+                      <h4 className="text-md font-semibold text-gray-700 mb-4">SOAP Notes</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <h5 className="font-medium text-gray-700 mb-2">Subjective</h5>
+                          <p className="text-gray-600">{documentationReport.soap.subjective}</p>
+                        </div>
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <h5 className="font-medium text-gray-700 mb-2">Objective</h5>
+                          <p className="text-gray-600">{documentationReport.soap.objective}</p>
+                        </div>
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <h5 className="font-medium text-gray-700 mb-2">Assessment</h5>
+                          <p className="text-gray-600">{documentationReport.soap.assessment}</p>
+                        </div>
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <h5 className="font-medium text-gray-700 mb-2">Plan</h5>
+                          <p className="text-gray-600">{documentationReport.soap.plan}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Clinical Documentation Section */}
-                {documentationReport.clinicalDocumentation && (
-                  <div className="mb-6">
-                    <h4 className="text-md font-semibold text-gray-700 mb-2">
-                      Clinical Documentation
-                    </h4>
-                    <div className="space-y-4">
-                      <div>
-                        <h5 className="font-medium text-gray-700">Initial Observations</h5>
-                        <p className="mt-1 text-gray-600 pl-4">
-                          {documentationReport.clinicalDocumentation.initialObservations}
-                        </p>
-                      </div>
-                      <div>
-                        <h5 className="font-medium text-gray-700">Risk Assessment</h5>
-                        <p className="mt-1 text-gray-600 pl-4">
-                          {documentationReport.clinicalDocumentation.riskAssessmentSummary}
-                        </p>
-                      </div>
-                      <div>
-                        <h5 className="font-medium text-gray-700">Diagnostic Considerations</h5>
-                        <p className="mt-1 text-gray-600 pl-4">
-                          {documentationReport.clinicalDocumentation.diagnosticConsiderations}
-                        </p>
-                      </div>
-                      {documentationReport.clinicalDocumentation.treatmentGoalsAndInterventions
-                        ?.length > 0 && (
-                        <div>
-                          <h5 className="font-medium text-gray-700">
-                            Treatment Goals & Interventions
-                          </h5>
-                          <ul className="list-disc ml-8 mt-1 text-gray-600">
-                            {documentationReport.clinicalDocumentation.treatmentGoalsAndInterventions.map(
-                              (item, i) => (
-                                <li key={i}>{item}</li>
-                              )
-                            )}
-                          </ul>
-                        </div>
-                      )}
-                      {documentationReport.clinicalDocumentation.progressIndicators?.length > 0 && (
-                        <div>
-                          <h5 className="font-medium text-gray-700">Progress Indicators</h5>
-                          <ul className="list-disc ml-8 mt-1 text-gray-600">
-                            {documentationReport.clinicalDocumentation.progressIndicators.map(
-                              (item, i) => (
-                                <li key={i}>{item}</li>
-                              )
-                            )}
-                          </ul>
-                        </div>
-                      )}
-                      <div>
-                        <h5 className="font-medium text-gray-700">Treatment Effectiveness</h5>
-                        <p className="mt-1 text-gray-600 pl-4">
-                          {documentationReport.clinicalDocumentation.treatmentEffectivenessAnalysis}
-                        </p>
-                      </div>
-                      {documentationReport.clinicalDocumentation.followUpRecommendations?.length >
-                        0 && (
-                        <div>
-                          <h5 className="font-medium text-gray-700">Follow-up Recommendations</h5>
-                          <ul className="list-disc ml-8 mt-1 text-gray-600">
-                            {documentationReport.clinicalDocumentation.followUpRecommendations.map(
-                              (item, i) => (
-                                <li key={i}>{item}</li>
-                              )
-                            )}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
+                  {/* Clinical Documentation */}
+                  {documentationReport.clinicalDocumentation && (
+                    <div className="mb-8">
+                      <h4 className="text-md font-semibold text-gray-700 mb-4">
+                        Clinical Documentation
+                      </h4>
 
-                {/* Additional Components Section */}
-                {documentationReport.additionalComponents && (
-                  <div className="mb-6">
-                    <h4 className="text-md font-semibold text-gray-700 mb-2">
-                      Additional Information
-                    </h4>
-                    <div className="space-y-4">
-                      {documentationReport.additionalComponents.areasRequiringImmediateAttention
-                        ?.length > 0 && (
-                        <div>
-                          <h5 className="font-medium text-red-600">
-                            Areas Requiring Immediate Attention
-                          </h5>
-                          <ul className="list-disc ml-8 mt-1 text-red-600">
-                            {documentationReport.additionalComponents.areasRequiringImmediateAttention.map(
-                              (item, i) => (
-                                <li key={i}>{item}</li>
-                              )
-                            )}
-                          </ul>
-                        </div>
-                      )}
-                      {documentationReport.additionalComponents.recommendedAssessmentTools?.length >
-                        0 && (
-                        <div>
-                          <h5 className="font-medium text-gray-700">
-                            Recommended Assessment Tools
-                          </h5>
-                          <ul className="list-disc ml-8 mt-1 text-gray-600">
-                            {documentationReport.additionalComponents.recommendedAssessmentTools.map(
-                              (item, i) => (
-                                <li key={i}>{item}</li>
-                              )
-                            )}
-                          </ul>
-                        </div>
-                      )}
-                      {documentationReport.additionalComponents.specificInterventions?.length >
-                        0 && (
-                        <div>
-                          <h5 className="font-medium text-gray-700">Specific Interventions</h5>
-                          <ul className="list-disc ml-8 mt-1 text-gray-600">
-                            {documentationReport.additionalComponents.specificInterventions.map(
-                              (item, i) => (
-                                <li key={i}>{item}</li>
-                              )
-                            )}
-                          </ul>
-                        </div>
-                      )}
-                      {documentationReport.additionalComponents.progressMetrics?.length > 0 && (
-                        <div>
-                          <h5 className="font-medium text-gray-700">Progress Metrics</h5>
-                          <ul className="list-disc ml-8 mt-1 text-gray-600">
-                            {documentationReport.additionalComponents.progressMetrics.map(
-                              (item, i) => (
-                                <li key={i}>{item}</li>
-                              )
-                            )}
-                          </ul>
-                        </div>
-                      )}
-                      {documentationReport.additionalComponents.nextSessionFocus && (
-                        <div>
-                          <h5 className="font-medium text-gray-700">Next Session Focus</h5>
-                          <p className="mt-1 text-gray-600 pl-4">
-                            {documentationReport.additionalComponents.nextSessionFocus}
+                      {/* Initial Observations */}
+                      <div className="mb-6">
+                        <h5 className="font-medium text-gray-700 mb-2">Initial Observations</h5>
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <p className="text-gray-600">
+                            {documentationReport.clinicalDocumentation.initialObservations}
                           </p>
                         </div>
+                      </div>
+
+                      {/* Risk Assessment */}
+                      <div className="mb-6">
+                        <h5 className="font-medium text-gray-700 mb-2">Risk Assessment</h5>
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <p className="text-gray-600">
+                            {documentationReport.clinicalDocumentation.riskAssessmentSummary}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Diagnostic Considerations */}
+                      <div className="mb-6">
+                        <h5 className="font-medium text-gray-700 mb-2">
+                          Diagnostic Considerations
+                        </h5>
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <p className="text-gray-600">
+                            {documentationReport.clinicalDocumentation.diagnosticConsiderations}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Treatment Goals & Interventions */}
+                      {documentationReport.clinicalDocumentation.treatmentGoalsAndInterventions
+                        ?.length > 0 && (
+                        <div className="mb-6">
+                          <h5 className="font-medium text-gray-700 mb-2">
+                            Treatment Goals & Interventions
+                          </h5>
+                          <div className="bg-gray-50 p-4 rounded-lg">
+                            <ul className="space-y-2">
+                              {documentationReport.clinicalDocumentation.treatmentGoalsAndInterventions.map(
+                                (goal, i) => (
+                                  <li key={i} className="flex items-start gap-2">
+                                    <span className="text-green-500 mt-1">•</span>
+                                    <span className="text-gray-600">{goal}</span>
+                                  </li>
+                                )
+                              )}
+                            </ul>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Progress Indicators */}
+                      {documentationReport.clinicalDocumentation.progressIndicators?.length > 0 && (
+                        <div className="mb-6">
+                          <h5 className="font-medium text-gray-700 mb-2">Progress Indicators</h5>
+                          <div className="bg-gray-50 p-4 rounded-lg">
+                            <ul className="space-y-2">
+                              {documentationReport.clinicalDocumentation.progressIndicators.map(
+                                (indicator, i) => (
+                                  <li key={i} className="flex items-start gap-2">
+                                    <span className="text-blue-500 mt-1">•</span>
+                                    <span className="text-gray-600">{indicator}</span>
+                                  </li>
+                                )
+                              )}
+                            </ul>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Treatment Effectiveness */}
+                      <div className="mb-6">
+                        <h5 className="font-medium text-gray-700 mb-2">Treatment Effectiveness</h5>
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <p className="text-gray-600">
+                            {
+                              documentationReport.clinicalDocumentation
+                                .treatmentEffectivenessAnalysis
+                            }
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Follow-up Recommendations */}
+                      {documentationReport.clinicalDocumentation.followUpRecommendations?.length >
+                        0 && (
+                        <div className="mb-6">
+                          <h5 className="font-medium text-gray-700 mb-2">
+                            Follow-up Recommendations
+                          </h5>
+                          <div className="bg-gray-50 p-4 rounded-lg">
+                            <ul className="space-y-2">
+                              {documentationReport.clinicalDocumentation.followUpRecommendations.map(
+                                (recommendation, i) => (
+                                  <li key={i} className="flex items-start gap-2">
+                                    <span className="text-purple-500 mt-1">•</span>
+                                    <span className="text-gray-600">{recommendation}</span>
+                                  </li>
+                                )
+                              )}
+                            </ul>
+                          </div>
+                        </div>
                       )}
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Progress Summary Section */}
-                {documentationReport.progressSummary && (
-                  <div>
-                    <h4 className="text-md font-semibold text-gray-700 mb-2">Progress Summary</h4>
-                    <div className="space-y-4">
+                  {/* Progress Summary */}
+                  {documentationReport.progressSummary && (
+                    <div className="mb-8">
+                      <h4 className="text-md font-semibold text-gray-700 mb-4">Progress Summary</h4>
+
+                      {/* Treatment Goals Progress */}
                       {documentationReport.progressSummary.treatmentGoalsProgress?.length > 0 && (
-                        <div>
-                          <h5 className="font-medium text-gray-700">Treatment Goals Progress</h5>
-                          <div className="space-y-2 mt-1">
+                        <div className="mb-6">
+                          <h5 className="font-medium text-gray-700 mb-2">
+                            Treatment Goals Progress
+                          </h5>
+                          <div className="space-y-4">
                             {documentationReport.progressSummary.treatmentGoalsProgress.map(
-                              (item, i) => (
-                                <div key={i} className="pl-4">
-                                  <p className="font-medium text-gray-600">{item.goal}</p>
-                                  <p className="text-gray-600 pl-4">{item.progress}</p>
+                              (goal, i) => (
+                                <div key={i} className="bg-gray-50 p-4 rounded-lg">
+                                  <p className="font-medium text-gray-700 mb-2">{goal.goal}</p>
+                                  <div className="flex items-center gap-2">
+                                    <span
+                                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                        goal.progress.toLowerCase() === "achieved"
+                                          ? "bg-green-100 text-green-800"
+                                          : goal.progress.toLowerCase() === "in progress"
+                                          ? "bg-blue-100 text-blue-800"
+                                          : "bg-gray-100 text-gray-800"
+                                      }`}
+                                    >
+                                      {goal.progress}
+                                    </span>
+                                  </div>
                                 </div>
                               )
                             )}
                           </div>
                         </div>
                       )}
-                      {documentationReport.progressSummary.outcomesMeasurement?.length > 0 && (
-                        <div>
-                          <h5 className="font-medium text-gray-700">Outcomes Measurement</h5>
-                          <ul className="list-disc ml-8 mt-1 text-gray-600">
-                            {documentationReport.progressSummary.outcomesMeasurement.map(
-                              (item, i) => (
-                                <li key={i}>{item}</li>
-                              )
-                            )}
-                          </ul>
-                        </div>
-                      )}
+
+                      {/* Areas of Improvement */}
                       {documentationReport.progressSummary.areasOfImprovement?.length > 0 && (
-                        <div>
-                          <h5 className="font-medium text-gray-700">Areas of Improvement</h5>
-                          <ul className="list-disc ml-8 mt-1 text-gray-600">
-                            {documentationReport.progressSummary.areasOfImprovement.map(
-                              (item, i) => (
-                                <li key={i}>{item}</li>
-                              )
-                            )}
-                          </ul>
+                        <div className="mb-6">
+                          <h5 className="font-medium text-gray-700 mb-2">Areas of Improvement</h5>
+                          <div className="bg-gray-50 p-4 rounded-lg">
+                            <ul className="space-y-2">
+                              {documentationReport.progressSummary.areasOfImprovement.map(
+                                (area, i) => (
+                                  <li key={i} className="flex items-start gap-2">
+                                    <span className="text-yellow-500 mt-1">•</span>
+                                    <span className="text-gray-600">{area}</span>
+                                  </li>
+                                )
+                              )}
+                            </ul>
+                          </div>
                         </div>
                       )}
+
+                      {/* Challenges and Barriers */}
                       {documentationReport.progressSummary.challengesAndBarriers?.length > 0 && (
-                        <div>
-                          <h5 className="font-medium text-gray-700">Challenges and Barriers</h5>
-                          <ul className="list-disc ml-8 mt-1 text-gray-600">
-                            {documentationReport.progressSummary.challengesAndBarriers.map(
-                              (item, i) => (
-                                <li key={i}>{item}</li>
-                              )
-                            )}
-                          </ul>
-                        </div>
-                      )}
-                      {documentationReport.progressSummary.treatmentPlanAdjustments?.length > 0 && (
-                        <div>
-                          <h5 className="font-medium text-gray-700">Treatment Plan Adjustments</h5>
-                          <ul className="list-disc ml-8 mt-1 text-gray-600">
-                            {documentationReport.progressSummary.treatmentPlanAdjustments.map(
-                              (item, i) => (
-                                <li key={i}>{item}</li>
-                              )
-                            )}
-                          </ul>
-                        </div>
-                      )}
-                      {documentationReport.progressSummary.longTermProgressIndicators?.length >
-                        0 && (
-                        <div>
-                          <h5 className="font-medium text-gray-700">
-                            Long-term Progress Indicators
+                        <div className="mb-6">
+                          <h5 className="font-medium text-gray-700 mb-2">
+                            Challenges and Barriers
                           </h5>
-                          <ul className="list-disc ml-8 mt-1 text-gray-600">
-                            {documentationReport.progressSummary.longTermProgressIndicators.map(
-                              (item, i) => (
-                                <li key={i}>{item}</li>
-                              )
-                            )}
-                          </ul>
+                          <div className="bg-gray-50 p-4 rounded-lg">
+                            <ul className="space-y-2">
+                              {documentationReport.progressSummary.challengesAndBarriers.map(
+                                (challenge, i) => (
+                                  <li key={i} className="flex items-start gap-2">
+                                    <span className="text-red-500 mt-1">•</span>
+                                    <span className="text-gray-600">{challenge}</span>
+                                  </li>
+                                )
+                              )}
+                            </ul>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Treatment Plan Adjustments */}
+                      {documentationReport.progressSummary.treatmentPlanAdjustments?.length > 0 && (
+                        <div className="mb-6">
+                          <h5 className="font-medium text-gray-700 mb-2">
+                            Treatment Plan Adjustments
+                          </h5>
+                          <div className="bg-gray-50 p-4 rounded-lg">
+                            <ul className="space-y-2">
+                              {documentationReport.progressSummary.treatmentPlanAdjustments.map(
+                                (adjustment, i) => (
+                                  <li key={i} className="flex items-start gap-2">
+                                    <span className="text-indigo-500 mt-1">•</span>
+                                    <span className="text-gray-600">{adjustment}</span>
+                                  </li>
+                                )
+                              )}
+                            </ul>
+                          </div>
                         </div>
                       )}
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -484,7 +467,7 @@ export default function SessionAIInsights({ session }) {
           } bg-white rounded-lg shadow`}
         >
           <div className="p-6">
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-6">
               <span className="text-2xl">📊</span>
               <div>
                 <h3 className="text-lg font-semibold">Assessment</h3>
@@ -497,69 +480,112 @@ export default function SessionAIInsights({ session }) {
 
             {assessmentReport && (
               <div className="space-y-6">
-                <div className="bg-white p-4 rounded-lg shadow">
-                  <h3 className="text-lg font-semibold mb-2">Initial Assessment Summary</h3>
-                  <div className="space-y-4">
-                    {assessmentReport.riskLevel && (
-                      <div className="flex items-center">
-                        <span className="font-medium mr-2">Risk Level:</span>
-                        <span className={getRiskLevelColor(assessmentReport.riskLevel)}>
-                          {assessmentReport.riskLevel}
-                        </span>
+                {/* Summary Section */}
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="text-md font-semibold text-gray-700 mb-2">Summary</h4>
+                  <p className="text-gray-600 leading-relaxed">{assessmentReport.summary}</p>
+                </div>
+
+                {/* Risk Level and Primary Concerns */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg shadow-sm">
+                    <h4 className="text-md font-semibold text-gray-700 mb-3">Risk Level</h4>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-2xl ${getRiskLevelColor(assessmentReport.riskLevel)}`}>
+                        {assessmentReport.riskLevel === "low" ? "✅" : "⚠️"}
+                      </span>
+                      <span
+                        className={`text-lg font-medium ${getRiskLevelColor(
+                          assessmentReport.riskLevel
+                        )}`}
+                      >
+                        {assessmentReport.riskLevel}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg shadow-sm">
+                    <h4 className="text-md font-semibold text-gray-700 mb-3">Primary Concerns</h4>
+                    <ul className="space-y-2">
+                      {assessmentReport.primaryConcerns.map((concern, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="text-blue-500 mt-1">•</span>
+                          <span className="text-gray-600">{concern}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Risk Factors */}
+                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                  <h4 className="text-md font-semibold text-gray-700 mb-3">Risk Factors</h4>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <ul className="space-y-2">
+                      {assessmentReport.riskFactors.map((factor, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="text-red-500 mt-1">•</span>
+                          <span className="text-gray-600">{factor}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Recommended Assessment Tools */}
+                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                  <h4 className="text-md font-semibold text-gray-700 mb-3">
+                    Recommended Assessment Tools
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {assessmentReport.recommendedAssessmentTools.map((tool, i) => (
+                      <div key={i} className="bg-gray-50 p-3 rounded-lg">
+                        <p className="text-gray-600">{tool}</p>
                       </div>
-                    )}
-                    {assessmentReport.primaryConcerns &&
-                      assessmentReport.primaryConcerns.length > 0 && (
-                        <div>
-                          <span className="font-medium">Primary Concerns:</span>
-                          <ul className="list-disc ml-5 mt-1">
-                            {assessmentReport.primaryConcerns.map((concern, i) => (
-                              <li key={i}>{concern}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    {assessmentReport.recommendedAssessmentTools &&
-                      assessmentReport.recommendedAssessmentTools.length > 0 && (
-                        <div>
-                          <span className="font-medium">Recommended Assessment Tools:</span>
-                          <ul className="list-disc ml-5 mt-1">
-                            {assessmentReport.recommendedAssessmentTools.map((tool, i) => (
-                              <li key={i}>{tool}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    {assessmentReport.initialClinicalObservations && (
-                      <div>
-                        <span className="font-medium">Clinical Observations:</span>
-                        <p className="mt-1 text-gray-700">
-                          {assessmentReport.initialClinicalObservations}
-                        </p>
-                      </div>
-                    )}
-                    {assessmentReport.suggestedNextSteps &&
-                      assessmentReport.suggestedNextSteps.length > 0 && (
-                        <div>
-                          <span className="font-medium">Suggested Next Steps:</span>
-                          <ul className="list-disc ml-5 mt-1">
-                            {assessmentReport.suggestedNextSteps.map((step, i) => (
-                              <li key={i}>{step}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    {assessmentReport.areasRequiringImmediateAttention &&
-                      assessmentReport.areasRequiringImmediateAttention.length > 0 && (
-                        <div>
-                          <span className="font-medium">Areas Requiring Immediate Attention:</span>
-                          <ul className="list-disc ml-5 mt-1 text-red-600">
-                            {assessmentReport.areasRequiringImmediateAttention.map((area, i) => (
-                              <li key={i}>{area}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
+                    ))}
+                  </div>
+                </div>
+
+                {/* Clinical Observations */}
+                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                  <h4 className="text-md font-semibold text-gray-700 mb-3">
+                    Clinical Observations
+                  </h4>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-gray-600 leading-relaxed">
+                      {assessmentReport.initialClinicalObservations}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Suggested Next Steps */}
+                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                  <h4 className="text-md font-semibold text-gray-700 mb-3">Suggested Next Steps</h4>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <ul className="space-y-2">
+                      {assessmentReport.suggestedNextSteps.map((step, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="text-green-500 mt-1">•</span>
+                          <span className="text-gray-600">{step}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Areas Requiring Immediate Attention */}
+                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                  <h4 className="text-md font-semibold text-gray-700 mb-3">
+                    Areas Requiring Immediate Attention
+                  </h4>
+                  <div className="bg-red-50 p-4 rounded-lg">
+                    <ul className="space-y-2">
+                      {assessmentReport.areasRequiringImmediateAttention.map((area, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="text-red-500 mt-1">•</span>
+                          <span className="text-gray-600">{area}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
               </div>
@@ -574,7 +600,7 @@ export default function SessionAIInsights({ session }) {
           } bg-white rounded-lg shadow`}
         >
           <div className="p-6">
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-6">
               <span className="text-2xl">🔍</span>
               <div>
                 <h3 className="text-lg font-semibold">Diagnostic</h3>
@@ -587,56 +613,170 @@ export default function SessionAIInsights({ session }) {
 
             {diagnosticReport && (
               <div className="space-y-6">
-                <div className="bg-white p-4 rounded-lg shadow">
-                  <h3 className="text-lg font-semibold mb-2">Diagnostic Impression</h3>
-                  <div className="space-y-2">
-                    {diagnosticReport.primaryDiagnosis && (
-                      <div>
-                        <span className="font-medium">Primary Diagnosis:</span>
-                        <div className="mt-1">
-                          <p className="font-medium">{diagnosticReport.primaryDiagnosis.name}</p>
-                          <p className="text-sm text-gray-600">
+                {/* Summary Section */}
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="text-md font-semibold text-gray-700 mb-2">Summary</h4>
+                  <p className="text-gray-600 leading-relaxed">{diagnosticReport.summary}</p>
+                </div>
+
+                {/* Primary Diagnosis */}
+                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                  <h4 className="text-md font-semibold text-gray-700 mb-3">Primary Diagnosis</h4>
+                  <div className="space-y-4">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-medium text-gray-700">
+                            {diagnosticReport.primaryDiagnosis.name}
+                          </p>
+                          <p className="text-sm text-gray-500">
                             Code: {diagnosticReport.primaryDiagnosis.code}
                           </p>
-                          {diagnosticReport.primaryDiagnosis.description && (
-                            <p className="text-sm text-gray-600 mt-1">
-                              {diagnosticReport.primaryDiagnosis.description}
-                            </p>
-                          )}
                         </div>
+                        <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                          {diagnosticReport.primaryDiagnosis.confidence} confidence
+                        </span>
                       </div>
-                    )}
-                    {diagnosticReport.differentialDiagnoses &&
-                      diagnosticReport.differentialDiagnoses.length > 0 && (
-                        <div>
-                          <span className="font-medium">Differential Diagnoses:</span>
-                          <ul className="list-disc ml-5 mt-1">
-                            {diagnosticReport.differentialDiagnoses.map((diagnosis, i) => (
-                              <li key={i}>{diagnosis}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    {diagnosticReport.severityIndicators &&
-                      diagnosticReport.severityIndicators.length > 0 && (
-                        <div>
-                          <span className="font-medium">Severity Indicators:</span>
-                          <ul className="list-disc ml-5 mt-1">
-                            {diagnosticReport.severityIndicators.map((indicator, i) => (
-                              <li key={i}>{indicator}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    {diagnosticReport.clinicalJustification && (
-                      <div>
-                        <span className="font-medium">Clinical Justification:</span>
-                        <p className="mt-1 text-gray-700">
-                          {diagnosticReport.clinicalJustification}
-                        </p>
-                      </div>
-                    )}
+                      <p className="text-gray-600 mt-2">
+                        {diagnosticReport.primaryDiagnosis.rationale}
+                      </p>
+                    </div>
+
+                    {/* Diagnostic Criteria */}
+                    <div>
+                      <h5 className="text-sm font-medium text-gray-700 mb-2">
+                        Diagnostic Criteria
+                      </h5>
+                      <ul className="space-y-2">
+                        {diagnosticReport.primaryDiagnosis.criteria.map((criterion, i) => (
+                          <li key={i} className="flex items-start gap-2">
+                            <span className="text-blue-500 mt-1">•</span>
+                            <span className="text-gray-600">{criterion}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
+                </div>
+
+                {/* Rule Out Conditions */}
+                {diagnosticReport.ruleOutConditions?.length > 0 && (
+                  <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                    <h4 className="text-md font-semibold text-gray-700 mb-3">
+                      Rule Out Conditions
+                    </h4>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <ul className="space-y-2">
+                        {diagnosticReport.ruleOutConditions.map((condition, i) => (
+                          <li key={i} className="flex items-start gap-2">
+                            <span className="text-red-500 mt-1">•</span>
+                            <span className="text-gray-600">{condition}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                {/* Severity and Risk Factors */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-lg shadow-sm">
+                    <h4 className="text-md font-semibold text-gray-700 mb-3">
+                      Severity Indicators
+                    </h4>
+                    <ul className="space-y-2">
+                      {diagnosticReport.severityIndicators.map((indicator, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="text-yellow-500 mt-1">•</span>
+                          <span className="text-gray-600">{indicator}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-lg shadow-sm">
+                    <h4 className="text-md font-semibold text-gray-700 mb-3">Risk Factors</h4>
+                    <ul className="space-y-2">
+                      {diagnosticReport.riskFactors.map((factor, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="text-red-500 mt-1">•</span>
+                          <span className="text-gray-600">{factor}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Recommended Assessments */}
+                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                  <h4 className="text-md font-semibold text-gray-700 mb-3">
+                    Recommended Assessments
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {diagnosticReport.recommendedAssessments.map((assessment, i) => (
+                      <div key={i} className="bg-gray-50 p-3 rounded-lg">
+                        <p className="text-gray-600">{assessment}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Clinical Justification */}
+                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                  <h4 className="text-md font-semibold text-gray-700 mb-3">
+                    Clinical Justification
+                  </h4>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-gray-600 leading-relaxed">
+                      {diagnosticReport.clinicalJustification}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Treatment Implications */}
+                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                  <h4 className="text-md font-semibold text-gray-700 mb-3">
+                    Treatment Implications
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {diagnosticReport.treatmentImplications.map((implication, i) => (
+                      <div key={i} className="bg-gray-50 p-3 rounded-lg">
+                        <p className="text-gray-600">{implication}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Comorbidity Assessment */}
+                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                  <h4 className="text-md font-semibold text-gray-700 mb-3">
+                    Comorbidity Assessment
+                  </h4>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`text-xl ${
+                          diagnosticReport.comorbidityAssessment.present
+                            ? "text-yellow-500"
+                            : "text-green-500"
+                        }`}
+                      >
+                        {diagnosticReport.comorbidityAssessment.present ? "⚠️" : "✅"}
+                      </span>
+                      <p className="text-gray-600">
+                        {diagnosticReport.comorbidityAssessment.present
+                          ? "Additional comorbid conditions present"
+                          : "No comorbid conditions identified"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Diagnostic Summary */}
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="text-md font-semibold text-gray-700 mb-2">Diagnostic Summary</h4>
+                  <p className="text-gray-600 leading-relaxed">
+                    {diagnosticReport.diagnosticSummary}
+                  </p>
                 </div>
               </div>
             )}
@@ -648,10 +788,10 @@ export default function SessionAIInsights({ session }) {
           className={`${activeTab === "treatment" ? "block" : "hidden"} bg-white rounded-lg shadow`}
         >
           <div className="p-6">
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-6">
               <span className="text-2xl">💡</span>
               <div>
-                <h3 className="text-lg font-semibold">Treatment</h3>
+                <h3 className="text-lg font-semibold">Treatment Plan</h3>
                 <p className="text-sm text-gray-500">
                   Treatment plan development, intervention recommendations, and goal setting
                 </p>
@@ -660,91 +800,134 @@ export default function SessionAIInsights({ session }) {
 
             {treatmentReport && (
               <div className="space-y-6">
-                <div className="bg-white p-4 rounded-lg shadow">
-                  <h3 className="text-lg font-semibold mb-4">Treatment Plan</h3>
+                {/* Summary Section */}
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="text-md font-semibold text-gray-700 mb-2">Summary</h4>
+                  <p className="text-gray-600 leading-relaxed">{treatmentReport.summary}</p>
+                </div>
+
+                {/* Goals Section */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg shadow-sm">
+                    <h4 className="text-md font-semibold text-gray-700 mb-3">Short-term Goals</h4>
+                    <ul className="space-y-2">
+                      {treatmentReport.goals.shortTerm.map((goal, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="text-green-500 mt-1">•</span>
+                          <span className="text-gray-600">{goal}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg shadow-sm">
+                    <h4 className="text-md font-semibold text-gray-700 mb-3">Long-term Goals</h4>
+                    <ul className="space-y-2">
+                      {treatmentReport.goals.longTerm.map((goal, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="text-blue-500 mt-1">•</span>
+                          <span className="text-gray-600">{goal}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Interventions Section */}
+                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                  <h4 className="text-md font-semibold text-gray-700 mb-3">Interventions</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {treatmentReport.interventions.map((intervention, i) => (
+                      <div key={i} className="bg-gray-50 p-3 rounded-lg">
+                        <p className="text-gray-600">{intervention}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Timeline Section */}
+                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                  <h4 className="text-md font-semibold text-gray-700 mb-3">Treatment Timeline</h4>
                   <div className="space-y-4">
-                    {/* <div>
-                      <h4 className="text-md font-semibold text-gray-700 mb-2">Current Focus</h4>
-                      <p className="text-gray-600">
-                        {treatmentReport.currentFocus || "Not defined"}
-                      </p>
-                    </div> */}
-                    <div>
-                      <h4 className="text-md font-semibold text-gray-700 mb-2">Treatment Goals</h4>
-                      {Array.isArray(treatmentReport.goals) ? (
-                        <ul className="list-disc ml-4 text-gray-600">
-                          {treatmentReport.goals.map((goal, i) => (
-                            <li key={i}>{goal}</li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="text-gray-600">No goals defined</p>
-                      )}
-                    </div>
-                    <div>
-                      <h4 className="text-md font-semibold text-gray-700 mb-2">Interventions</h4>
-                      {Array.isArray(treatmentReport.interventions) ? (
-                        <ul className="list-disc ml-4 text-gray-600">
-                          {treatmentReport.interventions.map((intervention, i) => (
-                            <li key={i}>{intervention}</li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="text-gray-600">No interventions defined</p>
-                      )}
-                    </div>
-                    <div>
-                      <h4 className="text-md font-semibold text-gray-700 mb-2">
-                        Recommended Approaches
-                      </h4>
-                      {Array.isArray(treatmentReport.recommendedApproaches) ? (
-                        <ul className="list-disc ml-4 text-gray-600">
-                          {treatmentReport.recommendedApproaches.map((approach, i) => (
-                            <li key={i}>{approach}</li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="text-gray-600">No approaches defined</p>
-                      )}
-                    </div>
-                    <div>
-                      <h4 className="text-md font-semibold text-gray-700 mb-2">Success Metrics</h4>
-                      {Array.isArray(treatmentReport.successMetrics) ? (
-                        <ul className="list-disc ml-4 text-gray-600">
-                          {treatmentReport.successMetrics.map((metric, i) => (
-                            <li key={i}>{metric}</li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="text-gray-600">No metrics defined</p>
-                      )}
-                    </div>
-                    <div>
-                      <h4 className="text-md font-semibold text-gray-700 mb-2">
-                        Potential Barriers
-                      </h4>
-                      {Array.isArray(treatmentReport.potentialBarriers) ? (
-                        <ul className="list-disc ml-4 text-gray-600">
-                          {treatmentReport.potentialBarriers.map((barrier, i) => (
-                            <li key={i}>{barrier}</li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="text-gray-600">No barriers identified</p>
-                      )}
-                    </div>
-                    <div>
-                      <h4 className="text-md font-semibold text-gray-700 mb-2">Next Steps</h4>
-                      {Array.isArray(treatmentReport.nextSteps) ? (
-                        <ul className="list-disc ml-4 text-gray-600">
-                          {treatmentReport.nextSteps.map((step, i) => (
-                            <li key={i}>{step}</li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="text-gray-600">No next steps defined</p>
-                      )}
-                    </div>
+                    {treatmentReport.timeline.map((item, i) => (
+                      <div key={i} className="flex items-start gap-4">
+                        <div className="flex-shrink-0 w-24 text-sm font-medium text-gray-500">
+                          {item.timeframe}
+                        </div>
+                        <div className="flex-grow bg-gray-50 p-3 rounded-lg">
+                          <p className="text-gray-600">{item.milestone}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Outcomes and Metrics Section */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg shadow-sm">
+                    <h4 className="text-md font-semibold text-gray-700 mb-3">
+                      Measurable Outcomes
+                    </h4>
+                    <ul className="space-y-2">
+                      {treatmentReport.measurableOutcomes.map((outcome, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="text-purple-500 mt-1">•</span>
+                          <span className="text-gray-600">{outcome}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-lg shadow-sm">
+                    <h4 className="text-md font-semibold text-gray-700 mb-3">
+                      Progress Indicators
+                    </h4>
+                    <ul className="space-y-2">
+                      {treatmentReport.progressIndicators.map((indicator, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="text-yellow-500 mt-1">•</span>
+                          <span className="text-gray-600">{indicator}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Recommended Approaches */}
+                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                  <h4 className="text-md font-semibold text-gray-700 mb-3">
+                    Recommended Approaches
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {treatmentReport.recommendedApproaches.map((approach, i) => (
+                      <div key={i} className="bg-gray-50 p-3 rounded-lg">
+                        <p className="text-gray-600">{approach}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Success Metrics and Barriers */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg shadow-sm">
+                    <h4 className="text-md font-semibold text-gray-700 mb-3">Success Metrics</h4>
+                    <ul className="space-y-2">
+                      {treatmentReport.successMetrics.map((metric, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="text-green-500 mt-1">•</span>
+                          <span className="text-gray-600">{metric}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-lg shadow-sm">
+                    <h4 className="text-md font-semibold text-gray-700 mb-3">Potential Barriers</h4>
+                    <ul className="space-y-2">
+                      {treatmentReport.potentialBarriers.map((barrier, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="text-red-500 mt-1">•</span>
+                          <span className="text-gray-600">{barrier}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
               </div>
@@ -757,7 +940,7 @@ export default function SessionAIInsights({ session }) {
           className={`${activeTab === "progress" ? "block" : "hidden"} bg-white rounded-lg shadow`}
         >
           <div className="p-6">
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-6">
               <span className="text-2xl">📈</span>
               <div>
                 <h3 className="text-lg font-semibold">Progress</h3>
@@ -770,48 +953,73 @@ export default function SessionAIInsights({ session }) {
 
             {progressReport && (
               <div className="space-y-6">
-                <div className="bg-white p-4 rounded-lg shadow">
-                  <h3 className="text-lg font-semibold mb-4">Progress Notes</h3>
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                  <h3 className="text-lg font-semibold mb-6 text-gray-800">Progress Report</h3>
 
                   {/* Summary */}
                   {progressReport.summary && (
-                    <div className="mb-4">
+                    <div className="mb-8 bg-blue-50 p-4 rounded-lg">
                       <h4 className="text-md font-semibold text-gray-700 mb-2">Summary</h4>
-                      <p className="text-gray-600">{progressReport.summary}</p>
+                      <p className="text-gray-600 leading-relaxed">{progressReport.summary}</p>
                     </div>
                   )}
 
-                  {/* Progress Summary */}
-                  {progressReport.progressSummary && (
-                    <div className="mb-4">
-                      <h4 className="text-md font-semibold text-gray-700 mb-2">Progress Summary</h4>
-                      <p className="text-gray-600">{progressReport.progressSummary}</p>
+                  {/* Metrics */}
+                  {progressReport.metrics && (
+                    <div className="mb-8">
+                      <h4 className="text-md font-semibold text-gray-700 mb-4">Progress Metrics</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg shadow-sm">
+                          <p className="text-sm text-gray-600 mb-1">Overall Progress</p>
+                          <p className="text-2xl font-bold text-blue-700">
+                            {progressReport.metrics.overallProgress}%
+                          </p>
+                        </div>
+                        <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg shadow-sm">
+                          <p className="text-sm text-gray-600 mb-1">Symptom Severity</p>
+                          <p className="text-2xl font-bold text-green-700">
+                            {progressReport.metrics.symptomSeverity}/10
+                          </p>
+                        </div>
+                        <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-lg shadow-sm">
+                          <p className="text-sm text-gray-600 mb-1">Treatment Adherence</p>
+                          <p className="text-2xl font-bold text-yellow-700">
+                            {progressReport.metrics.treatmentAdherence}%
+                          </p>
+                        </div>
+                        <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-lg shadow-sm">
+                          <p className="text-sm text-gray-600 mb-1">Risk Level</p>
+                          <p className="text-2xl font-bold text-red-700">
+                            {progressReport.metrics.riskLevel}/10
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   )}
 
                   {/* Goal Achievement Status */}
                   {progressReport.goalAchievementStatus?.length > 0 && (
-                    <div className="mb-6">
-                      <h4 className="text-md font-semibold text-gray-700 mb-2">
+                    <div className="mb-8">
+                      <h4 className="text-md font-semibold text-gray-700 mb-4">
                         Goal Achievement Status
                       </h4>
                       <div className="space-y-4">
                         {progressReport.goalAchievementStatus.map((goal, i) => (
-                          <div key={i} className="border-l-4 border-blue-200 pl-4">
-                            <h5 className="font-medium text-gray-700">{goal.goal}</h5>
-                            <div className="mt-2 space-y-2">
-                              <p className="text-gray-600">
-                                <span className="font-medium">Status: </span>
-                                <span className={getProgressStatusColor(goal.status)}>
-                                  {goal.status}
-                                </span>
-                              </p>
-                              {goal.notes && (
-                                <p className="text-gray-600">
-                                  <span className="font-medium">Notes: </span>
-                                  {goal.notes}
-                                </p>
-                              )}
+                          <div key={i} className="bg-gray-50 p-4 rounded-lg">
+                            <p className="font-medium text-gray-700 mb-2">{goal.goal}</p>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                  goal.status.toLowerCase() === "achieved"
+                                    ? "bg-green-100 text-green-800"
+                                    : goal.status.toLowerCase() === "in progress"
+                                    ? "bg-blue-100 text-blue-800"
+                                    : "bg-gray-100 text-gray-800"
+                                }`}
+                              >
+                                {goal.status}
+                              </span>
+                              {goal.notes && <p className="text-sm text-gray-600">{goal.notes}</p>}
                             </div>
                           </div>
                         ))}
@@ -821,153 +1029,184 @@ export default function SessionAIInsights({ session }) {
 
                   {/* Key Observations */}
                   {progressReport.keyObservations?.length > 0 && (
-                    <div className="mb-6">
-                      <h4 className="text-md font-semibold text-gray-700 mb-2">Key Observations</h4>
-                      <ul className="list-disc ml-8 space-y-2 text-gray-600">
-                        {progressReport.keyObservations.map((observation, i) => (
-                          <li key={i}>{observation}</li>
-                        ))}
-                      </ul>
+                    <div className="mb-8">
+                      <h4 className="text-md font-semibold text-gray-700 mb-4">Key Observations</h4>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <ul className="space-y-2">
+                          {progressReport.keyObservations.map((observation, i) => (
+                            <li key={i} className="flex items-start gap-2">
+                              <span className="text-blue-500 mt-1">•</span>
+                              <span className="text-gray-600">{observation}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
                   )}
 
                   {/* Treatment Effectiveness */}
                   {progressReport.treatmentEffectiveness && (
-                    <div className="mb-6">
-                      <h4 className="text-md font-semibold text-gray-700 mb-2">
+                    <div className="mb-8">
+                      <h4 className="text-md font-semibold text-gray-700 mb-4">
                         Treatment Effectiveness
                       </h4>
-                      <p className="text-gray-600">{progressReport.treatmentEffectiveness}</p>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <p className="text-gray-600 leading-relaxed">
+                          {progressReport.treatmentEffectiveness}
+                        </p>
+                      </div>
                     </div>
                   )}
 
-                  {/* Identified Barriers */}
-                  {progressReport.identifiedBarriers?.length > 0 && (
-                    <div className="mb-6">
-                      <h4 className="text-md font-semibold text-gray-700 mb-2">
-                        Identified Barriers
-                      </h4>
-                      <ul className="list-disc ml-8 space-y-2 text-gray-600">
-                        {progressReport.identifiedBarriers.map((barrier, i) => (
-                          <li key={i}>{barrier}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                  {/* Grid Layout for Multiple Sections */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    {/* Identified Barriers */}
+                    {progressReport.identifiedBarriers?.length > 0 && (
+                      <div>
+                        <h4 className="text-md font-semibold text-gray-700 mb-4">
+                          Identified Barriers
+                        </h4>
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <ul className="space-y-2">
+                            {progressReport.identifiedBarriers.map((barrier, i) => (
+                              <li key={i} className="flex items-start gap-2">
+                                <span className="text-red-500 mt-1">•</span>
+                                <span className="text-gray-600">{barrier}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    )}
 
-                  {/* Areas of Improvement */}
-                  {progressReport.areasOfImprovement?.length > 0 && (
-                    <div className="mb-6">
-                      <h4 className="text-md font-semibold text-gray-700 mb-2">
-                        Areas of Improvement
-                      </h4>
-                      <ul className="list-disc ml-8 space-y-2 text-gray-600">
-                        {progressReport.areasOfImprovement.map((area, i) => (
-                          <li key={i}>{area}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                    {/* Areas of Improvement */}
+                    {progressReport.areasOfImprovement?.length > 0 && (
+                      <div>
+                        <h4 className="text-md font-semibold text-gray-700 mb-4">
+                          Areas of Improvement
+                        </h4>
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <ul className="space-y-2">
+                            {progressReport.areasOfImprovement.map((area, i) => (
+                              <li key={i} className="flex items-start gap-2">
+                                <span className="text-green-500 mt-1">•</span>
+                                <span className="text-gray-600">{area}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    )}
 
-                  {/* Areas Needing Focus */}
-                  {progressReport.areasNeedingFocus?.length > 0 && (
-                    <div className="mb-6">
-                      <h4 className="text-md font-semibold text-gray-700 mb-2">
-                        Areas Needing Focus
-                      </h4>
-                      <ul className="list-disc ml-8 space-y-2 text-gray-600">
-                        {progressReport.areasNeedingFocus.map((area, i) => (
-                          <li key={i}>{area}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                    {/* Areas Needing Focus */}
+                    {progressReport.areasNeedingFocus?.length > 0 && (
+                      <div>
+                        <h4 className="text-md font-semibold text-gray-700 mb-4">
+                          Areas Needing Focus
+                        </h4>
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <ul className="space-y-2">
+                            {progressReport.areasNeedingFocus.map((area, i) => (
+                              <li key={i} className="flex items-start gap-2">
+                                <span className="text-yellow-500 mt-1">•</span>
+                                <span className="text-gray-600">{area}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    )}
 
-                  {/* Recommendations */}
-                  {progressReport.recommendations?.length > 0 && (
-                    <div className="mb-6">
-                      <h4 className="text-md font-semibold text-gray-700 mb-2">Recommendations</h4>
-                      <ul className="list-disc ml-8 space-y-2 text-gray-600">
-                        {progressReport.recommendations.map((recommendation, i) => (
-                          <li key={i}>{recommendation}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                    {/* Recommendations */}
+                    {progressReport.recommendations?.length > 0 && (
+                      <div>
+                        <h4 className="text-md font-semibold text-gray-700 mb-4">
+                          Recommendations
+                        </h4>
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <ul className="space-y-2">
+                            {progressReport.recommendations.map((recommendation, i) => (
+                              <li key={i} className="flex items-start gap-2">
+                                <span className="text-blue-500 mt-1">•</span>
+                                <span className="text-gray-600">{recommendation}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
                   {/* Next Steps */}
                   {progressReport.nextSteps?.length > 0 && (
-                    <div className="mb-6">
-                      <h4 className="text-md font-semibold text-gray-700 mb-2">Next Steps</h4>
-                      <ul className="list-disc ml-8 space-y-2 text-gray-600">
-                        {progressReport.nextSteps.map((step, i) => (
-                          <li key={i}>{step}</li>
-                        ))}
-                      </ul>
+                    <div className="mb-8">
+                      <h4 className="text-md font-semibold text-gray-700 mb-4">Next Steps</h4>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <ul className="space-y-2">
+                          {progressReport.nextSteps.map((step, i) => (
+                            <li key={i} className="flex items-start gap-2">
+                              <span className="text-purple-500 mt-1">•</span>
+                              <span className="text-gray-600">{step}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
                   )}
 
                   {/* Treatment Plan Adjustments */}
-                  {progressReport.adjustmentsToTreatmentPlan?.length > 0 && (
-                    <div className="mb-6">
-                      <h4 className="text-md font-semibold text-gray-700 mb-2">
+                  {progressReport.treatmentPlanAdjustments?.length > 0 && (
+                    <div className="mb-8">
+                      <h4 className="text-md font-semibold text-gray-700 mb-4">
                         Treatment Plan Adjustments
                       </h4>
-                      <ul className="list-disc ml-8 space-y-2 text-gray-600">
-                        {progressReport.adjustmentsToTreatmentPlan.map((adjustment, i) => (
-                          <li key={i}>{adjustment}</li>
-                        ))}
-                      </ul>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <ul className="space-y-2">
+                          {progressReport.treatmentPlanAdjustments.map((adjustment, i) => (
+                            <li key={i} className="flex items-start gap-2">
+                              <span className="text-indigo-500 mt-1">•</span>
+                              <span className="text-gray-600">{adjustment}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
                   )}
 
                   {/* Reassessment Recommendation */}
                   {progressReport.recommendReassessment !== undefined && (
-                    <div
-                      className={`p-4 mb-6 rounded-lg ${
-                        progressReport.recommendReassessment
-                          ? "bg-yellow-50 border border-yellow-200"
-                          : "bg-green-50 border border-green-200"
-                      }`}
-                    >
-                      <h4 className="text-md font-semibold mb-2">
-                        {progressReport.recommendReassessment
-                          ? "🔔 Reassessment Recommended"
-                          : "✅ No Reassessment Needed"}
+                    <div className="mb-8">
+                      <h4 className="text-md font-semibold text-gray-700 mb-4">
+                        Reassessment Recommendation
                       </h4>
-                      {progressReport.reassessmentRationale && (
-                        <p className="text-gray-700">{progressReport.reassessmentRationale}</p>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Metrics */}
-                  {progressReport.metrics && (
-                    <div className="mb-6">
-                      <h4 className="text-md font-semibold text-gray-700 mb-2">Progress Metrics</h4>
-                      <div className="grid grid-cols-2 gap-4">
-                        {/* Convert metrics object to array if needed */}
-                        {Array.isArray(progressReport.metrics)
-                          ? progressReport.metrics.map((metric, i) => (
-                              <div key={i} className="flex items-center">
-                                <span className="font-medium mr-2">{metric.name}:</span>
-                                <span className={getChangeColor(metric.change)}>
-                                  {metric.value}
-                                </span>
-                              </div>
-                            ))
-                          : /* Handle metrics as an object */
-                            Object.entries(progressReport.metrics).map(([key, value]) => (
-                              <div key={key} className="flex items-center">
-                                <span className="font-medium mr-2">
-                                  {key
-                                    .replace(/([A-Z])/g, " $1")
-                                    .replace(/^./, (str) => str.toUpperCase())}
-                                  :
-                                </span>
-                                <span>{value}</span>
-                              </div>
-                            ))}
+                      <div
+                        className={`p-4 rounded-lg ${
+                          progressReport.recommendReassessment
+                            ? "bg-yellow-50 border border-yellow-200"
+                            : "bg-green-50 border border-green-200"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <span
+                            className={`text-xl ${
+                              progressReport.recommendReassessment
+                                ? "text-yellow-500"
+                                : "text-green-500"
+                            }`}
+                          >
+                            {progressReport.recommendReassessment ? "⚠️" : "✅"}
+                          </span>
+                          <p className="font-medium text-gray-700">
+                            {progressReport.recommendReassessment
+                              ? "Reassessment Recommended"
+                              : "No Reassessment Needed"}
+                          </p>
+                        </div>
+                        {progressReport.reassessmentRationale && (
+                          <p className="text-gray-600 pl-8">
+                            {progressReport.reassessmentRationale}
+                          </p>
+                        )}
                       </div>
                     </div>
                   )}

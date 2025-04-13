@@ -29,14 +29,14 @@ export default function SessionPrepView({ clientId, sessionId }) {
 
         // If no session-specific report found and we were looking for one,
         // fall back to the most recent AI treatment report for this client
-        if ((!data || !data.reports || data.reports.length === 0) && sessionId) {
-          const fallbackUrl = `/api/clients/${clientId}/ai-reports?type=treatment&limit=1`;
-          const fallbackResponse = await fetch(fallbackUrl);
+        // if ((!data || !data.reports || data.reports.length === 0) && sessionId) {
+        //   const fallbackUrl = `/api/clients/${clientId}/ai-reports?type=treatment&limit=1`;
+        //   const fallbackResponse = await fetch(fallbackUrl);
 
-          if (fallbackResponse.ok) {
-            data = await fallbackResponse.json();
-          }
-        }
+        //   if (fallbackResponse.ok) {
+        //     data = await fallbackResponse.json();
+        //   }
+        // }
 
         if (data && data.reports && data.reports.length > 0) {
           setSessionPrep(data.reports[0]);

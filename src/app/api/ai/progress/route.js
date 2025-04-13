@@ -5,46 +5,6 @@ import { connectDB } from "@/lib/mongodb";
 import AIReport from "@/models/aiReport";
 import Session from "@/models/session";
 
-// Helper function to fetch relevant historical data
-async function fetchHistoricalData(clientId, currentSessionDate) {
-  await connectDB();
-
-  // Get last 3 sessions before current session
-  const LIMIT = 3;
-  const previousSessions = await Session.find({
-    clientId,
-    date: { $lt: currentSessionDate },
-  })
-    .sort({ date: -1 })
-    .limit(LIMIT)
-    .select("date moodRating notes")
-    .lean();
-
-  // Get previous progress analyses
-  const previousAnalyses = await AIReport.find({
-    clientId,
-    type: "progress",
-    "metadata.timestamp": { $lt: currentSessionDate },
-  })
-    .sort({ "metadata.timestamp": -1 })
-    .limit(LIMIT)
-    .select("content.metrics content.summary metadata.timestamp")
-    .lean();
-
-  return {
-    previousSessions: previousSessions.map((session) => ({
-      date: session.date,
-      moodRating: session.moodRating,
-      keyNotes: session.notes?.substring(0, 200), // Limit note length
-    })),
-    previousAnalyses: previousAnalyses.map((analysis) => ({
-      timestamp: analysis.metadata.timestamp,
-      metrics: analysis.content.metrics,
-      summary: analysis.content.summary,
-    })),
-  };
-}
-
 export async function POST(req) {
   try {
     const session = await getSession();
@@ -67,10 +27,6 @@ export async function POST(req) {
     if (!clientId || !sessionData) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
-
-    // Fetch historical data
-    const historicalData = await fetchHistoricalData(clientId, sessionData.date);
-    console.log("Historical Data:", historicalData);
 
     // Process through AI
     const systemPrompt = {
