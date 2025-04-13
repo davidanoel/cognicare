@@ -4,8 +4,18 @@ import { useState, useEffect } from "react";
 import { useAIWorkflow } from "@/app/context/AIWorkflowContext";
 
 export default function AIWorkflow({ client, session, updateFunction }) {
-  const { status, setStatus, results, setResults, activeStage, setActiveStage, error, setError } =
-    useAIWorkflow();
+  const {
+    status,
+    setStatus,
+    results,
+    setResults,
+    activeStage,
+    setActiveStage,
+    error,
+    setError,
+    updateState,
+    resetState,
+  } = useAIWorkflow();
   const [reassessmentRecommended, setReassessmentRecommended] = useState(false);
   const [reassessmentRationale, setReassessmentRationale] = useState("");
 
@@ -15,6 +25,12 @@ export default function AIWorkflow({ client, session, updateFunction }) {
       clientId: client?._id,
       sessionId: session?._id,
     });
+
+    // Cleanup function to reset state when component unmounts
+    return () => {
+      console.log("AIWorkflow component unmounting, resetting state");
+      resetState();
+    };
   }, []);
 
   // Check if the client has a reassessment recommendation
@@ -45,10 +61,12 @@ export default function AIWorkflow({ client, session, updateFunction }) {
     }
 
     console.log("Starting workflow:", { stage, options });
-    setStatus("loading");
-    setActiveStage(stage);
-    setError(null);
-    setResults(null);
+    updateState({
+      status: "loading",
+      activeStage: stage,
+      error: null,
+      results: null,
+    });
 
     try {
       console.log("Triggering workflow:", { stage, options, client, session });
@@ -93,14 +111,20 @@ export default function AIWorkflow({ client, session, updateFunction }) {
         reassessmentRationale: data.reassessmentRationale,
         progressResults: data.progressResults,
         documentationResults: data.documentationResults,
+        treatmentResults: data.treatmentResults,
       };
       console.log("Setting results:", newResults);
-      setResults(newResults);
-      setStatus("success");
+      updateState({
+        results: newResults,
+        status: "success",
+        activeStage: stage,
+      });
     } catch (err) {
       console.error("Workflow error:", err);
-      setError(err.message);
-      setStatus("error");
+      updateState({
+        error: err.message,
+        status: "error",
+      });
     }
   };
 
@@ -254,13 +278,6 @@ export default function AIWorkflow({ client, session, updateFunction }) {
               </p>
             </div>
           )}
-
-          <button
-            className="mt-2 text-blue-600 hover:text-blue-800 text-xs"
-            onClick={() => setResults(null)}
-          >
-            Clear
-          </button>
         </div>
       )}
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useCallback } from "react";
 
 const AIWorkflowContext = createContext();
 
@@ -9,6 +9,23 @@ export function AIWorkflowProvider({ children }) {
   const [results, setResults] = useState(null);
   const [activeStage, setActiveStage] = useState(null);
   const [error, setError] = useState(null);
+
+  const updateState = useCallback(
+    (newState) => {
+      setStatus(newState.status || status);
+      setResults(newState.results || results);
+      setActiveStage(newState.activeStage || activeStage);
+      setError(newState.error || error);
+    },
+    [status, results, activeStage, error]
+  );
+
+  const resetState = useCallback(() => {
+    setStatus("idle");
+    setResults(null);
+    setActiveStage(null);
+    setError(null);
+  }, []);
 
   return (
     <AIWorkflowContext.Provider
@@ -21,6 +38,8 @@ export function AIWorkflowProvider({ children }) {
         setActiveStage,
         error,
         setError,
+        updateState,
+        resetState,
       }}
     >
       {children}
