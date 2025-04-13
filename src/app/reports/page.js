@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { format } from "date-fns";
+import { useSession } from "next-auth/react";
 
 export default function ReportsPage() {
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [reports, setReports] = useState([]);
   const [filteredReports, setFilteredReports] = useState([]);
@@ -17,32 +19,34 @@ export default function ReportsPage() {
   const [showDebug, setShowDebug] = useState(false);
 
   useEffect(() => {
-    const fetchReports = async () => {
-      try {
-        console.log("Fetching all reports");
-        const response = await fetch("/api/reports");
-        console.log("API Response status:", response.status);
-        const data = await response.json();
-        console.log("API Response data:", data);
+    if (status === "unauthenticated") {
+      router.push("/login");
+      return;
+    }
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch reports");
+    if (status === "authenticated") {
+      const fetchReports = async () => {
+        try {
+          setIsLoading(true);
+          const response = await fetch("/api/reports");
+          if (!response.ok) {
+            throw new Error("Failed to fetch reports");
+          }
+          const data = await response.json();
+          const reportsArray = Array.isArray(data) ? data : [];
+          setReports(reportsArray);
+          setFilteredReports(reportsArray);
+        } catch (err) {
+          console.error("Error fetching reports:", err);
+          setError(err.message);
+        } finally {
+          setIsLoading(false);
         }
+      };
 
-        // Ensure data is an array
-        const reportsArray = Array.isArray(data) ? data : [];
-        setReports(reportsArray);
-        setFilteredReports(reportsArray);
-      } catch (err) {
-        console.error("Error fetching reports:", err);
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchReports();
-  }, []);
+      fetchReports();
+    }
+  }, [status, router]);
 
   useEffect(() => {
     let filtered = [...reports];
@@ -109,10 +113,13 @@ export default function ReportsPage() {
     }
   };
 
-  if (isLoading) {
+  if (status === "loading" || isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading reports...</p>
+        </div>
       </div>
     );
   }

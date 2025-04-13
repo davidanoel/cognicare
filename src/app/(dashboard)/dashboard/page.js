@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 export default function DashboardPage() {
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [stats, setStats] = useState({
     totalClients: 0,
@@ -15,20 +17,45 @@ export default function DashboardPage() {
     completedSessions: 0,
     reportsGenerated: 0,
   });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await fetch("/api/dashboard/stats");
-        const data = await response.json();
-        setStats(data);
-      } catch (error) {
-        console.error("Error fetching dashboard stats:", error);
-      }
-    };
+    if (status === "unauthenticated") {
+      router.push("/login");
+      return;
+    }
 
-    fetchStats();
-  }, []);
+    if (status === "authenticated") {
+      const fetchStats = async () => {
+        try {
+          setIsLoading(true);
+          const response = await fetch("/api/dashboard/stats");
+          if (!response.ok) {
+            throw new Error("Failed to fetch stats");
+          }
+          const data = await response.json();
+          setStats(data);
+        } catch (error) {
+          console.error("Error fetching dashboard stats:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      fetchStats();
+    }
+  }, [status, router]);
+
+  if (status === "loading" || isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleActivityClick = (activity) => {
     if (activity.type === "session") {
