@@ -323,7 +323,7 @@ export default function ClientInsights({ clientId }) {
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
               <span className="text-xl">📋</span> Treatment Plan Overview
-            </h3>
+          </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <h4 className="font-medium text-gray-700 mb-2">Current Interventions</h4>
@@ -809,9 +809,9 @@ export default function ClientInsights({ clientId }) {
                 ))}
               </div>
             </div>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       {activeTab === "progress" && !progressContent && (
         <div className="bg-blue-100 p-4 rounded-lg">
@@ -835,9 +835,9 @@ export default function ClientInsights({ clientId }) {
             >
               Go to AI Assistant
             </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       {activeTab === "progress" && progressContent && (
         <div className="bg-white shadow-lg rounded-xl p-8">
@@ -863,7 +863,7 @@ export default function ClientInsights({ clientId }) {
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="text-xl">📊</span> Progress Metrics
-              </h3>
+            </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <h4 className="text-sm font-medium text-gray-700 mb-1">Overall Progress</h4>
@@ -902,24 +902,24 @@ export default function ClientInsights({ clientId }) {
                   <div key={index} className="bg-gray-50 p-4 rounded-lg">
                     <div className="flex justify-between items-start">
                       <p className="text-gray-700 font-medium">{goal.goal}</p>
-                      <span
+                        <span
                         className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          goal.status === "Achieved"
-                            ? "bg-green-100 text-green-800"
-                            : goal.status === "In Progress"
+                            goal.status === "Achieved"
+                              ? "bg-green-100 text-green-800"
+                              : goal.status === "In Progress"
                             ? "bg-blue-100 text-blue-800"
                             : goal.status === "On track"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {goal.status}
-                      </span>
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {goal.status}
+                        </span>
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
+                      </div>
 
             {/* Key Observations Section */}
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
@@ -930,9 +930,9 @@ export default function ClientInsights({ clientId }) {
                 {progressContent.keyObservations.map((observation, index) => (
                   <div key={index} className="bg-purple-50 p-4 rounded-lg">
                     <p className="text-gray-700">{observation}</p>
-                  </div>
-                ))}
-              </div>
+                    </div>
+                  ))}
+                </div>
             </div>
 
             {/* Treatment Effectiveness Section */}
@@ -941,8 +941,8 @@ export default function ClientInsights({ clientId }) {
                 <span className="text-xl">💡</span> Treatment Effectiveness
               </h3>
               <p className="text-gray-700 leading-relaxed bg-gray-50 p-4 rounded-lg">
-                {progressContent.treatmentEffectiveness}
-              </p>
+                  {progressContent.treatmentEffectiveness}
+                </p>
             </div>
 
             {/* Areas of Improvement Section */}
