@@ -92,6 +92,19 @@ export default function ClientDetail({ clientId }) {
     }
   };
 
+  const fetchReports = async () => {
+    try {
+      const response = await fetch(`/api/clients/${clientId}/reports`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch reports");
+      }
+      const data = await response.json();
+      setRecentReports(data.reports);
+    } catch (error) {
+      console.error("Error fetching reports:", error);
+    }
+  };
+
   const handleEditSuccess = () => {
     setIsEditing(false);
     fetchClient();
@@ -155,26 +168,36 @@ export default function ClientDetail({ clientId }) {
         throw new Error("Failed to generate report");
       }
 
-      const data = await response.json();
-
-      // Fetch the complete report with populated createdBy
-      const reportResponse = await fetch(`/api/clients/${clientId}/reports/${data.report._id}`);
-      if (!reportResponse.ok) {
-        throw new Error("Failed to fetch report details");
-      }
-
-      const reportData = await reportResponse.json();
-      setSelectedReport(reportData.report);
+      // Close the generate modal and refresh only the reports list
       setShowGenerateModal(false);
-      setShowReportModal(true);
-
-      // Refresh the reports list
-      fetchClient();
+      fetchReports();
     } catch (error) {
       console.error("Error generating report:", error);
       alert("Failed to generate report. Please try again.");
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleDeleteReport = async (reportId) => {
+    if (!confirm("Are you sure you want to delete this report? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/clients/${clientId}/reports/${reportId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete report");
+      }
+
+      // Refresh the reports list
+      fetchReports();
+    } catch (error) {
+      console.error("Error deleting report:", error);
+      alert("Failed to delete report. Please try again.");
     }
   };
 
@@ -621,6 +644,12 @@ export default function ClientDetail({ clientId }) {
                             className="text-blue-600 hover:text-blue-900 mr-4"
                           >
                             View
+                          </button>
+                          <button
+                            onClick={() => handleDeleteReport(report._id)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Delete
                           </button>
                         </td>
                       </tr>

@@ -178,184 +178,174 @@ export default function ClientInsights({ clientId }) {
       </div>
 
       {activeTab === "overview" && (
-        <div className="bg-gradient-to-r from-white to-blue-50 p-6 rounded-xl shadow-lg border border-blue-100">
-          {/* Current Status */}
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
-              <span className="text-xl">🌡️</span> How They&apos;re Doing
-            </h3>
-            <div className="space-y-2 text-sm text-gray-700 bg-white p-3 rounded-lg shadow-sm">
-              {assessmentContent?.primaryConcerns && (
-                <p>
-                  <span className="font-medium text-blue-600">Main Challenge: </span>
-                  {assessmentContent.primaryConcerns.join(", ")}
-                </p>
-              )}
-              {progressContent?.progressSummary && (
-                <p>
-                  <span className="font-medium text-blue-600">Latest Win: </span>
-                  {progressContent.progressSummary}
-                </p>
-              )}
-              {assessmentContent?.riskLevel && (
-                <p>
-                  <span className="font-medium text-blue-600">Risk Check: </span>
-                  <span className={getRiskLevelColor(assessmentContent.riskLevel)}>
-                    {assessmentContent.riskLevel}
-                  </span>
-                </p>
-              )}
+        <div className="space-y-6">
+          {/* Key Metrics Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-gradient-to-br from-blue-50 to-white p-4 rounded-lg shadow-sm border border-blue-100 hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-50 rounded-lg">
+                  <span className="text-xl text-blue-500">📊</span>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-600">Overall Progress</h3>
+                  <p className="text-xl font-semibold text-blue-600">
+                    {progressContent?.metrics?.overallProgress || "N/A"}%
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-gradient-to-br from-yellow-50 to-white p-4 rounded-lg shadow-sm border border-yellow-100 hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-yellow-50 rounded-lg">
+                  <span className="text-xl text-yellow-500">⚠️</span>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-600">Risk Level</h3>
+                  <p className="text-xl font-semibold text-yellow-600">
+                    {assessmentContent?.riskLevel || "N/A"}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-gradient-to-br from-green-50 to-white p-4 rounded-lg shadow-sm border border-green-100 hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-50 rounded-lg">
+                  <span className="text-xl text-green-500">✅</span>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-600">Treatment Adherence</h3>
+                  <p className="text-xl font-semibold text-green-600">
+                    {progressContent?.metrics?.treatmentAdherence || "N/A"}%
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-gradient-to-br from-purple-50 to-white p-4 rounded-lg shadow-sm border border-purple-100 hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-50 rounded-lg">
+                  <span className="text-xl text-purple-500">🎯</span>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-600">Goals Achieved</h3>
+                  <p className="text-xl font-semibold text-purple-600">
+                    {progressContent?.goalAchievementStatus?.filter((g) => g.status === "Achieved")
+                      .length || 0}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Diagnosis */}
-          {diagnosticContent && (
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                <span className="text-xl">🔍</span> What&apos;s the Diagnosis?
-              </h3>
-              <div className="space-y-2 text-sm text-gray-700 bg-white p-3 rounded-lg shadow-sm">
-                {diagnosticContent.primaryDiagnosis && (
-                  <p>
-                    <span className="font-medium text-blue-600">Main Condition: </span>
-                    {diagnosticContent.primaryDiagnosis.name} (
-                    {diagnosticContent.primaryDiagnosis.code})
-                  </p>
-                )}
-                {diagnosticContent.differentialDiagnoses?.length > 0 && (
-                  <p>
-                    <span className="font-medium text-blue-600">Possibilities: </span>
-                    {diagnosticContent.differentialDiagnoses.join(", ")}
-                  </p>
-                )}
-                {diagnosticContent.comorbidityAssessment && (
-                  <div className="mt-3">
-                    <h4 className="font-medium text-blue-600 mb-1">Comorbidity Assessment:</h4>
-                    <div className="pl-4 border-l-2 border-blue-100">
-                      <p className="mb-2">
-                        <span className="font-medium">Status: </span>
-                        {diagnosticContent.comorbidityAssessment.present
-                          ? "Present"
-                          : "Not Present"}
-                      </p>
-                      {diagnosticContent.comorbidityAssessment.present && (
-                        <>
-                          <div className="mb-2">
-                            <span className="font-medium">Conditions: </span>
-                            <ul className="list-disc list-inside mt-1">
-                              {diagnosticContent.comorbidityAssessment.conditions.map(
-                                (condition, index) => (
-                                  <li key={index} className="text-sm">
-                                    {condition.name} ({condition.code})
-                                  </li>
-                                )
-                              )}
-                            </ul>
-                          </div>
-                          <p className="mb-2">
-                            <span className="font-medium">Overall Impact: </span>
-                            {diagnosticContent.comorbidityAssessment.overallImpact}
-                          </p>
-                          <p>
-                            <span className="font-medium">Management Strategy: </span>
-                            {diagnosticContent.comorbidityAssessment.managementStrategy}
-                          </p>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Treatment Focus */}
-          {treatmentContent && (
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                <span className="text-xl">🛠️</span> Game Plan
-              </h3>
-              <div className="space-y-2 text-sm text-gray-700 bg-white p-3 rounded-lg shadow-sm">
-                {treatmentContent.goals?.shortTerm?.length > 0 && (
-                  <p>
-                    <span className="font-medium text-blue-600">Quick Goals: </span>
-                    {treatmentContent.goals.shortTerm.join("; ")}
-                  </p>
-                )}
-                {treatmentContent.interventions?.length > 0 && (
-                  <p>
-                    <span className="font-medium text-blue-600">Key Moves: </span>
-                    {treatmentContent.interventions.join(", ")}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Progress Highlights */}
-          {progressContent && (
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                <span className="text-xl">📈</span> Progress Vibes
-              </h3>
-              <div className="space-y-2 text-sm text-gray-700 bg-white p-3 rounded-lg shadow-sm">
-                {progressContent.goalAchievementStatus?.length > 0 && (
-                  <div>
-                    {progressContent.goalAchievementStatus.map((goal, i) => (
-                      <div key={i} className="mb-2 last:mb-0">
-                        <p className="text-sm text-gray-700">
-                          <span className="font-medium text-blue-600">{goal.goal}</span>
-                        </p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs ${
-                              goal.status === "Achieved"
-                                ? "bg-green-100 text-green-800"
-                                : goal.status === "In Progress"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : goal.status === "Partially Achieved"
-                                ? "bg-blue-100 text-blue-800"
-                                : "bg-gray-100 text-gray-800"
-                            }`}
-                          >
-                            {goal.status}
-                          </span>
-                          {goal.notes && (
-                            <p className="text-xs text-gray-500 italic">{goal.notes}</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {progressContent.treatmentEffectiveness && (
-                  <p>
-                    <span className="font-medium text-blue-600">How It&apos;s Working: </span>
-                    {progressContent.treatmentEffectiveness}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Immediate Priorities */}
-          <div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
-              <span className="text-xl">🚀</span> Next Up
+          {/* Current Status Section */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <span className="text-xl">🌡️</span> Current Status
             </h3>
-            <ul className="list-none ml-0 text-sm text-gray-700 bg-white p-3 rounded-lg shadow-sm space-y-2">
-              {assessmentContent?.suggestedNextSteps?.length > 0 ? (
-                assessmentContent.suggestedNextSteps.map((step, i) => (
-                  <li key={i} className="flex items-center gap-2">
-                    <span className="text-blue-500">➡️</span> {step}
-                  </li>
-                ))
-              ) : (
-                <li className="flex items-center gap-2">
-                  <span className="text-blue-500">➡️</span> All good for now!
-                </li>
-              )}
-            </ul>
+            <div className="space-y-4">
+              {/* Primary Diagnosis */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-medium text-blue-700 mb-1">Primary Diagnosis</h4>
+                    <p className="text-gray-700">
+                      {diagnosticContent?.primaryDiagnosis?.name || "Not available"}
+                    </p>
+                    {diagnosticContent?.primaryDiagnosis?.code && (
+                      <p className="text-sm text-gray-500">
+                        Code: {diagnosticContent.primaryDiagnosis.code}
+                      </p>
+                    )}
+                  </div>
+                  {diagnosticContent?.primaryDiagnosis?.confidence && (
+                    <span
+                      className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        diagnosticContent.primaryDiagnosis.confidence === "high"
+                          ? "bg-green-100 text-green-800"
+                          : diagnosticContent.primaryDiagnosis.confidence === "moderate"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {diagnosticContent.primaryDiagnosis.confidence.charAt(0).toUpperCase() +
+                        diagnosticContent.primaryDiagnosis.confidence.slice(1)}{" "}
+                      Confidence
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <div className="bg-blue-50 p-3 rounded-lg">
+                    <h4 className="font-medium text-blue-700 mb-1">Primary Concerns</h4>
+                    <ul className="list-disc list-inside text-sm text-gray-700">
+                      {assessmentContent?.primaryConcerns?.map((concern, index) => (
+                        <li key={index}>{concern}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="bg-green-50 p-3 rounded-lg">
+                    <h4 className="font-medium text-green-700 mb-1">Latest Progress</h4>
+                    <p className="text-sm text-gray-700">
+                      {progressContent?.progressSummary || "No recent progress updates"}
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="bg-yellow-50 p-3 rounded-lg">
+                    <h4 className="font-medium text-yellow-700 mb-1">Areas Needing Focus</h4>
+                    <ul className="list-disc list-inside text-sm text-gray-700">
+                      {progressContent?.areasNeedingFocus?.map((area, index) => (
+                        <li key={index}>{area}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="bg-purple-50 p-3 rounded-lg">
+                    <h4 className="font-medium text-purple-700 mb-1">Recent Achievements</h4>
+                    <ul className="list-disc list-inside text-sm text-gray-700">
+                      {progressContent?.goalAchievementStatus
+                        ?.filter((g) => g.status === "Achieved")
+                        .slice(0, 2)
+                        .map((goal, index) => (
+                          <li key={index}>{goal.goal}</li>
+                        ))}
+                      {(!progressContent?.goalAchievementStatus ||
+                        progressContent.goalAchievementStatus.filter((g) => g.status === "Achieved")
+                          .length === 0) && <li>No recent achievements</li>}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Treatment Plan Overview */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <span className="text-xl">📋</span> Treatment Plan Overview
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h4 className="font-medium text-gray-700 mb-2">Current Interventions</h4>
+                <div className="space-y-2">
+                  {treatmentContent?.interventions?.slice(0, 3).map((intervention, index) => (
+                    <div key={index} className="bg-blue-50 p-2 rounded-lg">
+                      <p className="text-sm text-gray-700">{intervention}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <h4 className="font-medium text-gray-700 mb-2">Upcoming Goals</h4>
+                <div className="space-y-2">
+                  {treatmentContent?.goals?.shortTerm?.slice(0, 3).map((goal, index) => (
+                    <div key={index} className="bg-green-50 p-2 rounded-lg">
+                      <p className="text-sm text-gray-700">{goal}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
