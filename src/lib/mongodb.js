@@ -1,6 +1,11 @@
 "use server";
 
 import mongoose from "mongoose";
+import Client from "@/models/client";
+import Session from "@/models/session";
+import Report from "@/models/report";
+import AIReport from "@/models/aiReport";
+import User from "@/models/user";
 
 // Ensure environment variables are read
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -36,6 +41,14 @@ export async function connectDB() {
     cached.promise = mongoose
       .connect(MONGODB_URI, opts)
       .then((mongoose) => {
+        // Import models to ensure they are registered
+        // The models handle their own registration through mongoose.model()
+        Client;
+        Session;
+        Report;
+        AIReport;
+        User;
+
         return mongoose;
       })
       .catch((error) => {

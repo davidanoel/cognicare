@@ -70,6 +70,4 @@ sessionSchema.pre("save", function (next) {
   next();
 });
 
-const Session = mongoose.models.Session || mongoose.model("Session", sessionSchema);
-
-export default Session;
+export default mongoose.models.Session || mongoose.model("Session", sessionSchema);

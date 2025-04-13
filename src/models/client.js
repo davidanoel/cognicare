@@ -183,6 +183,4 @@ clientSchema.pre("save", function (next) {
   next();
 });
 
-const Client = mongoose.models.Client || mongoose.model("Client", clientSchema);
-
-export default Client;
+export default mongoose.models.Client || mongoose.model("Client", clientSchema);
