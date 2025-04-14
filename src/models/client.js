@@ -156,8 +156,8 @@ const clientSchema = new mongoose.Schema({
       dateSigned: Date,
       status: {
         type: String,
-        enum: ["active", "expired", "revoked"],
-        default: "active",
+        enum: ["pending", "signed", "expired", "revoked"],
+        default: "pending",
       },
       document: String,
       electronicSignature: {
@@ -167,6 +167,40 @@ const clientSchema = new mongoose.Schema({
       },
     },
   ],
+  // Billing Information
+  billing: {
+    paymentMethod: {
+      type: String,
+      enum: ["self-pay", "insurance", "sliding-scale"],
+      default: "self-pay",
+    },
+    rate: Number,
+    notes: String,
+    invoices: [
+      {
+        date: Date,
+        amount: Number,
+        status: {
+          type: String,
+          enum: ["pending", "paid", "overdue"],
+          default: "pending",
+        },
+        notes: String,
+      },
+    ],
+  },
+  // Insurance Information
+  insurance: {
+    provider: String,
+    policyNumber: String,
+    groupNumber: String,
+    coverage: {
+      type: String,
+      enum: ["full", "partial", "none"],
+      default: "none",
+    },
+    notes: String,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

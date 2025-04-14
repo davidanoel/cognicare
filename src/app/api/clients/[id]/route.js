@@ -133,6 +133,91 @@ export async function PATCH(req, context) {
       }
     });
 
+    // Handle consent forms updates
+    if (body.consentForms) {
+      if (Array.isArray(body.consentForms)) {
+        // Replace entire consent forms array
+        existingClient.consentForms = body.consentForms;
+      } else if (typeof body.consentForms === "object") {
+        // Add a new consent form
+        if (!existingClient.consentForms) {
+          existingClient.consentForms = [];
+        }
+        existingClient.consentForms.push({
+          type: body.consentForms.type,
+          version: body.consentForms.version || "1.0",
+          dateSigned: body.consentForms.dateSigned ? new Date(body.consentForms.dateSigned) : null,
+          status: body.consentForms.status || "active",
+          document: body.consentForms.document,
+          electronicSignature: body.consentForms.electronicSignature,
+        });
+      }
+    }
+
+    // Handle billing updates
+    if (body.billing) {
+      if (!existingClient.billing) {
+        existingClient.billing = {
+          paymentMethod: "self-pay",
+          rate: 0,
+          notes: "",
+          invoices: [],
+        };
+      }
+
+      if (body.billing.paymentMethod !== undefined) {
+        existingClient.billing.paymentMethod = body.billing.paymentMethod;
+      }
+      if (body.billing.rate !== undefined) {
+        existingClient.billing.rate = body.billing.rate;
+      }
+      if (body.billing.notes !== undefined) {
+        existingClient.billing.notes = body.billing.notes;
+      }
+      if (body.billing.invoices && Array.isArray(body.billing.invoices)) {
+        if (!existingClient.billing.invoices) {
+          existingClient.billing.invoices = [];
+        }
+        body.billing.invoices.forEach((invoice) => {
+          existingClient.billing.invoices.push({
+            date: new Date(invoice.date),
+            amount: invoice.amount,
+            status: invoice.status || "pending",
+            notes: invoice.notes || "",
+          });
+        });
+      }
+    }
+
+    // Handle insurance updates
+    if (body.insurance) {
+      if (!existingClient.insurance) {
+        existingClient.insurance = {
+          provider: "",
+          policyNumber: "",
+          groupNumber: "",
+          coverage: "none",
+          notes: "",
+        };
+      }
+
+      if (body.insurance.provider !== undefined) {
+        existingClient.insurance.provider = body.insurance.provider;
+      }
+      if (body.insurance.policyNumber !== undefined) {
+        existingClient.insurance.policyNumber = body.insurance.policyNumber;
+      }
+      if (body.insurance.groupNumber !== undefined) {
+        existingClient.insurance.groupNumber = body.insurance.groupNumber;
+      }
+      if (body.insurance.coverage !== undefined) {
+        existingClient.insurance.coverage = body.insurance.coverage;
+      }
+      if (body.insurance.notes !== undefined) {
+        existingClient.insurance.notes = body.insurance.notes;
+      }
+    }
+
     // Save the updated client
     await existingClient.save();
 

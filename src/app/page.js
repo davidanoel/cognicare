@@ -19,8 +19,8 @@ export default function LandingPage() {
           practice.
         </p>
         <div className="flex justify-center gap-4">
-          <Link
-            href="/signup"
+                    <Link
+                      href="/signup"
             className="bg-indigo-600 text-white px-8 py-3 rounded-full font-medium hover:bg-indigo-700 transition-colors shadow-lg hover:shadow-indigo-200"
           >
             Try CogniCare Free
@@ -30,7 +30,7 @@ export default function LandingPage() {
             className="bg-white text-indigo-600 px-8 py-3 rounded-full font-medium border border-indigo-200 hover:bg-indigo-50 transition-colors"
           >
             See How It Works
-          </Link>
+                    </Link>
         </div>
       </section>
 
@@ -220,7 +220,7 @@ export default function LandingPage() {
                 Beautiful charts and insights help you track client progress and celebrate their
                 wins.
               </p>
-            </div>
+      </div>
 
             <div className="p-6 rounded-2xl bg-white shadow-lg hover:shadow-xl transition-shadow">
               <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
@@ -252,7 +252,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-center text-indigo-900 mb-12">
             Everything You Need in One Place with CogniCare
-          </h2>
+            </h2>
           <div className="grid md:grid-cols-2 gap-12">
             <div className="space-y-6">
               <div className="flex items-start">
@@ -360,7 +360,7 @@ export default function LandingPage() {
                   </p>
                 </div>
               </div>
-            </div>
+          </div>
 
             <div className="space-y-6">
               <div className="flex items-start">
@@ -807,8 +807,8 @@ export default function LandingPage() {
           </div>
           <div className="mt-12 pt-8 border-t border-gray-200 text-center text-gray-600">
             <p>© 2024 CogniCare. All rights reserved.</p>
-          </div>
         </div>
+      </div>
       </footer>
     </div>
   );

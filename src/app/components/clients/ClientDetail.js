@@ -8,6 +8,11 @@ import ClientAnalytics from "./ClientAnalytics";
 import AIWorkflow from "./AIWorkflow";
 import SessionPrepView from "./SessionPrepView";
 import { useAIWorkflow } from "@/app/context/AIWorkflowContext";
+import {
+  getConsentFormTemplate,
+  getAvailableTemplates,
+  generateConsentFormPDF,
+} from "@/lib/templates/consentFormTemplate";
 
 export default function ClientDetail({ clientId }) {
   const [client, setClient] = useState(null);
@@ -24,6 +29,15 @@ export default function ClientDetail({ clientId }) {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showConsentModal, setShowConsentModal] = useState(false);
+  const [selectedConsent, setSelectedConsent] = useState(null);
+  const [showBillingModal, setShowBillingModal] = useState(false);
+  const [showInsuranceModal, setShowInsuranceModal] = useState(false);
+  const [selectedConsentType, setSelectedConsentType] = useState("");
+  const [consentFormContent, setConsentFormContent] = useState("");
+  const [consentFormNotes, setConsentFormNotes] = useState("");
+  const [consentFormFile, setConsentFormFile] = useState(null);
+  const [availableTemplates, setAvailableTemplates] = useState([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -64,6 +78,10 @@ export default function ClientDetail({ clientId }) {
         setActiveTab(tabParam);
       }
     }
+  }, []);
+
+  useEffect(() => {
+    setAvailableTemplates(getAvailableTemplates());
   }, []);
 
   const fetchClient = async () => {
@@ -198,6 +216,160 @@ export default function ClientDetail({ clientId }) {
     } catch (error) {
       console.error("Error deleting report:", error);
       alert("Failed to delete report. Please try again.");
+    }
+  };
+
+  const handleEditInsurance = () => {
+    setShowInsuranceModal(true);
+  };
+
+  const handleBillingUpdate = async (formData) => {
+    try {
+      // Handle invoice upload if provided
+      let invoiceData = null;
+      if (formData.invoiceFile) {
+        const uploadFormData = new FormData();
+        uploadFormData.append("file", formData.invoiceFile);
+
+        const uploadResponse = await fetch("/api/upload", {
+          method: "POST",
+          body: uploadFormData,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error("Failed to upload invoice");
+        }
+
+        const uploadResult = await uploadResponse.json();
+        invoiceData = {
+          date: new Date().toISOString(),
+          amount: formData.amount,
+          status: "pending",
+          document: uploadResult.path,
+          notes: formData.invoiceNotes || "",
+        };
+      }
+
+      // Update client billing information
+      const response = await fetch(`/api/clients/${client._id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          billing: {
+            paymentMethod: formData.paymentMethod,
+            rate: formData.rate,
+            notes: formData.notes,
+            ...(invoiceData && { invoices: [invoiceData] }),
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update billing information");
+      }
+
+      const updatedClient = await response.json();
+      setClient(updatedClient);
+      setShowBillingModal(false);
+    } catch (error) {
+      console.error("Error updating billing:", error);
+      // Handle error (show toast, etc.)
+    }
+  };
+
+  const handleViewConsent = (form) => {
+    setSelectedConsent(form);
+    setShowConsentModal(true);
+  };
+
+  const handleEditBilling = () => {
+    setShowBillingModal(true);
+  };
+
+  const handleConsentTypeChange = (e) => {
+    const type = e.target.value;
+    setSelectedConsentType(type);
+
+    // Only try to get template if a type is selected
+    if (type) {
+      try {
+        const template = getConsentFormTemplate(type);
+        setConsentFormContent(template.content);
+      } catch (error) {
+        console.error("Error loading template:", error);
+        setConsentFormContent("");
+      }
+    } else {
+      // Reset version when no type is selected
+      setConsentFormContent("");
+    }
+  };
+
+  const handleRequestConsent = async (e) => {
+    e.preventDefault();
+
+    if (!consentFormFile) {
+      alert("Please upload a PDF file");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("clientId", client._id);
+    formData.append("type", selectedConsentType);
+    formData.append("file", consentFormFile);
+    formData.append("notes", consentFormNotes);
+
+    try {
+      const response = await fetch("/api/consent-forms", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create consent form");
+      }
+
+      const newConsentForm = await response.json();
+      setClient((prev) => ({
+        ...prev,
+        consentForms: [...prev.consentForms, newConsentForm],
+      }));
+
+      // Reset form state
+      setSelectedConsentType("");
+      setConsentFormContent("");
+      setConsentFormNotes("");
+      setConsentFormFile(null);
+      setShowConsentModal(false);
+    } catch (error) {
+      console.error("Error creating consent form:", error);
+      alert("Failed to create consent form");
+    }
+  };
+
+  const handleDeleteConsent = async (formId, e) => {
+    e.stopPropagation(); // Prevent opening the view modal
+    if (!confirm("Are you sure you want to delete this consent form?")) return;
+
+    try {
+      const response = await fetch(`/api/clients/${client._id}/consent-forms/${formId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete consent form");
+      }
+
+      // Update client state
+      setClient((prev) => ({
+        ...prev,
+        consentForms: prev.consentForms.filter((form) => form._id !== formId),
+      }));
+    } catch (error) {
+      console.error("Error deleting consent form:", error);
+      alert("Failed to delete consent form");
     }
   };
 
@@ -352,6 +524,16 @@ export default function ClientDetail({ clientId }) {
             }`}
           >
             AI Assistant
+          </button>
+          <button
+            onClick={() => setActiveTab("consent-billing")}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === "consent-billing"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            Consent & Billing
           </button>
         </nav>
       </div>
@@ -856,7 +1038,612 @@ export default function ClientDetail({ clientId }) {
             </div>
           </div>
         )}
+
+        {activeTab === "consent-billing" && (
+          <div className="space-y-8">
+            {/* Consent Forms Section */}
+            <div className="bg-white shadow rounded-lg p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Consent Forms</h3>
+                <button
+                  onClick={() => setShowConsentModal(true)}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Request New Consent
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {client.consentForms?.map((form) => (
+                  <div
+                    key={form._id}
+                    onClick={() => handleViewConsent(form)}
+                    className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-900">{form.type}</h4>
+                        <p className="text-sm text-gray-500">Version {form.version}</p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            form.status === "signed"
+                              ? "bg-green-100 text-green-800"
+                              : form.status === "pending"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : form.status === "expired"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {form.status}
+                        </span>
+                        <button
+                          onClick={(e) => handleDeleteConsent(form._id, e)}
+                          className="text-red-600 hover:text-red-800"
+                          title="Delete consent form"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mt-2 text-sm text-gray-500">
+                      <p>
+                        Requested on{" "}
+                        {form.requestedAt ? new Date(form.requestedAt).toLocaleDateString() : "N/A"}
+                      </p>
+                      {form.signedAt && (
+                        <p>Signed on {new Date(form.signedAt).toLocaleDateString()}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {(!client.consentForms || client.consentForms.length === 0) && (
+                  <p className="text-sm text-gray-500">No consent forms yet</p>
+                )}
+              </div>
+            </div>
+
+            {/* Billing Information Section */}
+            <div>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Billing Information</h3>
+                <button
+                  onClick={() => setShowBillingModal(true)}
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  Edit Billing
+                </button>
+              </div>
+              <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+                <div className="px-4 py-5 sm:p-6">
+                  <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500">Payment Method</dt>
+                      <dd className="mt-1 text-sm text-gray-900">
+                        {client?.billing?.paymentMethod || "Not set"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500">Session Rate</dt>
+                      <dd className="mt-1 text-sm text-gray-900">
+                        {client?.billing?.rate ? `$${client.billing.rate}/session` : "Not set"}
+                      </dd>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <dt className="text-sm font-medium text-gray-500">Recent Invoices</dt>
+                      <dd className="mt-1">
+                        <ul className="border border-gray-200 rounded-md divide-y divide-gray-200">
+                          {client?.billing?.invoices?.length > 0 ? (
+                            client.billing.invoices.map((invoice, index) => (
+                              <li
+                                key={index}
+                                className="pl-3 pr-4 py-3 flex items-center justify-between text-sm"
+                              >
+                                <div className="w-0 flex-1 flex items-center">
+                                  <span className="ml-2 flex-1 w-0 truncate">
+                                    {formatDate(invoice.date)} - ${invoice.amount}
+                                  </span>
+                                </div>
+                                <div className="ml-4 flex-shrink-0 flex items-center space-x-2">
+                                  {invoice.document && (
+                                    <a
+                                      href={invoice.document}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-indigo-600 hover:text-indigo-500"
+                                    >
+                                      View
+                                    </a>
+                                  )}
+                                  <span
+                                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                    ${
+                                      invoice.status === "paid"
+                                        ? "bg-green-100 text-green-800"
+                                        : invoice.status === "pending"
+                                        ? "bg-yellow-100 text-yellow-800"
+                                        : "bg-red-100 text-red-800"
+                                    }`}
+                                  >
+                                    {invoice.status}
+                                  </span>
+                                </div>
+                              </li>
+                            ))
+                          ) : (
+                            <li className="pl-3 pr-4 py-3 text-sm text-gray-500">
+                              No recent invoices
+                            </li>
+                          )}
+                        </ul>
+                      </dd>
+                    </div>
+                    {client?.billing?.notes && (
+                      <div className="sm:col-span-2">
+                        <dt className="text-sm font-medium text-gray-500">Notes</dt>
+                        <dd className="mt-1 text-sm text-gray-900">{client.billing.notes}</dd>
+                      </div>
+                    )}
+                  </dl>
+                </div>
+              </div>
+            </div>
+
+            {/* Insurance Information Section */}
+            <div>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Insurance Information</h3>
+                <button
+                  onClick={() => setShowInsuranceModal(true)}
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  Edit Insurance
+                </button>
+              </div>
+              <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+                <div className="px-4 py-5 sm:p-6">
+                  <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500">Insurance Provider</dt>
+                      <dd className="mt-1 text-sm text-gray-900">
+                        {client?.insurance?.provider || "Not set"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500">Policy Number</dt>
+                      <dd className="mt-1 text-sm text-gray-900">
+                        {client?.insurance?.policyNumber || "Not set"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500">Group Number</dt>
+                      <dd className="mt-1 text-sm text-gray-900">
+                        {client?.insurance?.groupNumber || "Not set"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500">Coverage Status</dt>
+                      <dd className="mt-1 text-sm text-gray-900">
+                        <span
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                          ${
+                            client?.insurance?.coverage === "full"
+                              ? "bg-green-100 text-green-800"
+                              : client?.insurance?.coverage === "partial"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {client?.insurance?.coverage || "Not set"}
+                        </span>
+                      </dd>
+                    </div>
+                    {client?.insurance?.notes && (
+                      <div className="sm:col-span-2">
+                        <dt className="text-sm font-medium text-gray-500">Notes</dt>
+                        <dd className="mt-1 text-sm text-gray-900">{client.insurance.notes}</dd>
+                      </div>
+                    )}
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Modals */}
+      {showConsentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold mb-4">
+              {selectedConsent ? "View Consent Form" : "Request New Consent Form"}
+            </h2>
+
+            {selectedConsent ? (
+              <div>
+                <div className="mb-4">
+                  <h3 className="font-semibold">{selectedConsent.type}</h3>
+                  <p className="text-sm text-gray-600">Version: {selectedConsent.version}</p>
+                  <p className="text-sm text-gray-600">Status: {selectedConsent.status}</p>
+                </div>
+
+                {selectedConsent.document && (
+                  <div className="mb-4">
+                    <a
+                      href={selectedConsent.document}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
+                      View Document
+                    </a>
+                  </div>
+                )}
+
+                <div className="mt-4">
+                  <button
+                    onClick={() => {
+                      setSelectedConsent(null);
+                      setShowConsentModal(false);
+                    }}
+                    className="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleRequestConsent} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Consent Type</label>
+                  <select
+                    value={selectedConsentType}
+                    onChange={handleConsentTypeChange}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="">Select a consent type</option>
+                    {availableTemplates.map((template) => (
+                      <option key={template.type} value={template.type}>
+                        {template.title} (v{template.version})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {consentFormContent && (
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-700">Form Preview</label>
+                    <div className="mt-1 p-4 bg-gray-50 rounded-md max-h-60 overflow-y-auto">
+                      <pre className="whitespace-pre-wrap text-sm">{consentFormContent}</pre>
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Upload Document (PDF)
+                  </label>
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    onChange={(e) => setConsentFormFile(e.target.files[0])}
+                    className="mt-1 block w-full text-sm text-gray-500
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-md file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-blue-50 file:text-blue-700
+                      hover:file:bg-blue-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Notes</label>
+                  <textarea
+                    value={consentFormNotes}
+                    onChange={(e) => setConsentFormNotes(e.target.value)}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    rows="3"
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowConsentModal(false)}
+                    className="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                  >
+                    Request Consent
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {showBillingModal && (
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Edit Billing Information</h3>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                handleBillingUpdate({
+                  paymentMethod: formData.get("paymentMethod"),
+                  rate: parseFloat(formData.get("rate")),
+                  notes: formData.get("notes"),
+                  invoiceFile: formData.get("invoiceFile"),
+                  amount: parseFloat(formData.get("amount")),
+                  invoiceNotes: formData.get("invoiceNotes"),
+                });
+              }}
+            >
+              <div className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="paymentMethod"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Payment Method
+                  </label>
+                  <select
+                    id="paymentMethod"
+                    name="paymentMethod"
+                    required
+                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                    defaultValue={client?.billing?.paymentMethod || "self-pay"}
+                  >
+                    <option value="self-pay">Self Pay</option>
+                    <option value="insurance">Insurance</option>
+                    <option value="sliding-scale">Sliding Scale</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="rate" className="block text-sm font-medium text-gray-700">
+                    Session Rate ($)
+                  </label>
+                  <div className="mt-1 relative rounded-md shadow-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="text-gray-500 sm:text-sm">$</span>
+                    </div>
+                    <input
+                      type="number"
+                      name="rate"
+                      id="rate"
+                      step="0.01"
+                      min="0"
+                      defaultValue={client?.billing?.rate || 0}
+                      className="pl-7 block w-full border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
+                    Billing Notes
+                  </label>
+                  <textarea
+                    id="notes"
+                    name="notes"
+                    rows={3}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    defaultValue={client?.billing?.notes || ""}
+                  />
+                </div>
+
+                {/* Invoice Upload Section */}
+                <div className="border-t border-gray-200 pt-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Add New Invoice</h4>
+
+                  <div>
+                    <label
+                      htmlFor="invoiceFile"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Invoice Document (PDF)
+                    </label>
+                    <input
+                      type="file"
+                      id="invoiceFile"
+                      name="invoiceFile"
+                      accept=".pdf"
+                      className="mt-1 block w-full text-sm text-gray-500
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-md file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-indigo-50 file:text-indigo-700
+                        hover:file:bg-indigo-100"
+                    />
+                  </div>
+
+                  <div className="mt-2">
+                    <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
+                      Amount ($)
+                    </label>
+                    <div className="mt-1 relative rounded-md shadow-sm">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <span className="text-gray-500 sm:text-sm">$</span>
+                      </div>
+                      <input
+                        type="number"
+                        name="amount"
+                        id="amount"
+                        step="0.01"
+                        min="0"
+                        className="pl-7 block w-full border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-2">
+                    <label
+                      htmlFor="invoiceNotes"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Invoice Notes
+                    </label>
+                    <textarea
+                      id="invoiceNotes"
+                      name="invoiceNotes"
+                      rows={2}
+                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      placeholder="Optional notes about this invoice"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setShowBillingModal(false)}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showInsuranceModal && (
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Edit Insurance Information</h3>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                // Handle insurance update
+                // This will be implemented when we add the insurance API
+              }}
+            >
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="provider" className="block text-sm font-medium text-gray-700">
+                    Insurance Provider
+                  </label>
+                  <input
+                    type="text"
+                    id="provider"
+                    name="provider"
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    defaultValue={client?.insurance?.provider || ""}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="policyNumber" className="block text-sm font-medium text-gray-700">
+                    Policy Number
+                  </label>
+                  <input
+                    type="text"
+                    id="policyNumber"
+                    name="policyNumber"
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    defaultValue={client?.insurance?.policyNumber || ""}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="groupNumber" className="block text-sm font-medium text-gray-700">
+                    Group Number
+                  </label>
+                  <input
+                    type="text"
+                    id="groupNumber"
+                    name="groupNumber"
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    defaultValue={client?.insurance?.groupNumber || ""}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="coverage" className="block text-sm font-medium text-gray-700">
+                    Coverage Type
+                  </label>
+                  <select
+                    id="coverage"
+                    name="coverage"
+                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                    defaultValue={client?.insurance?.coverage || "none"}
+                  >
+                    <option value="none">No Coverage</option>
+                    <option value="partial">Partial Coverage</option>
+                    <option value="full">Full Coverage</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="insuranceNotes"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Notes
+                  </label>
+                  <textarea
+                    id="insuranceNotes"
+                    name="insuranceNotes"
+                    rows={3}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    defaultValue={client?.insurance?.notes || ""}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setShowInsuranceModal(false)}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
