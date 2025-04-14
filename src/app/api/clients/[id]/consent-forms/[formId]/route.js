@@ -10,11 +10,11 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id: clientId, formId } = await params;
+    const { id, formId } = await params;
 
     // Find the client and remove the consent form using findOneAndUpdate
     const client = await Client.findOneAndUpdate(
-      { _id: clientId },
+      { _id: id, counselorId: user.id },
       { $pull: { consentForms: { _id: formId } } },
       { new: true }
     );
@@ -23,9 +23,8 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ error: "Client not found" }, { status: 404 });
     }
 
-    // If we need to delete the file from storage, we can do it here
-    // But we'll need to get the documentKey first
-    const consentForm = client.consentForms.find((form) => form._id === formId);
+    // Get the consent form to delete its file
+    const consentForm = client.consentForms.find((form) => form._id.toString() === formId);
     if (consentForm?.documentKey) {
       await deleteFile(consentForm.documentKey);
     }

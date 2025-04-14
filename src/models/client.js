@@ -150,20 +150,54 @@ const clientSchema = new mongoose.Schema({
     {
       type: {
         type: String,
-        enum: ["treatment", "information-release", "privacy-policy"],
+        required: true,
+        enum: ["general", "telehealth", "minor"],
       },
-      version: String,
-      dateSigned: Date,
+      version: {
+        type: String,
+        required: true,
+      },
+      document: {
+        type: String,
+        required: true,
+      },
+      documentKey: {
+        type: String,
+        required: true,
+      },
+      signedDocument: {
+        type: String,
+      },
+      signedDocumentKey: {
+        type: String,
+      },
       status: {
         type: String,
+        required: true,
         enum: ["pending", "signed", "expired", "revoked"],
         default: "pending",
       },
-      document: String,
-      electronicSignature: {
-        signature: String,
-        ipAddress: String,
-        timestamp: Date,
+      token: {
+        type: String,
+        unique: true,
+      },
+      tokenExpires: {
+        type: Date,
+      },
+      requestedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+      },
+      requestedAt: {
+        type: Date,
+        default: Date.now,
+      },
+      dateSigned: {
+        type: Date,
+      },
+      notes: {
+        type: String,
       },
     },
   ],

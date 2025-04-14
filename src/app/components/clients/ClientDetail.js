@@ -351,6 +351,11 @@ export default function ClientDetail({ clientId }) {
 
   const handleDeleteConsent = async (formId, e) => {
     e.stopPropagation(); // Prevent opening the view modal
+    if (!formId) {
+      console.error("No form ID provided");
+      return;
+    }
+
     if (!confirm("Are you sure you want to delete this consent form?")) return;
 
     try {
@@ -359,17 +364,18 @@ export default function ClientDetail({ clientId }) {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to delete consent form");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to delete consent form");
       }
 
       // Update client state
       setClient((prev) => ({
         ...prev,
-        consentForms: prev.consentForms.filter((form) => form._id !== formId),
+        consentForms: prev.consentForms.filter((form) => form._id.toString() !== formId.toString()),
       }));
     } catch (error) {
       console.error("Error deleting consent form:", error);
-      alert("Failed to delete consent form");
+      alert(error.message || "Failed to delete consent form");
     }
   };
 
@@ -1291,6 +1297,39 @@ export default function ClientDetail({ clientId }) {
                     >
                       View Document
                     </a>
+                  </div>
+                )}
+
+                {selectedConsent.shareableLink && (
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Shareable Link
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="text"
+                        readOnly
+                        value={selectedConsent.shareableLink}
+                        className="flex-1 text-sm border rounded-md px-2 py-1 bg-gray-50"
+                      />
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(selectedConsent.shareableLink);
+                          // You might want to add a toast notification here
+                        }}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-5 w-5"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                          <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 )}
 

@@ -4,6 +4,11 @@ import { uploadFile, getSignedDownloadUrl } from "@/lib/storage";
 import { generateFileKey } from "@/lib/storage";
 import { getConsentFormTemplate } from "@/lib/templates/consentFormTemplate";
 import Client from "@/models/client";
+import crypto from "crypto";
+
+const generateToken = () => {
+  return crypto.randomBytes(32).toString("hex");
+};
 
 export async function POST(request) {
   try {
@@ -37,6 +42,11 @@ export async function POST(request) {
     // Generate a signed URL for the document
     const signedUrl = await getSignedDownloadUrl(fileKey);
 
+    // Generate token
+    const token = generateToken();
+    const tokenExpires = new Date();
+    tokenExpires.setDate(tokenExpires.getDate() + 7); // Token expires in 7 days
+
     // Create consent form object
     const consentForm = {
       type:
@@ -51,9 +61,12 @@ export async function POST(request) {
       document: signedUrl,
       documentKey: fileKey,
       status: "pending",
+      token,
+      tokenExpires,
       requestedBy: user._id,
       requestedAt: new Date(),
       notes: notes || "",
+      shareableLink: `/api/consent-forms/${clientId}/share/${fileKey}`,
     };
 
     // Update client with new consent form
@@ -69,7 +82,12 @@ export async function POST(request) {
       return NextResponse.json({ error: "Client not found" }, { status: 404 });
     }
 
-    return NextResponse.json(consentForm);
+    // Return the consent form with the shareable link
+    const shareableLink = `${process.env.NEXT_PUBLIC_APP_URL}/client-portal/consent/${token}`;
+    return NextResponse.json({
+      ...consentForm,
+      shareableLink,
+    });
   } catch (error) {
     console.error("Error creating consent form:", error);
     return NextResponse.json({ error: "Failed to create consent form" }, { status: 500 });
