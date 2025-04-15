@@ -153,9 +153,11 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
       }
       const sessions = await response.json();
       setSessions(sessions);
+      return sessions;
     } catch (error) {
       console.error("Error fetching sessions:", error);
       alert("Failed to load sessions");
+      return null;
     } finally {
       setIsLoadingSessions(false);
     }
@@ -169,13 +171,11 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
 
     setIsGenerating(true);
     try {
-      await fetchSessions();
-
+      const sessions = await fetchSessions();
       if (!sessions || sessions.length === 0) {
         alert("No sessions available to invoice");
         return;
       }
-
       setShowSessionModal(true);
     } catch (error) {
       console.error("Error generating invoice:", error);
