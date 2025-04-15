@@ -8,7 +8,8 @@ import { connectDB } from "@/lib/mongodb";
 // Update billing information
 export async function PATCH(req, context) {
   try {
-    const { id } = await context.params;
+    const params = await context.params;
+    const { id } = params;
 
     const user = await getCurrentUser();
     if (!user) {
@@ -59,7 +60,8 @@ export async function PATCH(req, context) {
 // Delete billing information
 export async function DELETE(req, context) {
   try {
-    const { id } = await context.params;
+    const params = await context.params;
+    const { id } = params;
 
     const user = await getCurrentUser();
     if (!user) {
