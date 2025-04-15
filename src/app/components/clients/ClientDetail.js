@@ -13,6 +13,7 @@ import {
   getAvailableTemplates,
   generateConsentFormPDF,
 } from "@/lib/templates/consentFormTemplate";
+import BillingInfo from "./BillingInfo";
 
 export default function ClientDetail({ clientId }) {
   const [client, setClient] = useState(null);
@@ -31,14 +32,12 @@ export default function ClientDetail({ clientId }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [showConsentModal, setShowConsentModal] = useState(false);
   const [selectedConsent, setSelectedConsent] = useState(null);
-  const [showBillingModal, setShowBillingModal] = useState(false);
   const [showInsuranceModal, setShowInsuranceModal] = useState(false);
   const [selectedConsentType, setSelectedConsentType] = useState("");
   const [consentFormContent, setConsentFormContent] = useState("");
   const [consentFormNotes, setConsentFormNotes] = useState("");
   const [consentFormFile, setConsentFormFile] = useState(null);
   const [availableTemplates, setAvailableTemplates] = useState([]);
-  const [selectedInvoice, setSelectedInvoice] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -224,91 +223,42 @@ export default function ClientDetail({ clientId }) {
     setShowInsuranceModal(true);
   };
 
-  const handleBillingUpdate = async (formData) => {
+  const handleBillingUpdate = (updatedClient) => {
+    setClient(updatedClient);
+  };
+
+  const handleDeleteBilling = async () => {
+    if (
+      !confirm(
+        "Are you sure you want to delete all billing information? This will also delete all invoices."
+      )
+    ) {
+      return;
+    }
+
     try {
-      // Handle invoice upload if provided
-      let invoiceData = null;
-      if (formData.invoiceFile) {
-        const uploadFormData = new FormData();
-        uploadFormData.append("file", formData.invoiceFile);
-
-        const uploadResponse = await fetch("/api/upload", {
-          method: "POST",
-          body: uploadFormData,
-        });
-
-        if (!uploadResponse.ok) {
-          throw new Error("Failed to upload invoice");
-        }
-
-        const uploadResult = await uploadResponse.json();
-        invoiceData = {
-          date: new Date().toISOString(),
-          amount: formData.amount,
-          status: "pending",
-          document: uploadResult.path,
-          documentKey: uploadResult.key,
-          notes: formData.invoiceNotes || "",
-        };
-      }
-
-      // Prepare the update data
-      const updateData = {
-        billing: {
-          paymentMethod: formData.paymentMethod,
-          rate: formData.rate,
-          notes: formData.notes,
-        },
-      };
-
-      // If there's a new invoice, handle it based on whether we're updating an existing one
-      if (invoiceData) {
-        if (formData.invoiceId) {
-          // Update existing invoice
-          updateData.billing.invoices = (client.billing?.invoices || []).map((invoice) =>
-            invoice._id === formData.invoiceId ? invoiceData : invoice
-          );
-        } else {
-          // Add new invoice
-          updateData.billing.invoices = [...(client.billing?.invoices || []), invoiceData];
-        }
-      }
-
-      // Update client billing information
-      const response = await fetch(`/api/clients/${client._id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updateData),
+      const response = await fetch(`/api/clients/${client._id}/billing`, {
+        method: "DELETE",
       });
 
       if (!response.ok) {
-        throw new Error("Failed to update billing information");
+        throw new Error("Failed to delete billing information");
       }
 
-      const updatedClient = await response.json();
-      setClient(updatedClient);
-      setShowBillingModal(false);
+      // Update the client state by removing the billing information
+      setClient((prevClient) => ({
+        ...prevClient,
+        billing: null,
+      }));
     } catch (error) {
-      console.error("Error updating billing:", error);
+      console.error("Error deleting billing:", error);
       // Handle error (show toast, etc.)
-    }
-  };
-
-  const handleViewInvoice = (invoice) => {
-    if (invoice.document) {
-      window.open(invoice.document, "_blank");
     }
   };
 
   const handleViewConsent = (form) => {
     setSelectedConsent(form);
     setShowConsentModal(true);
-  };
-
-  const handleEditBilling = () => {
-    setShowBillingModal(true);
   };
 
   const handleConsentTypeChange = (e) => {
@@ -399,63 +349,6 @@ export default function ClientDetail({ clientId }) {
     } catch (error) {
       console.error("Error deleting consent form:", error);
       alert(error.message || "Failed to delete consent form");
-    }
-  };
-
-  const handleDeleteInvoice = async (invoiceId) => {
-    if (!confirm("Are you sure you want to delete this invoice?")) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/clients/${client._id}/invoices/${invoiceId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to delete invoice");
-      }
-
-      // Update the client state by removing the deleted invoice
-      setClient((prevClient) => ({
-        ...prevClient,
-        billing: {
-          ...prevClient.billing,
-          invoices: prevClient.billing.invoices.filter((invoice) => invoice._id !== invoiceId),
-        },
-      }));
-    } catch (error) {
-      console.error("Error deleting invoice:", error);
-      // Handle error (show toast, etc.)
-    }
-  };
-
-  const handleDeleteBilling = async () => {
-    if (
-      !confirm(
-        "Are you sure you want to delete all billing information? This will also delete all invoices."
-      )
-    ) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/clients/${client._id}/billing`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to delete billing information");
-      }
-
-      // Update the client state by removing the billing information
-      setClient((prevClient) => ({
-        ...prevClient,
-        billing: null,
-      }));
-    } catch (error) {
-      console.error("Error deleting billing:", error);
-      // Handle error (show toast, etc.)
     }
   };
 
@@ -1203,113 +1096,11 @@ export default function ClientDetail({ clientId }) {
             </div>
 
             {/* Billing Information Section */}
-            <div>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Billing Information</h3>
-                <div className="flex space-x-2">
-                  {client?.billing && (
-                    <button
-                      onClick={handleDeleteBilling}
-                      className="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-sm leading-4 font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                    >
-                      Delete Billing
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setShowBillingModal(true)}
-                    className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  >
-                    {client?.billing ? "Edit Billing" : "Add Billing Information"}
-                  </button>
-                </div>
-              </div>
-
-              {client?.billing ? (
-                <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-                  <div className="px-4 py-5 sm:p-6">
-                    <dl className="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
-                      <div className="sm:col-span-1">
-                        <dt className="text-sm font-medium text-gray-500">Payment Method</dt>
-                        <dd className="mt-1 text-sm text-gray-900">
-                          {client.billing.paymentMethod === "self-pay" && "Self Pay"}
-                          {client.billing.paymentMethod === "insurance" && "Insurance"}
-                          {client.billing.paymentMethod === "sliding-scale" && "Sliding Scale"}
-                        </dd>
-                      </div>
-
-                      <div className="sm:col-span-1">
-                        <dt className="text-sm font-medium text-gray-500">Session Rate</dt>
-                        <dd className="mt-1 text-sm text-gray-900">
-                          ${client.billing.rate || "Not set"}
-                        </dd>
-                      </div>
-
-                      <div className="sm:col-span-2">
-                        <dt className="text-sm font-medium text-gray-500">Recent Invoices</dt>
-                        <dd className="mt-1">
-                          <div className="space-y-2">
-                            {client.billing.invoices?.map((invoice) => (
-                              <div
-                                key={invoice._id}
-                                className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
-                              >
-                                <div>
-                                  <p className="font-medium">
-                                    ${invoice.amount} -{" "}
-                                    {new Date(invoice.date).toLocaleDateString()}
-                                  </p>
-                                  <p className="text-sm text-gray-600">{invoice.notes}</p>
-                                </div>
-                                <div className="flex space-x-2">
-                                  {invoice.document && (
-                                    <button
-                                      onClick={() => handleViewInvoice(invoice)}
-                                      className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800"
-                                    >
-                                      View
-                                    </button>
-                                  )}
-                                  <button
-                                    onClick={() => {
-                                      setSelectedInvoice(invoice);
-                                      setShowBillingModal(true);
-                                    }}
-                                    className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
-                                  >
-                                    Edit
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteInvoice(invoice._id)}
-                                    className="px-3 py-1 text-sm text-red-600 hover:text-red-800"
-                                  >
-                                    Delete
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </dd>
-                      </div>
-
-                      {client.billing.notes && (
-                        <div className="sm:col-span-2">
-                          <dt className="text-sm font-medium text-gray-500">Notes</dt>
-                          <dd className="mt-1 text-sm text-gray-900">{client.billing.notes}</dd>
-                        </div>
-                      )}
-                    </dl>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-                  <div className="px-4 py-5 sm:p-6">
-                    <p className="text-sm text-gray-500">
-                      No billing information has been added yet.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
+            <BillingInfo
+              client={client}
+              onUpdate={handleBillingUpdate}
+              onDelete={handleDeleteBilling}
+            />
 
             {/* Insurance Information Section */}
             <div>
@@ -1379,7 +1170,7 @@ export default function ClientDetail({ clientId }) {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold mb-4">
-              {selectedConsent ? "View Consent Form" : "Request New Consent Form"}
+              {selectedConsent ? "View Consent Form" : "Request New Consent"}
             </h2>
 
             {selectedConsent ? (
@@ -1524,117 +1315,6 @@ export default function ClientDetail({ clientId }) {
         </div>
       )}
 
-      {showBillingModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full">
-            <h2 className="text-xl font-semibold mb-4">Edit Billing Information</h2>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const formData = new FormData(e.target);
-                handleBillingUpdate({
-                  paymentMethod: formData.get("paymentMethod"),
-                  rate: formData.get("rate"),
-                  notes: formData.get("notes"),
-                  invoiceFile: formData.get("invoiceFile"),
-                  amount: formData.get("amount"),
-                  invoiceNotes: formData.get("invoiceNotes"),
-                  invoiceId: formData.get("invoiceId"),
-                });
-              }}
-            >
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Payment Method</label>
-                  <select
-                    name="paymentMethod"
-                    defaultValue={client.billing?.paymentMethod}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  >
-                    <option value="self-pay">Self Pay</option>
-                    <option value="insurance">Insurance</option>
-                    <option value="sliding-scale">Sliding Scale</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Session Rate</label>
-                  <input
-                    type="number"
-                    name="rate"
-                    defaultValue={client.billing?.rate}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Billing Notes</label>
-                  <textarea
-                    name="notes"
-                    defaultValue={client.billing?.notes}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div className="border-t pt-4">
-                  <h3 className="text-lg font-medium mb-2">Invoice</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Invoice Document
-                      </label>
-                      <input
-                        type="file"
-                        name="invoiceFile"
-                        accept=".pdf"
-                        className="mt-1 block w-full"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Amount</label>
-                      <input
-                        type="number"
-                        name="amount"
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Invoice Notes
-                      </label>
-                      <textarea
-                        name="invoiceNotes"
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                      />
-                    </div>
-
-                    <input type="hidden" name="invoiceId" value={selectedInvoice?._id} />
-                  </div>
-                </div>
-
-                <div className="flex justify-end space-x-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowBillingModal(false)}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-                  >
-                    Save Changes
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
       {showInsuranceModal && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
@@ -1658,7 +1338,6 @@ export default function ClientDetail({ clientId }) {
                     id="provider"
                     name="provider"
                     className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    defaultValue={client?.insurance?.provider || ""}
                   />
                 </div>
 
@@ -1671,7 +1350,6 @@ export default function ClientDetail({ clientId }) {
                     id="policyNumber"
                     name="policyNumber"
                     className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    defaultValue={client?.insurance?.policyNumber || ""}
                   />
                 </div>
 
@@ -1684,7 +1362,6 @@ export default function ClientDetail({ clientId }) {
                     id="groupNumber"
                     name="groupNumber"
                     className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    defaultValue={client?.insurance?.groupNumber || ""}
                   />
                 </div>
 
@@ -1696,7 +1373,6 @@ export default function ClientDetail({ clientId }) {
                     id="coverage"
                     name="coverage"
                     className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                    defaultValue={client?.insurance?.coverage || "none"}
                   >
                     <option value="none">No Coverage</option>
                     <option value="partial">Partial Coverage</option>
@@ -1716,7 +1392,6 @@ export default function ClientDetail({ clientId }) {
                     name="insuranceNotes"
                     rows={3}
                     className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    defaultValue={client?.insurance?.notes || ""}
                   />
                 </div>
               </div>

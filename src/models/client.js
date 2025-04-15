@@ -220,6 +220,8 @@ const clientSchema = new mongoose.Schema({
           default: "pending",
         },
         notes: String,
+        document: String,
+        documentKey: String,
       },
     ],
   },

@@ -4,6 +4,7 @@ import Client from "@/models/client";
 import Session from "@/models/session";
 import Report from "@/models/report";
 import { getCurrentUser } from "@/lib/auth";
+import mongoose from "mongoose";
 
 // Get a specific client with their sessions and reports
 export async function GET(req, context) {
@@ -178,14 +179,16 @@ export async function PATCH(req, context) {
         if (!existingClient.billing.invoices) {
           existingClient.billing.invoices = [];
         }
-        body.billing.invoices.forEach((invoice) => {
-          existingClient.billing.invoices.push({
-            date: new Date(invoice.date),
-            amount: invoice.amount,
-            status: invoice.status || "pending",
-            notes: invoice.notes || "",
-          });
-        });
+        // Clear existing invoices and replace with new ones
+        existingClient.billing.invoices = body.billing.invoices.map((invoice) => ({
+          _id: invoice._id || new mongoose.Types.ObjectId(),
+          date: new Date(invoice.date),
+          amount: invoice.amount,
+          status: invoice.status || "pending",
+          notes: invoice.notes || "",
+          document: invoice.document || null,
+          documentKey: invoice.documentKey || null,
+        }));
       }
     }
 
