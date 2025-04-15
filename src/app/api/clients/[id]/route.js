@@ -194,31 +194,38 @@ export async function PATCH(req, context) {
 
     // Handle insurance updates
     if (body.insurance) {
-      if (!existingClient.insurance) {
-        existingClient.insurance = {
-          provider: "",
-          policyNumber: "",
-          groupNumber: "",
-          coverage: "none",
-          notes: "",
-        };
-      }
+      const insuranceUpdate = {};
 
       if (body.insurance.provider !== undefined) {
-        existingClient.insurance.provider = body.insurance.provider;
+        insuranceUpdate["insurance.provider"] = body.insurance.provider;
       }
       if (body.insurance.policyNumber !== undefined) {
-        existingClient.insurance.policyNumber = body.insurance.policyNumber;
+        insuranceUpdate["insurance.policyNumber"] = body.insurance.policyNumber;
       }
       if (body.insurance.groupNumber !== undefined) {
-        existingClient.insurance.groupNumber = body.insurance.groupNumber;
+        insuranceUpdate["insurance.groupNumber"] = body.insurance.groupNumber;
       }
       if (body.insurance.coverage !== undefined) {
-        existingClient.insurance.coverage = body.insurance.coverage;
+        insuranceUpdate["insurance.coverage"] = body.insurance.coverage;
       }
       if (body.insurance.notes !== undefined) {
-        existingClient.insurance.notes = body.insurance.notes;
+        insuranceUpdate["insurance.notes"] = body.insurance.notes;
       }
+
+      // Update just the insurance fields using findOneAndUpdate
+      const updatedClient = await Client.findOneAndUpdate(
+        { _id: id, counselorId: user.id },
+        { $set: insuranceUpdate },
+        { new: true }
+      );
+
+      if (!updatedClient) {
+        return NextResponse.json({ message: "Client not found" }, { status: 404 });
+      }
+
+      // Return without initialAssessment field
+      const { initialAssessment, ...clientWithoutAssessment } = updatedClient.toObject();
+      return NextResponse.json(clientWithoutAssessment);
     }
 
     // Save the updated client
