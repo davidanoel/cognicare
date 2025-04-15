@@ -4,12 +4,18 @@ import React, { useState, useEffect } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
-export default function SessionForm({ session, onSuccess, onCancel, initialClientId }) {
+export default function SessionForm({
+  session,
+  onSuccess,
+  onCancel,
+  initialClientId,
+  initialDate,
+}) {
   const [clients, setClients] = useState([]);
   const [loadingClients, setLoadingClients] = useState(true);
   const [formData, setFormData] = useState({
     clientId: initialClientId || "",
-    date: new Date().toISOString().split("T")[0],
+    date: initialDate || new Date().toISOString(),
     duration: 50,
     type: "initial",
     format: "in-person",
@@ -47,7 +53,7 @@ export default function SessionForm({ session, onSuccess, onCancel, initialClien
     if (session) {
       setFormData({
         clientId: session.clientId._id || session.clientId,
-        date: session.date.split("T")[0],
+        date: session.date,
         duration: session.duration,
         type: session.type,
         format: session.format,
@@ -72,7 +78,7 @@ export default function SessionForm({ session, onSuccess, onCancel, initialClien
   const handleDateChange = (date) => {
     setFormData((prev) => ({
       ...prev,
-      date: date.toISOString().split("T")[0],
+      date: date.toISOString(),
     }));
   };
 

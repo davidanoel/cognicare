@@ -11,6 +11,7 @@ function NewSessionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const clientId = searchParams.get("clientId");
+  const initialDate = searchParams.get("date");
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -40,6 +41,7 @@ function NewSessionContent() {
           }}
           onCancel={() => router.push("/sessions")}
           initialClientId={clientId}
+          initialDate={initialDate}
         />
       </div>
     </div>

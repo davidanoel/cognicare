@@ -279,7 +279,7 @@ export default function SessionAIInsights({ session }) {
                       </div>
 
                       {/* Treatment Goals & Interventions */}
-                      {documentationReport.clinicalDocumentation.treatmentGoalsAndInterventions
+                      {documentationReport?.clinicalDocumentation?.treatmentGoalsAndInterventions
                         ?.length > 0 && (
                         <div className="mb-6">
                           <h5 className="font-medium text-gray-700 mb-2">
@@ -301,7 +301,8 @@ export default function SessionAIInsights({ session }) {
                       )}
 
                       {/* Progress Indicators */}
-                      {documentationReport.clinicalDocumentation.progressIndicators?.length > 0 && (
+                      {documentationReport?.clinicalDocumentation?.progressIndicators?.length >
+                        0 && (
                         <div className="mb-6">
                           <h5 className="font-medium text-gray-700 mb-2">Progress Indicators</h5>
                           <div className="bg-gray-50 p-4 rounded-lg">
@@ -333,7 +334,7 @@ export default function SessionAIInsights({ session }) {
                       </div>
 
                       {/* Follow-up Recommendations */}
-                      {documentationReport.clinicalDocumentation.followUpRecommendations?.length >
+                      {documentationReport?.clinicalDocumentation?.followUpRecommendations?.length >
                         0 && (
                         <div className="mb-6">
                           <h5 className="font-medium text-gray-700 mb-2">
@@ -357,12 +358,12 @@ export default function SessionAIInsights({ session }) {
                   )}
 
                   {/* Progress Summary */}
-                  {documentationReport.progressSummary && (
+                  {documentationReport?.progressSummary && (
                     <div className="mb-8">
                       <h4 className="text-md font-semibold text-gray-700 mb-4">Progress Summary</h4>
 
                       {/* Treatment Goals Progress */}
-                      {documentationReport.progressSummary.treatmentGoalsProgress?.length > 0 && (
+                      {documentationReport?.progressSummary?.treatmentGoalsProgress?.length > 0 && (
                         <div className="mb-6">
                           <h5 className="font-medium text-gray-700 mb-2">
                             Treatment Goals Progress
@@ -393,7 +394,7 @@ export default function SessionAIInsights({ session }) {
                       )}
 
                       {/* Areas of Improvement */}
-                      {documentationReport.progressSummary.areasOfImprovement?.length > 0 && (
+                      {documentationReport?.progressSummary?.areasOfImprovement?.length > 0 && (
                         <div className="mb-6">
                           <h5 className="font-medium text-gray-700 mb-2">Areas of Improvement</h5>
                           <div className="bg-gray-50 p-4 rounded-lg">
@@ -412,7 +413,7 @@ export default function SessionAIInsights({ session }) {
                       )}
 
                       {/* Challenges and Barriers */}
-                      {documentationReport.progressSummary.challengesAndBarriers?.length > 0 && (
+                      {documentationReport?.progressSummary?.challengesAndBarriers?.length > 0 && (
                         <div className="mb-6">
                           <h5 className="font-medium text-gray-700 mb-2">
                             Challenges and Barriers
@@ -433,7 +434,8 @@ export default function SessionAIInsights({ session }) {
                       )}
 
                       {/* Treatment Plan Adjustments */}
-                      {documentationReport.progressSummary.treatmentPlanAdjustments?.length > 0 && (
+                      {documentationReport?.progressSummary?.treatmentPlanAdjustments?.length >
+                        0 && (
                         <div className="mb-6">
                           <h5 className="font-medium text-gray-700 mb-2">
                             Treatment Plan Adjustments
@@ -517,77 +519,89 @@ export default function SessionAIInsights({ session }) {
                 </div>
 
                 {/* Risk Factors */}
-                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                  <h4 className="text-md font-semibold text-gray-700 mb-3">Risk Factors</h4>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <ul className="space-y-2">
-                      {assessmentReport.riskFactors.map((factor, i) => (
-                        <li key={i} className="flex items-start gap-2">
-                          <span className="text-red-500 mt-1">•</span>
-                          <span className="text-gray-600">{factor}</span>
-                        </li>
-                      ))}
-                    </ul>
+                {assessmentReport?.riskFactors?.length > 0 && (
+                  <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                    <h4 className="text-md font-semibold text-gray-700 mb-3">Risk Factors</h4>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <ul className="space-y-2">
+                        {assessmentReport.riskFactors.map((factor, i) => (
+                          <li key={i} className="flex items-start gap-2">
+                            <span className="text-red-500 mt-1">•</span>
+                            <span className="text-gray-600">{factor}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Recommended Assessment Tools */}
-                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                  <h4 className="text-md font-semibold text-gray-700 mb-3">
-                    Recommended Assessment Tools
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {assessmentReport.recommendedAssessmentTools.map((tool, i) => (
-                      <div key={i} className="bg-gray-50 p-3 rounded-lg">
-                        <p className="text-gray-600">{tool}</p>
-                      </div>
-                    ))}
+                {assessmentReport?.recommendedAssessmentTools?.length > 0 && (
+                  <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                    <h4 className="text-md font-semibold text-gray-700 mb-3">
+                      Recommended Assessment Tools
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {assessmentReport.recommendedAssessmentTools.map((tool, i) => (
+                        <div key={i} className="bg-gray-50 p-3 rounded-lg">
+                          <p className="text-gray-600">{tool}</p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Clinical Observations */}
-                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                  <h4 className="text-md font-semibold text-gray-700 mb-3">
-                    Clinical Observations
-                  </h4>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-gray-600 leading-relaxed">
-                      {assessmentReport.initialClinicalObservations}
-                    </p>
+                {assessmentReport?.initialClinicalObservations && (
+                  <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                    <h4 className="text-md font-semibold text-gray-700 mb-3">
+                      Clinical Observations
+                    </h4>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <p className="text-gray-600 leading-relaxed">
+                        {assessmentReport.initialClinicalObservations}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Suggested Next Steps */}
-                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                  <h4 className="text-md font-semibold text-gray-700 mb-3">Suggested Next Steps</h4>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <ul className="space-y-2">
-                      {assessmentReport.suggestedNextSteps.map((step, i) => (
-                        <li key={i} className="flex items-start gap-2">
-                          <span className="text-green-500 mt-1">•</span>
-                          <span className="text-gray-600">{step}</span>
-                        </li>
-                      ))}
-                    </ul>
+                {assessmentReport?.suggestedNextSteps?.length > 0 && (
+                  <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                    <h4 className="text-md font-semibold text-gray-700 mb-3">
+                      Suggested Next Steps
+                    </h4>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <ul className="space-y-2">
+                        {assessmentReport.suggestedNextSteps.map((step, i) => (
+                          <li key={i} className="flex items-start gap-2">
+                            <span className="text-green-500 mt-1">•</span>
+                            <span className="text-gray-600">{step}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Areas Requiring Immediate Attention */}
-                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                  <h4 className="text-md font-semibold text-gray-700 mb-3">
-                    Areas Requiring Immediate Attention
-                  </h4>
-                  <div className="bg-red-50 p-4 rounded-lg">
-                    <ul className="space-y-2">
-                      {assessmentReport.areasRequiringImmediateAttention.map((area, i) => (
-                        <li key={i} className="flex items-start gap-2">
-                          <span className="text-red-500 mt-1">•</span>
-                          <span className="text-gray-600">{area}</span>
-                        </li>
-                      ))}
-                    </ul>
+                {assessmentReport?.areasRequiringImmediateAttention?.length > 0 && (
+                  <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                    <h4 className="text-md font-semibold text-gray-700 mb-3">
+                      Areas Requiring Immediate Attention
+                    </h4>
+                    <div className="bg-red-50 p-4 rounded-lg">
+                      <ul className="space-y-2">
+                        {assessmentReport.areasRequiringImmediateAttention.map((area, i) => (
+                          <li key={i} className="flex items-start gap-2">
+                            <span className="text-red-500 mt-1">•</span>
+                            <span className="text-gray-600">{area}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
           </div>
@@ -643,24 +657,26 @@ export default function SessionAIInsights({ session }) {
                     </div>
 
                     {/* Diagnostic Criteria */}
-                    <div>
-                      <h5 className="text-sm font-medium text-gray-700 mb-2">
-                        Diagnostic Criteria
-                      </h5>
-                      <ul className="space-y-2">
-                        {diagnosticReport.primaryDiagnosis.criteria.map((criterion, i) => (
-                          <li key={i} className="flex items-start gap-2">
-                            <span className="text-blue-500 mt-1">•</span>
-                            <span className="text-gray-600">{criterion}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                    {diagnosticReport?.primaryDiagnosis?.criteria?.length > 0 && (
+                      <div>
+                        <h5 className="text-sm font-medium text-gray-700 mb-2">
+                          Diagnostic Criteria
+                        </h5>
+                        <ul className="space-y-2">
+                          {diagnosticReport.primaryDiagnosis.criteria.map((criterion, i) => (
+                            <li key={i} className="flex items-start gap-2">
+                              <span className="text-blue-500 mt-1">•</span>
+                              <span className="text-gray-600">{criterion}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* Rule Out Conditions */}
-                {diagnosticReport.ruleOutConditions?.length > 0 && (
+                {diagnosticReport?.ruleOutConditions?.length > 0 && (
                   <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
                     <h4 className="text-md font-semibold text-gray-700 mb-3">
                       Rule Out Conditions
@@ -680,45 +696,51 @@ export default function SessionAIInsights({ session }) {
 
                 {/* Severity and Risk Factors */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-lg shadow-sm">
-                    <h4 className="text-md font-semibold text-gray-700 mb-3">
-                      Severity Indicators
-                    </h4>
-                    <ul className="space-y-2">
-                      {diagnosticReport.severityIndicators.map((indicator, i) => (
-                        <li key={i} className="flex items-start gap-2">
-                          <span className="text-yellow-500 mt-1">•</span>
-                          <span className="text-gray-600">{indicator}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-lg shadow-sm">
-                    <h4 className="text-md font-semibold text-gray-700 mb-3">Risk Factors</h4>
-                    <ul className="space-y-2">
-                      {diagnosticReport.riskFactors.map((factor, i) => (
-                        <li key={i} className="flex items-start gap-2">
-                          <span className="text-red-500 mt-1">•</span>
-                          <span className="text-gray-600">{factor}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  {diagnosticReport?.severityIndicators?.length > 0 && (
+                    <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-lg shadow-sm">
+                      <h4 className="text-md font-semibold text-gray-700 mb-3">
+                        Severity Indicators
+                      </h4>
+                      <ul className="space-y-2">
+                        {diagnosticReport.severityIndicators.map((indicator, i) => (
+                          <li key={i} className="flex items-start gap-2">
+                            <span className="text-yellow-500 mt-1">•</span>
+                            <span className="text-gray-600">{indicator}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {diagnosticReport?.riskFactors?.length > 0 && (
+                    <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-lg shadow-sm">
+                      <h4 className="text-md font-semibold text-gray-700 mb-3">Risk Factors</h4>
+                      <ul className="space-y-2">
+                        {diagnosticReport.riskFactors.map((factor, i) => (
+                          <li key={i} className="flex items-start gap-2">
+                            <span className="text-red-500 mt-1">•</span>
+                            <span className="text-gray-600">{factor}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
 
                 {/* Recommended Assessments */}
-                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                  <h4 className="text-md font-semibold text-gray-700 mb-3">
-                    Recommended Assessments
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {diagnosticReport.recommendedAssessments.map((assessment, i) => (
-                      <div key={i} className="bg-gray-50 p-3 rounded-lg">
-                        <p className="text-gray-600">{assessment}</p>
-                      </div>
-                    ))}
+                {diagnosticReport?.recommendedAssessments?.length > 0 && (
+                  <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                    <h4 className="text-md font-semibold text-gray-700 mb-3">
+                      Recommended Assessments
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {diagnosticReport.recommendedAssessments.map((assessment, i) => (
+                        <div key={i} className="bg-gray-50 p-3 rounded-lg">
+                          <p className="text-gray-600">{assessment}</p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Clinical Justification */}
                 <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
@@ -733,43 +755,47 @@ export default function SessionAIInsights({ session }) {
                 </div>
 
                 {/* Treatment Implications */}
-                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                  <h4 className="text-md font-semibold text-gray-700 mb-3">
-                    Treatment Implications
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {diagnosticReport.treatmentImplications.map((implication, i) => (
-                      <div key={i} className="bg-gray-50 p-3 rounded-lg">
-                        <p className="text-gray-600">{implication}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Comorbidity Assessment */}
-                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                  <h4 className="text-md font-semibold text-gray-700 mb-3">
-                    Comorbidity Assessment
-                  </h4>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`text-xl ${
-                          diagnosticReport.comorbidityAssessment.present
-                            ? "text-yellow-500"
-                            : "text-green-500"
-                        }`}
-                      >
-                        {diagnosticReport.comorbidityAssessment.present ? "⚠️" : "✅"}
-                      </span>
-                      <p className="text-gray-600">
-                        {diagnosticReport.comorbidityAssessment.present
-                          ? "Additional comorbid conditions present"
-                          : "No comorbid conditions identified"}
-                      </p>
+                {diagnosticReport?.treatmentImplications?.length > 0 && (
+                  <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                    <h4 className="text-md font-semibold text-gray-700 mb-3">
+                      Treatment Implications
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {diagnosticReport.treatmentImplications.map((implication, i) => (
+                        <div key={i} className="bg-gray-50 p-3 rounded-lg">
+                          <p className="text-gray-600">{implication}</p>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                </div>
+                )}
+
+                {/* Comorbidity Assessment */}
+                {diagnosticReport?.comorbidityAssessment && (
+                  <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                    <h4 className="text-md font-semibold text-gray-700 mb-3">
+                      Comorbidity Assessment
+                    </h4>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`text-xl ${
+                            diagnosticReport.comorbidityAssessment.present
+                              ? "text-yellow-500"
+                              : "text-green-500"
+                          }`}
+                        >
+                          {diagnosticReport.comorbidityAssessment.present ? "⚠️" : "✅"}
+                        </span>
+                        <p className="text-gray-600">
+                          {diagnosticReport.comorbidityAssessment.present
+                            ? "Additional comorbid conditions present"
+                            : "No comorbid conditions identified"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Diagnostic Summary */}
                 <div className="bg-blue-50 p-4 rounded-lg">
@@ -998,7 +1024,7 @@ export default function SessionAIInsights({ session }) {
                   )}
 
                   {/* Goal Achievement Status */}
-                  {progressReport.goalAchievementStatus?.length > 0 && (
+                  {progressReport?.goalAchievementStatus?.length > 0 && (
                     <div className="mb-8">
                       <h4 className="text-md font-semibold text-gray-700 mb-4">
                         Goal Achievement Status
@@ -1028,7 +1054,7 @@ export default function SessionAIInsights({ session }) {
                   )}
 
                   {/* Key Observations */}
-                  {progressReport.keyObservations?.length > 0 && (
+                  {progressReport?.keyObservations?.length > 0 && (
                     <div className="mb-8">
                       <h4 className="text-md font-semibold text-gray-700 mb-4">Key Observations</h4>
                       <div className="bg-gray-50 p-4 rounded-lg">
@@ -1099,7 +1125,7 @@ export default function SessionAIInsights({ session }) {
                     )}
 
                     {/* Areas Needing Focus */}
-                    {progressReport.areasNeedingFocus?.length > 0 && (
+                    {progressReport?.areasNeedingFocus?.length > 0 && (
                       <div>
                         <h4 className="text-md font-semibold text-gray-700 mb-4">
                           Areas Needing Focus
@@ -1118,7 +1144,7 @@ export default function SessionAIInsights({ session }) {
                     )}
 
                     {/* Recommendations */}
-                    {progressReport.recommendations?.length > 0 && (
+                    {progressReport?.recommendations?.length > 0 && (
                       <div>
                         <h4 className="text-md font-semibold text-gray-700 mb-4">
                           Recommendations

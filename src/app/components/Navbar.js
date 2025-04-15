@@ -70,6 +70,16 @@ export default function Navbar() {
                 Sessions
               </Link>
               <Link
+                href="/sessions/calendar"
+                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                  isActive("/sessions/calendar")
+                    ? "border-white text-white"
+                    : "border-transparent text-indigo-100 hover:border-indigo-200 hover:text-white"
+                }`}
+              >
+                Calendar
+              </Link>
+              <Link
                 href="/reports"
                 className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
                   isActive("/reports")
