@@ -49,14 +49,7 @@ export async function POST(request) {
 
     // Create consent form object
     const consentForm = {
-      type:
-        type === "general"
-          ? "treatment"
-          : type === "telehealth"
-          ? "treatment"
-          : type === "minor"
-          ? "treatment"
-          : "treatment",
+      type: type,
       version: template.version,
       document: signedUrl,
       documentKey: fileKey,
