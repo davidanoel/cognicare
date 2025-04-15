@@ -15,12 +15,10 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
     try {
       // Prepare the update data for basic billing info
       const updateData = {
-        billing: {
-          paymentMethod: formData.paymentMethod,
-          rate: formData.rate,
-          notes: formData.notes,
-          invoices: client?.billing?.invoices || [],
-        },
+        paymentMethod: formData.paymentMethod,
+        rate: formData.rate,
+        notes: formData.notes,
+        invoices: client?.billing?.invoices || [],
       };
 
       // Only process invoice data if an amount is provided
@@ -63,16 +61,16 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
         // Update or add the invoice
         if (formData.invoiceId) {
           // Update existing invoice
-          updateData.billing.invoices = updateData.billing.invoices.map((invoice) =>
+          updateData.invoices = updateData.invoices.map((invoice) =>
             invoice._id === formData.invoiceId ? invoiceData : invoice
           );
         } else {
           // Add new invoice only if it doesn't already exist
-          const existingInvoice = updateData.billing.invoices.find(
+          const existingInvoice = updateData.invoices.find(
             (inv) => inv.amount === formData.amount && inv.date === invoiceData.date
           );
           if (!existingInvoice) {
-            updateData.billing.invoices = [...updateData.billing.invoices, invoiceData];
+            updateData.invoices = [...updateData.invoices, invoiceData];
           }
         }
       }
@@ -80,7 +78,7 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
       console.log("Update data:", updateData);
 
       // Update client billing information
-      const response = await fetch(`/api/clients/${client._id}`, {
+      const response = await fetch(`/api/clients/${client._id}/billing`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -92,9 +90,12 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
         throw new Error("Failed to update billing information");
       }
 
-      const updatedClient = await response.json();
-      console.log("Updated client:", updatedClient);
-      onUpdate(updatedClient);
+      const updatedBilling = await response.json();
+      console.log("Updated billing:", updatedBilling);
+      onUpdate({
+        ...client,
+        billing: updatedBilling,
+      });
       setSelectedInvoice(null);
       setShowBillingModal(false);
     } catch (error) {
