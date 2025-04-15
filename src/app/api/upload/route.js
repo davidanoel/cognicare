@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { writeFile } from "fs/promises";
-import { join } from "path";
+import { uploadFile, generateFileKey } from "@/lib/storage";
 
 export async function POST(req) {
   try {
@@ -17,20 +16,19 @@ export async function POST(req) {
       return NextResponse.json({ message: "No file uploaded" }, { status: 400 });
     }
 
-    // Create a unique filename
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const filename = `${Date.now()}-${file.name}`;
+    // Generate a unique file key
+    const fileKey = generateFileKey("invoices", file.name);
 
-    // Save the file to the public/uploads directory
-    const path = join(process.cwd(), "public/uploads", filename);
-    await writeFile(path, buffer);
+    // Upload file to Google Cloud Storage
+    const documentUrl = await uploadFile(file, fileKey, {
+      type: "invoice",
+      uploadedBy: user._id,
+    });
 
-    // Return the file path
     return NextResponse.json({
       success: true,
-      filename,
-      path: `/uploads/${filename}`,
+      path: documentUrl,
+      key: fileKey,
     });
   } catch (error) {
     console.error("Upload error:", error);

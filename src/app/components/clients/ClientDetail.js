@@ -38,6 +38,7 @@ export default function ClientDetail({ clientId }) {
   const [consentFormNotes, setConsentFormNotes] = useState("");
   const [consentFormFile, setConsentFormFile] = useState(null);
   const [availableTemplates, setAvailableTemplates] = useState([]);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -246,8 +247,31 @@ export default function ClientDetail({ clientId }) {
           amount: formData.amount,
           status: "pending",
           document: uploadResult.path,
+          documentKey: uploadResult.key,
           notes: formData.invoiceNotes || "",
         };
+      }
+
+      // Prepare the update data
+      const updateData = {
+        billing: {
+          paymentMethod: formData.paymentMethod,
+          rate: formData.rate,
+          notes: formData.notes,
+        },
+      };
+
+      // If there's a new invoice, handle it based on whether we're updating an existing one
+      if (invoiceData) {
+        if (formData.invoiceId) {
+          // Update existing invoice
+          updateData.billing.invoices = (client.billing?.invoices || []).map((invoice) =>
+            invoice._id === formData.invoiceId ? invoiceData : invoice
+          );
+        } else {
+          // Add new invoice
+          updateData.billing.invoices = [...(client.billing?.invoices || []), invoiceData];
+        }
       }
 
       // Update client billing information
@@ -256,14 +280,7 @@ export default function ClientDetail({ clientId }) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          billing: {
-            paymentMethod: formData.paymentMethod,
-            rate: formData.rate,
-            notes: formData.notes,
-            ...(invoiceData && { invoices: [invoiceData] }),
-          },
-        }),
+        body: JSON.stringify(updateData),
       });
 
       if (!response.ok) {
@@ -276,6 +293,12 @@ export default function ClientDetail({ clientId }) {
     } catch (error) {
       console.error("Error updating billing:", error);
       // Handle error (show toast, etc.)
+    }
+  };
+
+  const handleViewInvoice = (invoice) => {
+    if (invoice.document) {
+      window.open(invoice.document, "_blank");
     }
   };
 
@@ -376,6 +399,63 @@ export default function ClientDetail({ clientId }) {
     } catch (error) {
       console.error("Error deleting consent form:", error);
       alert(error.message || "Failed to delete consent form");
+    }
+  };
+
+  const handleDeleteInvoice = async (invoiceId) => {
+    if (!confirm("Are you sure you want to delete this invoice?")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/clients/${client._id}/invoices/${invoiceId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete invoice");
+      }
+
+      // Update the client state by removing the deleted invoice
+      setClient((prevClient) => ({
+        ...prevClient,
+        billing: {
+          ...prevClient.billing,
+          invoices: prevClient.billing.invoices.filter((invoice) => invoice._id !== invoiceId),
+        },
+      }));
+    } catch (error) {
+      console.error("Error deleting invoice:", error);
+      // Handle error (show toast, etc.)
+    }
+  };
+
+  const handleDeleteBilling = async () => {
+    if (
+      !confirm(
+        "Are you sure you want to delete all billing information? This will also delete all invoices."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/clients/${client._id}/billing`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete billing information");
+      }
+
+      // Update the client state by removing the billing information
+      setClient((prevClient) => ({
+        ...prevClient,
+        billing: null,
+      }));
+    } catch (error) {
+      console.error("Error deleting billing:", error);
+      // Handle error (show toast, etc.)
     }
   };
 
@@ -1126,86 +1206,109 @@ export default function ClientDetail({ clientId }) {
             <div>
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-medium text-gray-900">Billing Information</h3>
-                <button
-                  onClick={() => setShowBillingModal(true)}
-                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  Edit Billing
-                </button>
-              </div>
-              <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-                <div className="px-4 py-5 sm:p-6">
-                  <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500">Payment Method</dt>
-                      <dd className="mt-1 text-sm text-gray-900">
-                        {client?.billing?.paymentMethod || "Not set"}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500">Session Rate</dt>
-                      <dd className="mt-1 text-sm text-gray-900">
-                        {client?.billing?.rate ? `$${client.billing.rate}/session` : "Not set"}
-                      </dd>
-                    </div>
-                    <div className="sm:col-span-2">
-                      <dt className="text-sm font-medium text-gray-500">Recent Invoices</dt>
-                      <dd className="mt-1">
-                        <ul className="border border-gray-200 rounded-md divide-y divide-gray-200">
-                          {client?.billing?.invoices?.length > 0 ? (
-                            client.billing.invoices.map((invoice, index) => (
-                              <li
-                                key={index}
-                                className="pl-3 pr-4 py-3 flex items-center justify-between text-sm"
-                              >
-                                <div className="w-0 flex-1 flex items-center">
-                                  <span className="ml-2 flex-1 w-0 truncate">
-                                    {formatDate(invoice.date)} - ${invoice.amount}
-                                  </span>
-                                </div>
-                                <div className="ml-4 flex-shrink-0 flex items-center space-x-2">
-                                  {invoice.document && (
-                                    <a
-                                      href={invoice.document}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-indigo-600 hover:text-indigo-500"
-                                    >
-                                      View
-                                    </a>
-                                  )}
-                                  <span
-                                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                                    ${
-                                      invoice.status === "paid"
-                                        ? "bg-green-100 text-green-800"
-                                        : invoice.status === "pending"
-                                        ? "bg-yellow-100 text-yellow-800"
-                                        : "bg-red-100 text-red-800"
-                                    }`}
-                                  >
-                                    {invoice.status}
-                                  </span>
-                                </div>
-                              </li>
-                            ))
-                          ) : (
-                            <li className="pl-3 pr-4 py-3 text-sm text-gray-500">
-                              No recent invoices
-                            </li>
-                          )}
-                        </ul>
-                      </dd>
-                    </div>
-                    {client?.billing?.notes && (
-                      <div className="sm:col-span-2">
-                        <dt className="text-sm font-medium text-gray-500">Notes</dt>
-                        <dd className="mt-1 text-sm text-gray-900">{client.billing.notes}</dd>
-                      </div>
-                    )}
-                  </dl>
+                <div className="flex space-x-2">
+                  {client?.billing && (
+                    <button
+                      onClick={handleDeleteBilling}
+                      className="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-sm leading-4 font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                    >
+                      Delete Billing
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowBillingModal(true)}
+                    className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                    {client?.billing ? "Edit Billing" : "Add Billing Information"}
+                  </button>
                 </div>
               </div>
+
+              {client?.billing ? (
+                <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+                  <div className="px-4 py-5 sm:p-6">
+                    <dl className="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
+                      <div className="sm:col-span-1">
+                        <dt className="text-sm font-medium text-gray-500">Payment Method</dt>
+                        <dd className="mt-1 text-sm text-gray-900">
+                          {client.billing.paymentMethod === "self-pay" && "Self Pay"}
+                          {client.billing.paymentMethod === "insurance" && "Insurance"}
+                          {client.billing.paymentMethod === "sliding-scale" && "Sliding Scale"}
+                        </dd>
+                      </div>
+
+                      <div className="sm:col-span-1">
+                        <dt className="text-sm font-medium text-gray-500">Session Rate</dt>
+                        <dd className="mt-1 text-sm text-gray-900">
+                          ${client.billing.rate || "Not set"}
+                        </dd>
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <dt className="text-sm font-medium text-gray-500">Recent Invoices</dt>
+                        <dd className="mt-1">
+                          <div className="space-y-2">
+                            {client.billing.invoices?.map((invoice) => (
+                              <div
+                                key={invoice._id}
+                                className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
+                              >
+                                <div>
+                                  <p className="font-medium">
+                                    ${invoice.amount} -{" "}
+                                    {new Date(invoice.date).toLocaleDateString()}
+                                  </p>
+                                  <p className="text-sm text-gray-600">{invoice.notes}</p>
+                                </div>
+                                <div className="flex space-x-2">
+                                  {invoice.document && (
+                                    <button
+                                      onClick={() => handleViewInvoice(invoice)}
+                                      className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800"
+                                    >
+                                      View
+                                    </button>
+                                  )}
+                                  <button
+                                    onClick={() => {
+                                      setSelectedInvoice(invoice);
+                                      setShowBillingModal(true);
+                                    }}
+                                    className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteInvoice(invoice._id)}
+                                    className="px-3 py-1 text-sm text-red-600 hover:text-red-800"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </dd>
+                      </div>
+
+                      {client.billing.notes && (
+                        <div className="sm:col-span-2">
+                          <dt className="text-sm font-medium text-gray-500">Notes</dt>
+                          <dd className="mt-1 text-sm text-gray-900">{client.billing.notes}</dd>
+                        </div>
+                      )}
+                    </dl>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+                  <div className="px-4 py-5 sm:p-6">
+                    <p className="text-sm text-gray-500">
+                      No billing information has been added yet.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Insurance Information Section */}
@@ -1422,38 +1525,31 @@ export default function ClientDetail({ clientId }) {
       )}
 
       {showBillingModal && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Edit Billing Information</h3>
-
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full">
+            <h2 className="text-xl font-semibold mb-4">Edit Billing Information</h2>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
                 handleBillingUpdate({
                   paymentMethod: formData.get("paymentMethod"),
-                  rate: parseFloat(formData.get("rate")),
+                  rate: formData.get("rate"),
                   notes: formData.get("notes"),
                   invoiceFile: formData.get("invoiceFile"),
-                  amount: parseFloat(formData.get("amount")),
+                  amount: formData.get("amount"),
                   invoiceNotes: formData.get("invoiceNotes"),
+                  invoiceId: formData.get("invoiceId"),
                 });
               }}
             >
               <div className="space-y-4">
                 <div>
-                  <label
-                    htmlFor="paymentMethod"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Payment Method
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700">Payment Method</label>
                   <select
-                    id="paymentMethod"
                     name="paymentMethod"
-                    required
-                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                    defaultValue={client?.billing?.paymentMethod || "self-pay"}
+                    defaultValue={client.billing?.paymentMethod}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   >
                     <option value="self-pay">Self Pay</option>
                     <option value="insurance">Insurance</option>
@@ -1462,116 +1558,77 @@ export default function ClientDetail({ clientId }) {
                 </div>
 
                 <div>
-                  <label htmlFor="rate" className="block text-sm font-medium text-gray-700">
-                    Session Rate ($)
-                  </label>
-                  <div className="mt-1 relative rounded-md shadow-sm">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <span className="text-gray-500 sm:text-sm">$</span>
-                    </div>
-                    <input
-                      type="number"
-                      name="rate"
-                      id="rate"
-                      step="0.01"
-                      min="0"
-                      defaultValue={client?.billing?.rate || 0}
-                      className="pl-7 block w-full border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      placeholder="0.00"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
-                    Billing Notes
-                  </label>
-                  <textarea
-                    id="notes"
-                    name="notes"
-                    rows={3}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    defaultValue={client?.billing?.notes || ""}
+                  <label className="block text-sm font-medium text-gray-700">Session Rate</label>
+                  <input
+                    type="number"
+                    name="rate"
+                    defaultValue={client.billing?.rate}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   />
                 </div>
 
-                {/* Invoice Upload Section */}
-                <div className="border-t border-gray-200 pt-4">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Add New Invoice</h4>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Billing Notes</label>
+                  <textarea
+                    name="notes"
+                    defaultValue={client.billing?.notes}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
 
-                  <div>
-                    <label
-                      htmlFor="invoiceFile"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Invoice Document (PDF)
-                    </label>
-                    <input
-                      type="file"
-                      id="invoiceFile"
-                      name="invoiceFile"
-                      accept=".pdf"
-                      className="mt-1 block w-full text-sm text-gray-500
-                        file:mr-4 file:py-2 file:px-4
-                        file:rounded-md file:border-0
-                        file:text-sm file:font-semibold
-                        file:bg-indigo-50 file:text-indigo-700
-                        hover:file:bg-indigo-100"
-                    />
-                  </div>
+                <div className="border-t pt-4">
+                  <h3 className="text-lg font-medium mb-2">Invoice</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Invoice Document
+                      </label>
+                      <input
+                        type="file"
+                        name="invoiceFile"
+                        accept=".pdf"
+                        className="mt-1 block w-full"
+                      />
+                    </div>
 
-                  <div className="mt-2">
-                    <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
-                      Amount ($)
-                    </label>
-                    <div className="mt-1 relative rounded-md shadow-sm">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <span className="text-gray-500 sm:text-sm">$</span>
-                      </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Amount</label>
                       <input
                         type="number"
                         name="amount"
-                        id="amount"
-                        step="0.01"
-                        min="0"
-                        className="pl-7 block w-full border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        placeholder="0.00"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                       />
                     </div>
-                  </div>
 
-                  <div className="mt-2">
-                    <label
-                      htmlFor="invoiceNotes"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Invoice Notes
-                    </label>
-                    <textarea
-                      id="invoiceNotes"
-                      name="invoiceNotes"
-                      rows={2}
-                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      placeholder="Optional notes about this invoice"
-                    />
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Invoice Notes
+                      </label>
+                      <textarea
+                        name="invoiceNotes"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <input type="hidden" name="invoiceId" value={selectedInvoice?._id} />
                   </div>
                 </div>
-              </div>
 
-              <div className="mt-6 flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setShowBillingModal(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
-                >
-                  Save Changes
-                </button>
+                <div className="flex justify-end space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowBillingModal(false)}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                  >
+                    Save Changes
+                  </button>
+                </div>
               </div>
             </form>
           </div>
