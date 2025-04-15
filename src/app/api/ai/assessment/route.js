@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import { createStructuredResponse } from "@/lib/ai/baseAgent";
 import { connectDB } from "@/lib/mongodb";
 import AIReport from "@/models/aiReport";
 
 export async function POST(req) {
   try {
-    const session = await getSession();
-    if (!session) {
+    const user = await getCurrentUser();
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -82,7 +82,7 @@ IMPORTANT: Your response must be in this exact JSON format:
     await connectDB();
     const aiReport = new AIReport({
       clientId,
-      counselorId: session.user.id,
+      counselorId: user.id,
       type: "assessment",
       content: response,
       source: assessmentSource,

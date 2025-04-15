@@ -20,7 +20,14 @@ const aiReportSchema = new mongoose.Schema(
     type: {
       type: String,
       required: true,
-      enum: ["assessment", "diagnostic", "treatment", "progress", "documentation"],
+      enum: [
+        "assessment",
+        "diagnostic",
+        "treatment",
+        "progress",
+        "documentation",
+        "conversational",
+      ],
     },
     content: {
       type: mongoose.Schema.Types.Mixed,

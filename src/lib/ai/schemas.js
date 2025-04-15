@@ -186,6 +186,17 @@ export const documentationSchema = z
   })
   .passthrough();
 
+// Conversational response schema
+export const conversationalSchema = z
+  .object({
+    response: z.string(),
+    relevantData: z.object({
+      sessions: z.array(z.string()).optional(),
+      reports: z.array(z.string()).optional(),
+    }),
+  })
+  .passthrough();
+
 // Combined schema that can handle any agent type
 export const combinedSchema = z.union([
   assessmentSchema,
@@ -193,6 +204,7 @@ export const combinedSchema = z.union([
   treatmentSchema,
   progressSchema,
   documentationSchema,
+  conversationalSchema,
 ]);
 
 // Helper function to get schema by agent type
@@ -208,6 +220,8 @@ export function getSchemaByType(agentType) {
       return progressSchema;
     case "documentation":
       return documentationSchema;
+    case "conversational":
+      return conversationalSchema;
     default:
       return combinedSchema;
   }

@@ -6,7 +6,7 @@ import Link from "next/link";
 import SessionForm from "./SessionForm";
 import SessionAIInsights from "./SessionAIInsights";
 import AIWorkflow from "../clients/AIWorkflow";
-import SessionPrepView from "../clients/SessionPrepView";
+import SessionAssistant from "./SessionAssistant";
 
 export default function SessionDetail({ sessionId }) {
   const router = useRouter();
@@ -343,6 +343,7 @@ export default function SessionDetail({ sessionId }) {
           </div>
         </div>
       </div>
+      <SessionAssistant sessionId={sessionId} clientId={session.clientId} />
     </div>
   );
 }
