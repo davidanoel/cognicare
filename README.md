@@ -2,6 +2,34 @@
 
 CogniCare is a professional mental health platform that empowers counselors with advanced AI-assisted tools for client assessment, treatment planning, and progress monitoring. Powered by [Vercel AI SDK](https://sdk.vercel.ai/docs), CogniCare leverages a specialized chain of AI agents to enhance clinical decision-making and streamline practice management.
 
+## Latest Features 🆕
+
+### 🤖 TheraBot - AI Session Assistant
+
+- Real-time session assistance
+- Context-aware responses
+- Session history analysis
+- Treatment plan suggestions
+- Progress tracking insights
+
+### 📅 Enhanced Calendar System
+
+- Drag-and-drop session scheduling
+- Real-time updates
+- Session duration management
+- Conflict prevention
+- Visual session organization
+- Quick session rescheduling
+
+### 💰 Integrated Billing System
+
+- Automated invoice generation
+- Secure payment processing
+- Insurance claim support
+- Billing history tracking
+- Financial reporting
+- Payment reminders
+
 ## Core AI Implementation
 
 ### 🤖 AI Agent Chain
@@ -39,16 +67,24 @@ CogniCare's AI system operates through an interconnected chain of specialized ag
    - Plan adjustment suggestions
 
 5. **Documentation Agent**
+
    - Comprehensive clinical notes
    - Progress report generation
    - Treatment record maintenance
    - Compliance documentation
    - Professional report formatting
 
+6. **Conversational Agent** (TheraBot)
+   - Real-time session assistance
+   - Context-aware responses
+   - Treatment plan suggestions
+   - Progress tracking insights
+   - Session history analysis
+
 ### 🔄 Data Flow
 
 ```typescript
-Client Data → Assessment → Diagnosis → Treatment → Progress → Documentation
+Client Data → Assessment → Diagnosis → Treatment → Progress → Documentation → TheraBot
 ```
 
 Each agent in the chain:
@@ -66,6 +102,9 @@ Each agent in the chain:
 - **Consistent Care Quality**: Standardized assessment and treatment planning processes
 - **Time Efficiency**: Reduced administrative burden on mental health professionals
 - **Improved Outcomes**: Data-driven insights for better treatment effectiveness
+- **Real-time Assistance**: TheraBot provides immediate support during sessions
+- **Flexible Scheduling**: Intuitive calendar system for easy session management
+- **Integrated Billing**: Seamless financial management and reporting
 
 ## Professional Features
 
@@ -80,6 +119,8 @@ Each agent in the chain:
 - Client progress visualization
 - Treatment plan management
 - Risk assessment tracking
+- Billing and payment history
+- Insurance information management
 
 ### 🧠 AI Clinical Support Team
 
@@ -88,6 +129,7 @@ Each agent in the chain:
 - **Treatment Planner**: Develops structured intervention strategies
 - **Progress Monitor**: Tracks therapeutic outcomes
 - **Documentation Assistant**: Generates clinical notes and reports
+- **TheraBot**: Real-time session assistance and insights
 
 ### 📊 Clinical Tools
 
@@ -97,6 +139,9 @@ Each agent in the chain:
 - Outcome measurement tools
 - Crisis response protocols
 - Resource management system
+- Session calendar with drag-and-drop
+- Billing and invoicing system
+- Insurance claim management
 
 ### 📈 Practice Analytics
 
@@ -105,107 +150,10 @@ Each agent in the chain:
 - Caseload management insights
 - Outcome tracking dashboards
 - Quality of care indicators
-
-## Report Types
-
-CogniCare generates comprehensive reports for various clinical needs:
-
-### 📝 Assessment Reports
-
-- Initial client evaluation
-- Risk assessment
-- Clinical history analysis
-- Treatment recommendations
-
-### 🏥 Diagnostic Reports
-
-- DSM-5 aligned diagnoses
-- Clinical impressions
-- Differential diagnosis
-- Risk factor analysis
-
-### 📋 Treatment Plans
-
-- Evidence-based interventions
-- Goal setting and timeline
-- Progress metrics
-- Outcome expectations
-
-### 📈 Progress Reports
-
-- Treatment effectiveness
-- Goal achievement tracking
-- Pattern recognition
-- Plan adjustment recommendations
-
-### 📑 Documentation Reports
-
-- Session summaries
-- Clinical notes
-- Compliance documentation
-- Treatment records
-
-## User Interface
-
-CogniCare features a modern, intuitive interface designed for professional use:
-
-### 🎨 Design Features
-
-- Clean, professional layout
-- Responsive design for all devices
-- Accessible color schemes
-- Intuitive navigation
-- Real-time updates
-
-### 📱 Mobile Compatibility
-
-- Full functionality on mobile devices
-- Optimized touch interactions
-- Offline capabilities
-- Push notifications
-
-### 📊 Dashboard
-
-- Customizable widgets
-- Quick access to key features
-- Real-time analytics
-- Client overview
-- Task management
-
-## Pricing Plans
-
-CogniCare offers flexible pricing options to suit different practice needs:
-
-### 💼 Basic Plan ($49/month)
-
-- AI-powered session analysis
-- Comprehensive report generation
-- Client management
-- Session tracking
-- Basic analytics
-- Email support
-
-### 👨‍⚕️ Professional Plan ($99/month)
-
-- All Basic features
-- Advanced AI insights
-- Custom report templates
-- Team collaboration
-- Priority support
-- Data export
-- API access
-
-### 🏢 Enterprise Plan ($299/month)
-
-- All Professional features
-- Custom AI models
-- Dedicated support
-- Custom integrations
-- Advanced security
-- Training sessions
-- SLA guarantees
-
-All plans include a 14-day free trial with no credit card required.
+- Financial performance metrics
+- Session attendance tracking
+- Revenue analysis
+- Insurance claim success rates
 
 ## Technical Implementation
 
@@ -216,6 +164,9 @@ CogniCare is built on cutting-edge technology:
 - **NextAuth.js**: Secure authentication system
 - **Tailwind CSS**: Professional-grade UI components
 - **Vercel AI SDK**: Advanced AI integration, streaming, and agent orchestration
+- **Google Cloud Storage**: Secure file storage and management
+- **React Big Calendar**: Advanced calendar functionality
+- **Stripe**: Secure payment processing
 
 ### Development Tools
 
@@ -241,7 +192,10 @@ CogniCare is built on cutting-edge technology:
     "react": "^18.2.0",
     "react-datepicker": "^6.9.0",
     "react-dom": "^18.2.0",
-    "recharts": "^2.15.2"
+    "recharts": "^2.15.2",
+    "react-big-calendar": "^1.8.0",
+    "@google-cloud/storage": "^7.0.0",
+    "stripe": "^14.0.0"
   }
 }
 ```
@@ -250,143 +204,51 @@ CogniCare is built on cutting-edge technology:
 
 CogniCare implements robust security measures:
 
-### 🔐 Role-Based Access
-
-- **Admin**: Full system access
-- **Practitioner**: Client management and reporting
-- **Staff**: Limited access to assigned clients
-- **Client**: Personal data access only
-
-### 🔒 Security Features
-
-- Multi-factor authentication
-- Session management
-- Role-based permissions
-- Audit logging
-- Data encryption
+- **Role-based access control**
+- **Multi-factor authentication**
+- **Session management**
+- **HIPAA-compliant data handling**
+- **Encrypted data transmission**
+- **Regular security audits**
 
 ## Deployment
 
-### 🚀 Production Deployment
+CogniCare is deployed on Vercel with:
 
-1. Set up environment variables:
+- **Automatic deployments**
+- **Preview deployments**
+- **Environment variable management**
+- **Performance monitoring**
+- **Error tracking**
+- **Analytics integration**
 
-   ```env
-   MONGODB_URI=your_mongodb_uri
-   NEXTAUTH_SECRET=your_nextauth_secret
-   NEXTAUTH_URL=your_production_url
-   OPENAI_API_KEY=your_openai_api_key
-   ANTHROPIC_API_KEY=your_anthropic_api_key
-   GROQ_API_KEY=your_groq_api_key
-   ```
+## Getting Started
 
-2. Build and deploy:
-   ```bash
-   npm run build
-   npm start
-   ```
-
-### 📦 Development Setup
-
-1. Clone the repository:
-
-   ```bash
-   git clone [repository-url]
-   cd cognicare-next
-   ```
-
-2. Install dependencies:
-
-   ```bash
-   npm install
-   ```
-
-3. Start development server:
-   ```bash
-   npm run dev
-   ```
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Set up environment variables
+4. Run development server: `npm run dev`
+5. Build for production: `npm run build`
+6. Start production server: `npm start`
 
 ## Contributing
 
-We welcome contributions to CogniCare! Here's how to get started:
-
-### 🛠️ Development Process
+We welcome contributions to CogniCare! Please follow our contribution guidelines:
 
 1. Fork the repository
 2. Create a feature branch
-3. Make your changes
-4. Run tests
-5. Submit a pull request
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
 
-### 📝 Code Standards
+## License
 
-- Follow TypeScript best practices
-- Use ESLint and Prettier
-- Write unit tests for new features
-- Document your code
-- Follow the existing code style
+CogniCare is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
-## Troubleshooting
+## Support
 
-### 🔧 Common Issues
+For support, please contact:
 
-1. **Authentication Problems**
-
-   - Clear browser cookies
-   - Check network connectivity
-   - Verify environment variables
-
-2. **Database Connection**
-
-   - Verify MongoDB URI
-   - Check network access
-   - Ensure proper permissions
-
-3. **AI Integration**
-   - Verify API keys
-   - Check rate limits
-   - Monitor API responses
-
-### 📞 Support Channels
-
-- Email: support@cognicare.ai
-- Documentation: [docs.cognicare.ai](https://docs.cognicare.ai)
-- Community Forum: [forum.cognicare.ai](https://forum.cognicare.ai)
-
-## Roadmap
-
-### 🚀 Upcoming Features
-
-- [ ] Mobile app development
-- [ ] Advanced analytics dashboard
-- [ ] Custom report templates
-- [ ] Integration with EHR systems
-- [ ] Telehealth capabilities
-
-### 📅 Development Timeline
-
-- Q3 2024: Mobile app beta
-- Q4 2024: Advanced analytics
-- Q1 2025: EHR integration
-- Q2 2025: Telehealth features
-
-## License & Attribution
-
-CogniCare is powered by:
-
-- [Vercel AI SDK](https://sdk.vercel.ai/docs) - AI Integration Framework
-- [Next.js](https://nextjs.org/) - React Framework
-- [MongoDB](https://www.mongodb.com/) - Database
-- Additional dependencies listed in `package.json`
-
-## Contact
-
-For professional inquiries:
-
-- Email: support@cognicare.ai
-- Professional Support: [Support Portal](support-link)
-- LinkedIn: [CogniCare Professional](linkedin-link)
-
----
-
-_CogniCare: Empowering Mental Health Professionals with Intelligent Practice Solutions_
+- Email: support@cognicare.com
+- Documentation: [docs.cognicare.com](https://docs.cognicare.com)
+- Community: [community.cognicare.com](https://community.cognicare.com)
