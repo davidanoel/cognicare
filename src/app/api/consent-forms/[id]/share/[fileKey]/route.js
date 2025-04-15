@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { getSignedUrl } from "@/lib/storage";
+import { getSignedDownloadUrl } from "@/lib/storage";
 import Client from "@/models/client";
 
 export async function GET(request, { params }) {
@@ -40,7 +40,7 @@ export async function GET(request, { params }) {
     }
 
     // Get the signed URL for the file
-    const signedUrl = await getSignedUrl(fileKey);
+    const signedUrl = await getSignedDownloadUrl(fileKey);
 
     return NextResponse.json({ url: signedUrl });
   } catch (error) {
