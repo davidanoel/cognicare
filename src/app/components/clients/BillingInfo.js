@@ -5,6 +5,11 @@ import { useState } from "react";
 export default function BillingInfo({ client, onUpdate, onDelete }) {
   const [showBillingModal, setShowBillingModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [showSessionModal, setShowSessionModal] = useState(false);
+  const [selectedSessions, setSelectedSessions] = useState([]);
+  const [sessions, setSessions] = useState([]);
+  const [isLoadingSessions, setIsLoadingSessions] = useState(false);
 
   const handleEditBilling = () => {
     setSelectedInvoice(null);
@@ -138,6 +143,82 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
     }
   };
 
+  const fetchSessions = async () => {
+    setIsLoadingSessions(true);
+    try {
+      const response = await fetch(`/api/sessions?clientId=${client._id}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch sessions");
+      }
+      const sessions = await response.json();
+      setSessions(sessions);
+    } catch (error) {
+      console.error("Error fetching sessions:", error);
+      alert("Failed to load sessions");
+    } finally {
+      setIsLoadingSessions(false);
+    }
+  };
+
+  const handleGenerateInvoice = async () => {
+    if (!client.billing?.rate) {
+      alert("Please set a session rate first");
+      return;
+    }
+    await fetchSessions();
+    if (sessions.length === 0) {
+      alert("No sessions available to invoice");
+      return;
+    }
+    setShowSessionModal(true);
+  };
+
+  const handleSessionSelection = async () => {
+    if (selectedSessions.length === 0) {
+      alert("Please select at least one session");
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const response = await fetch(`/api/clients/${client._id}/invoices/generate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          sessions: selectedSessions,
+          notes: "Automatically generated invoice",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate invoice");
+      }
+
+      const data = await response.json();
+
+      // Update the client state with the new invoice
+      onUpdate({
+        ...client,
+        billing: {
+          ...client.billing,
+          invoices: [...(client.billing?.invoices || []), data.invoice],
+        },
+      });
+
+      // Open the generated invoice
+      window.open(data.documentUrl, "_blank");
+      setShowSessionModal(false);
+      setSelectedSessions([]);
+    } catch (error) {
+      console.error("Error generating invoice:", error);
+      alert("Failed to generate invoice. Please try again.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
     <div>
       <div className="px-4 py-5 sm:px-6">
@@ -151,9 +232,18 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
               {client?.billing ? "Edit Billing" : "Add Billing Information"}
             </button>
             {client?.billing && (
-              <button onClick={onDelete} className="text-sm text-red-600 hover:text-red-800">
-                Delete Billing Information
-              </button>
+              <>
+                <button
+                  onClick={handleGenerateInvoice}
+                  disabled={isGenerating}
+                  className="text-sm text-green-600 hover:text-green-800 mr-4"
+                >
+                  {isGenerating ? "Generating..." : "Generate Invoice"}
+                </button>
+                <button onClick={onDelete} className="text-sm text-red-600 hover:text-red-800">
+                  Delete Billing
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -377,6 +467,79 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
                 </div>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Session Selection Modal */}
+      {showSessionModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full">
+            <h2 className="text-xl font-semibold mb-4">Select Sessions for Invoice</h2>
+            {isLoadingSessions ? (
+              <div className="flex justify-center items-center h-32">
+                <p className="text-gray-500">Loading sessions...</p>
+              </div>
+            ) : (
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                {sessions.map((session) => (
+                  <div
+                    key={session._id}
+                    className="flex items-center space-x-4 p-2 hover:bg-gray-50 rounded"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedSessions.some((s) => s._id === session._id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedSessions([...selectedSessions, session]);
+                        } else {
+                          setSelectedSessions(
+                            selectedSessions.filter((s) => s._id !== session._id)
+                          );
+                        }
+                      }}
+                      className="h-4 w-4 text-blue-600"
+                    />
+                    <div className="flex-1">
+                      <p className="font-medium">
+                        {new Date(session.date).toLocaleDateString()} - {session.duration || "60"}{" "}
+                        minutes
+                      </p>
+                      {session.notes && (
+                        <p className="text-sm text-gray-500 mt-1">{session.notes}</p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium">${client.billing.rate}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="mt-4 flex justify-between items-center">
+              <p className="text-sm text-gray-600">
+                Total: ${selectedSessions.length * client.billing.rate}
+              </p>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => {
+                    setShowSessionModal(false);
+                    setSelectedSessions([]);
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSessionSelection}
+                  disabled={isGenerating || selectedSessions.length === 0}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {isGenerating ? "Generating..." : "Generate Invoice"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
