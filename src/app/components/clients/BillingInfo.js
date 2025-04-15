@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "react-hot-toast";
 
 export default function BillingInfo({ client, onUpdate, onDelete }) {
   const [showBillingModal, setShowBillingModal] = useState(false);
@@ -165,12 +166,23 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
       alert("Please set a session rate first");
       return;
     }
-    await fetchSessions();
-    if (sessions.length === 0) {
-      alert("No sessions available to invoice");
-      return;
+
+    setIsGenerating(true);
+    try {
+      await fetchSessions();
+
+      if (!sessions || sessions.length === 0) {
+        alert("No sessions available to invoice");
+        return;
+      }
+
+      setShowSessionModal(true);
+    } catch (error) {
+      console.error("Error generating invoice:", error);
+      alert("Failed to load sessions");
+    } finally {
+      setIsGenerating(false);
     }
-    setShowSessionModal(true);
   };
 
   const handleSessionSelection = async () => {
@@ -217,6 +229,64 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const handleMarkAsPaid = async (invoiceId) => {
+    try {
+      const response = await fetch(`/api/clients/${client._id}/invoices/${invoiceId}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status: "paid",
+          paymentDate: new Date().toISOString(),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to mark invoice as paid");
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        // Update the invoice in the state with the new document URL
+        onUpdate({
+          ...client,
+          billing: {
+            ...client.billing,
+            invoices: client.billing.invoices.map((inv) =>
+              inv._id === invoiceId
+                ? {
+                    ...inv,
+                    status: "paid",
+                    paymentDate: new Date().toISOString(),
+                    document: data.invoice.document,
+                    documentKey: data.invoice.documentKey,
+                  }
+                : inv
+            ),
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Error marking invoice as paid:", error);
+    }
+  };
+
+  const renderInvoiceStatus = (invoice) => {
+    if (invoice.status === "paid") {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+          Paid
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+        Pending
+      </span>
+    );
   };
 
   return (
@@ -283,51 +353,42 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
                   <div className="sm:col-span-2">
                     <dt className="text-sm font-medium text-gray-500">Recent Invoices</dt>
                     <dd className="mt-1">
-                      <div className="space-y-2">
-                        {client.billing.invoices.map(
-                          (invoice) =>
-                            invoice.amount && (
-                              <div
-                                key={invoice._id}
-                                className="flex items-center justify-between p-2 border rounded"
-                              >
-                                <div>
-                                  <p className="text-sm font-medium">${invoice.amount}</p>
-                                  <p className="text-xs text-gray-500">
-                                    {new Date(invoice.date).toLocaleDateString()}
-                                  </p>
-                                  {invoice.notes && (
-                                    <p className="text-xs text-gray-500">{invoice.notes}</p>
-                                  )}
-                                </div>
-                                <div className="flex space-x-2">
-                                  {invoice.document && (
-                                    <button
-                                      onClick={() => handleViewInvoice(invoice)}
-                                      className="text-xs text-blue-600 hover:text-blue-800"
-                                    >
-                                      View
-                                    </button>
-                                  )}
-                                  <button
-                                    onClick={() => {
-                                      setSelectedInvoice(invoice);
-                                      setShowBillingModal(true);
-                                    }}
-                                    className="text-xs text-gray-600 hover:text-gray-800"
-                                  >
-                                    Edit
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteInvoice(invoice._id)}
-                                    className="text-xs text-red-600 hover:text-red-800"
-                                  >
-                                    Delete
-                                  </button>
-                                </div>
+                      <div className="space-y-4">
+                        {client.billing.invoices.map((invoice) => (
+                          <div key={invoice._id} className="border rounded-lg p-4">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <p className="font-medium">
+                                  Invoice #
+                                  {invoice.invoiceNumber || invoice._id.toString().slice(-6)}
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                  Date: {new Date(invoice.date).toLocaleDateString()}
+                                </p>
+                                <p className="text-sm text-gray-600">Amount: ${invoice.amount}</p>
+                                <p className="text-sm">Status: {renderInvoiceStatus(invoice)}</p>
                               </div>
-                            )
-                        )}
+                              <div className="flex space-x-2">
+                                {invoice.status !== "paid" && (
+                                  <button
+                                    onClick={() => handleMarkAsPaid(invoice._id)}
+                                    className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
+                                  >
+                                    Mark as Paid
+                                  </button>
+                                )}
+                                <a
+                                  href={invoice.document}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                                >
+                                  View PDF
+                                </a>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </dd>
                   </div>

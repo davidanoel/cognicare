@@ -3,44 +3,41 @@ import { getCurrentUser } from "@/lib/auth";
 import Client from "@/models/client";
 import { uploadFile, generateFileKey } from "@/lib/storage";
 import { connectDB } from "@/lib/mongodb";
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
-import mongoose from "mongoose";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
-export async function POST(req, context) {
+export async function PATCH(req, { params }) {
   try {
-    const { id } = await context.params;
+    await connectDB();
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await connectDB();
+    const { id, invoiceId } = await params;
+    const { status, paymentDate } = await req.json();
 
-    // Get client data
-    const client = await Client.findOne({ _id: id, counselorId: user.id });
+    // Find the client and update the invoice
+    const client = await Client.findOne({ _id: id, userId: user._id });
     if (!client) {
-      return NextResponse.json({ message: "Client not found" }, { status: 404 });
+      return NextResponse.json({ error: "Client not found" }, { status: 404 });
     }
 
-    if (!client.billing?.rate) {
-      return NextResponse.json({ message: "Client rate not set" }, { status: 400 });
+    const invoice = client.billing.invoices.id(invoiceId);
+    if (!invoice) {
+      return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
 
-    // Get request body
-    const body = await req.json();
-    const { sessions = [], notes = "" } = body;
+    // Update invoice status and date
+    invoice.status = status;
+    if (paymentDate) {
+      invoice.paymentDate = paymentDate;
+    }
 
-    // Calculate total amount
-    const totalAmount = sessions.length * client.billing.rate;
-
-    // Generate PDF invoice
+    // Regenerate PDF with updated status
     const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([595.28, 841.89]); // A4 size
-
-    // Set margins
+    const page = pdfDoc.addPage();
+    const { width: pageWidth, height: pageHeight } = page.getSize();
     const margin = 50;
-    const pageWidth = page.getWidth();
-    const pageHeight = page.getHeight();
 
     // Add company letterhead
     page.drawText("COGNICARE", {
@@ -84,18 +81,14 @@ export async function POST(req, context) {
     });
 
     // Add invoice details
-    const invoiceDate = new Date().toLocaleDateString();
-    const timestamp = Date.now();
-    const invoiceNumber = `INV-${timestamp}`;
-
-    page.drawText(`Invoice #: ${invoiceNumber}`, {
+    page.drawText(`Invoice #: ${invoice.invoiceNumber}`, {
       x: pageWidth - margin - 200,
       y: pageHeight - margin - 114,
       size: 12,
       color: rgb(0.3, 0.3, 0.3),
     });
 
-    page.drawText(`Date: ${invoiceDate}`, {
+    page.drawText(`Date: ${new Date(invoice.date).toLocaleDateString()}`, {
       x: pageWidth - margin - 200,
       y: pageHeight - margin - 134,
       size: 12,
@@ -104,24 +97,33 @@ export async function POST(req, context) {
 
     // Add payment status
     page.drawText("Payment Status:", {
-      x: pageWidth - margin - 150,
+      x: pageWidth - margin - 200,
       y: pageHeight - margin - 164,
       size: 12,
       color: rgb(0.3, 0.3, 0.3),
       font: await pdfDoc.embedFont(StandardFonts.HelveticaBold),
     });
 
-    page.drawText("Unpaid", {
-      x: pageWidth - margin - 50,
+    page.drawText(status === "paid" ? "Paid" : "Unpaid", {
+      x: pageWidth - margin - 100,
       y: pageHeight - margin - 164,
       size: 12,
-      color: rgb(0.8, 0.2, 0.2),
+      color: status === "paid" ? rgb(0, 0.5, 0) : rgb(0.8, 0.2, 0.2),
     });
+
+    if (status === "paid") {
+      page.drawText(`Paid on: ${new Date(paymentDate).toLocaleDateString()}`, {
+        x: pageWidth - margin - 200,
+        y: pageHeight - margin - 184,
+        size: 12,
+        color: rgb(0.3, 0.3, 0.3),
+      });
+    }
 
     // Add sessions table header with more space
     page.drawText("Description", {
       x: margin,
-      y: pageHeight - margin - 194,
+      y: pageHeight - margin - 214,
       size: 12,
       color: rgb(0.3, 0.3, 0.3),
       font: await pdfDoc.embedFont(StandardFonts.HelveticaBold),
@@ -129,7 +131,7 @@ export async function POST(req, context) {
 
     page.drawText("Date", {
       x: margin + 200,
-      y: pageHeight - margin - 194,
+      y: pageHeight - margin - 214,
       size: 12,
       color: rgb(0.3, 0.3, 0.3),
       font: await pdfDoc.embedFont(StandardFonts.HelveticaBold),
@@ -137,38 +139,38 @@ export async function POST(req, context) {
 
     page.drawText("Amount", {
       x: margin + 350,
-      y: pageHeight - margin - 194,
+      y: pageHeight - margin - 214,
       size: 12,
       color: rgb(0.3, 0.3, 0.3),
       font: await pdfDoc.embedFont(StandardFonts.HelveticaBold),
     });
 
     // Add sessions table content
-    let yPosition = pageHeight - margin - 214;
-    sessions.forEach((session) => {
-      page.drawText(`Therapy Session - ${session.type}`, {
-        x: margin,
-        y: yPosition,
-        size: 12,
-        color: rgb(0, 0, 0),
-      });
+    let yPosition = pageHeight - margin - 234;
 
-      page.drawText(new Date(session.date).toLocaleDateString(), {
-        x: margin + 200,
-        y: yPosition,
-        size: 12,
-        color: rgb(0, 0, 0),
-      });
-
-      page.drawText(`$${client.billing.rate}`, {
-        x: margin + 350,
-        y: yPosition,
-        size: 12,
-        color: rgb(0, 0, 0),
-      });
-
-      yPosition -= 20;
+    // Add session details
+    page.drawText(`Therapy Session`, {
+      x: margin,
+      y: yPosition,
+      size: 12,
+      color: rgb(0, 0, 0),
     });
+
+    page.drawText(new Date(invoice.date).toLocaleDateString(), {
+      x: margin + 200,
+      y: yPosition,
+      size: 12,
+      color: rgb(0, 0, 0),
+    });
+
+    page.drawText(`$${invoice.amount}`, {
+      x: margin + 350,
+      y: yPosition,
+      size: 12,
+      color: rgb(0, 0, 0),
+    });
+
+    yPosition -= 20;
 
     // Add total
     yPosition -= 20;
@@ -188,7 +190,7 @@ export async function POST(req, context) {
       font: await pdfDoc.embedFont(StandardFonts.HelveticaBold),
     });
 
-    page.drawText(`$${totalAmount}`, {
+    page.drawText(`$${invoice.amount}`, {
       x: pageWidth - margin - 50,
       y: yPosition,
       size: 12,
@@ -272,47 +274,59 @@ export async function POST(req, context) {
       color: rgb(0.5, 0.5, 0.5),
     });
 
-    // Save the PDF
+    // Save and upload the new PDF
     const pdfBytes = await pdfDoc.save();
+    const fileKey = generateFileKey("invoices", `${client._id}-${invoiceId}-${Date.now()}.pdf`);
 
-    // Convert PDF bytes to Blob
+    // Create a Blob from the PDF bytes
     const pdfBlob = new Blob([pdfBytes], { type: "application/pdf" });
-
-    // Generate file key
-    const fileKey = generateFileKey("invoices", `invoice-${Date.now()}.pdf`);
-
-    // Upload PDF to storage
-    const documentUrl = await uploadFile(pdfBlob, fileKey, {
+    const pdfUrl = await uploadFile(pdfBlob, fileKey, {
       type: "invoice",
       uploadedBy: user._id,
     });
 
-    // Create invoice record
-    const invoiceData = {
-      _id: new mongoose.Types.ObjectId(),
-      date: new Date(),
-      amount: totalAmount,
-      status: "pending",
-      notes: notes || "",
-      document: documentUrl,
-      documentKey: fileKey,
-      invoiceNumber: `INV-${timestamp}`,
-    };
-
-    // Update client with new invoice
+    // Update invoice with new PDF and status
     const updatedClient = await Client.findOneAndUpdate(
-      { _id: id, counselorId: user.id },
-      { $push: { "billing.invoices": invoiceData } },
+      {
+        _id: id,
+        userId: user._id,
+        "billing.invoices._id": invoiceId,
+      },
+      {
+        $set: {
+          "billing.invoices.$.document": pdfUrl,
+          "billing.invoices.$.documentKey": fileKey,
+          "billing.invoices.$.status": status,
+          "billing.invoices.$.paymentDate": paymentDate,
+          "billing.invoices.$.invoiceNumber": invoice.invoiceNumber,
+        },
+      },
       { new: true }
     );
 
+    if (!updatedClient) {
+      return NextResponse.json({ error: "Failed to update invoice" }, { status: 500 });
+    }
+
+    // Find the updated invoice
+    const updatedInvoice = updatedClient.billing.invoices.id(invoiceId);
+
     return NextResponse.json({
       success: true,
-      invoice: invoiceData,
-      documentUrl,
+      invoice: {
+        _id: updatedInvoice._id.toString(),
+        date: updatedInvoice.date,
+        amount: updatedInvoice.amount,
+        status: updatedInvoice.status,
+        paymentDate: updatedInvoice.paymentDate,
+        notes: updatedInvoice.notes,
+        document: pdfUrl,
+        documentKey: updatedInvoice.documentKey,
+        invoiceNumber: invoice.invoiceNumber,
+      },
     });
   } catch (error) {
-    console.error("Error generating invoice:", error);
-    return NextResponse.json({ message: "Error generating invoice" }, { status: 500 });
+    console.error("Error updating invoice status:", error);
+    return NextResponse.json({ error: "Failed to update invoice status" }, { status: 500 });
   }
 }
