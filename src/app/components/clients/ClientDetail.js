@@ -14,6 +14,7 @@ import {
   generateConsentFormPDF,
 } from "@/lib/templates/consentFormTemplate";
 import BillingInfo from "./BillingInfo";
+import InsuranceInfo from "./InsuranceInfo";
 
 export default function ClientDetail({ clientId }) {
   const [client, setClient] = useState(null);
@@ -32,7 +33,6 @@ export default function ClientDetail({ clientId }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [showConsentModal, setShowConsentModal] = useState(false);
   const [selectedConsent, setSelectedConsent] = useState(null);
-  const [showInsuranceModal, setShowInsuranceModal] = useState(false);
   const [selectedConsentType, setSelectedConsentType] = useState("");
   const [consentFormContent, setConsentFormContent] = useState("");
   const [consentFormNotes, setConsentFormNotes] = useState("");
@@ -219,10 +219,6 @@ export default function ClientDetail({ clientId }) {
     }
   };
 
-  const handleEditInsurance = () => {
-    setShowInsuranceModal(true);
-  };
-
   const handleBillingUpdate = (updatedClient) => {
     setClient(updatedClient);
   };
@@ -350,6 +346,10 @@ export default function ClientDetail({ clientId }) {
       console.error("Error deleting consent form:", error);
       alert(error.message || "Failed to delete consent form");
     }
+  };
+
+  const handleClientUpdate = (updatedClient) => {
+    setClient(updatedClient);
   };
 
   if (loading) {
@@ -1098,69 +1098,12 @@ export default function ClientDetail({ clientId }) {
             {/* Billing Information Section */}
             <BillingInfo
               client={client}
-              onUpdate={handleBillingUpdate}
+              onUpdate={handleClientUpdate}
               onDelete={handleDeleteBilling}
             />
 
             {/* Insurance Information Section */}
-            <div>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Insurance Information</h3>
-                <button
-                  onClick={() => setShowInsuranceModal(true)}
-                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  Edit Insurance
-                </button>
-              </div>
-              <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-                <div className="px-4 py-5 sm:p-6">
-                  <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500">Insurance Provider</dt>
-                      <dd className="mt-1 text-sm text-gray-900">
-                        {client?.insurance?.provider || "Not set"}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500">Policy Number</dt>
-                      <dd className="mt-1 text-sm text-gray-900">
-                        {client?.insurance?.policyNumber || "Not set"}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500">Group Number</dt>
-                      <dd className="mt-1 text-sm text-gray-900">
-                        {client?.insurance?.groupNumber || "Not set"}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500">Coverage Status</dt>
-                      <dd className="mt-1 text-sm text-gray-900">
-                        <span
-                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                          ${
-                            client?.insurance?.coverage === "full"
-                              ? "bg-green-100 text-green-800"
-                              : client?.insurance?.coverage === "partial"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {client?.insurance?.coverage || "Not set"}
-                        </span>
-                      </dd>
-                    </div>
-                    {client?.insurance?.notes && (
-                      <div className="sm:col-span-2">
-                        <dt className="text-sm font-medium text-gray-500">Notes</dt>
-                        <dd className="mt-1 text-sm text-gray-900">{client.insurance.notes}</dd>
-                      </div>
-                    )}
-                  </dl>
-                </div>
-              </div>
-            </div>
+            <InsuranceInfo client={client} onUpdate={handleClientUpdate} />
           </div>
         )}
       </div>
@@ -1311,107 +1254,6 @@ export default function ClientDetail({ clientId }) {
                 </div>
               </form>
             )}
-          </div>
-        </div>
-      )}
-
-      {showInsuranceModal && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Edit Insurance Information</h3>
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const formData = new FormData(e.target);
-                // Handle insurance update
-                // This will be implemented when we add the insurance API
-              }}
-            >
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="provider" className="block text-sm font-medium text-gray-700">
-                    Insurance Provider
-                  </label>
-                  <input
-                    type="text"
-                    id="provider"
-                    name="provider"
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="policyNumber" className="block text-sm font-medium text-gray-700">
-                    Policy Number
-                  </label>
-                  <input
-                    type="text"
-                    id="policyNumber"
-                    name="policyNumber"
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="groupNumber" className="block text-sm font-medium text-gray-700">
-                    Group Number
-                  </label>
-                  <input
-                    type="text"
-                    id="groupNumber"
-                    name="groupNumber"
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="coverage" className="block text-sm font-medium text-gray-700">
-                    Coverage Type
-                  </label>
-                  <select
-                    id="coverage"
-                    name="coverage"
-                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                  >
-                    <option value="none">No Coverage</option>
-                    <option value="partial">Partial Coverage</option>
-                    <option value="full">Full Coverage</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="insuranceNotes"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Notes
-                  </label>
-                  <textarea
-                    id="insuranceNotes"
-                    name="insuranceNotes"
-                    rows={3}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-6 flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setShowInsuranceModal(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}
