@@ -11,6 +11,7 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
   const [selectedSessions, setSelectedSessions] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [isLoadingSessions, setIsLoadingSessions] = useState(false);
+  const [showPaymentDropdown, setShowPaymentDropdown] = useState(null);
 
   const handleEditBilling = () => {
     setSelectedInvoice(null);
@@ -22,7 +23,9 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
       // Prepare the update data for basic billing info
       const updateData = {
         paymentMethod: formData.paymentMethod,
-        rate: formData.rate,
+        rate: parseFloat(formData.rate) || 0,
+        initialRate: parseFloat(formData.initialRate) || 0,
+        groupRate: parseFloat(formData.groupRate) || 0,
         notes: formData.notes,
         invoices: client?.billing?.invoices || [],
       };
@@ -199,7 +202,15 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          sessions: selectedSessions,
+          sessions: selectedSessions.map((session) => ({
+            ...session,
+            rate:
+              session.type === "initial"
+                ? client.billing.initialRate || client.billing.rate
+                : session.type === "group"
+                ? client.billing.groupRate || client.billing.rate
+                : client.billing.rate,
+          })),
           notes: "Automatically generated invoice",
         }),
       });
@@ -209,8 +220,6 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
       }
 
       const data = await response.json();
-
-      // Update the client state with the new invoice
       onUpdate({
         ...client,
         billing: {
@@ -219,7 +228,6 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
         },
       });
 
-      // Open the generated invoice
       window.open(data.documentUrl, "_blank");
       setShowSessionModal(false);
       setSelectedSessions([]);
@@ -231,7 +239,7 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
     }
   };
 
-  const handleMarkAsPaid = async (invoiceId) => {
+  const handleMarkAsPaid = async (invoiceId, paymentMethod) => {
     try {
       const response = await fetch(`/api/clients/${client._id}/invoices/${invoiceId}/status`, {
         method: "PATCH",
@@ -241,6 +249,7 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
         body: JSON.stringify({
           status: "paid",
           paymentDate: new Date().toISOString(),
+          paymentMethod: paymentMethod,
         }),
       });
 
@@ -250,7 +259,6 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
 
       const data = await response.json();
       if (data.success) {
-        // Update the invoice in the state with the new document URL
         onUpdate({
           ...client,
           billing: {
@@ -261,6 +269,7 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
                     ...inv,
                     status: "paid",
                     paymentDate: new Date().toISOString(),
+                    paymentMethod: paymentMethod,
                     document: data.invoice.document,
                     documentKey: data.invoice.documentKey,
                   }
@@ -274,6 +283,23 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
     }
   };
 
+  const handleSendReminder = async (invoiceId) => {
+    try {
+      const response = await fetch(`/api/clients/${client._id}/invoices/${invoiceId}/reminder`, {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to send reminder");
+      }
+
+      toast.success("Payment reminder sent successfully");
+    } catch (error) {
+      console.error("Error sending reminder:", error);
+      toast.error("Failed to send reminder");
+    }
+  };
+
   const renderInvoiceStatus = (invoice) => {
     if (invoice.status === "paid") {
       return (
@@ -283,9 +309,116 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
       );
     }
     return (
-      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-        Pending
-      </span>
+      <div className="flex items-center space-x-2">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+          Pending
+        </span>
+        <button
+          onClick={() => handleSendReminder(invoice._id)}
+          className="text-xs text-blue-600 hover:text-blue-800"
+        >
+          Send Reminder
+        </button>
+      </div>
+    );
+  };
+
+  const renderPaymentOptions = (invoice) => {
+    if (invoice.status === "paid") {
+      return null;
+    }
+    return (
+      <div className="relative">
+        <button
+          onClick={() =>
+            setShowPaymentDropdown(showPaymentDropdown === invoice._id ? null : invoice._id)
+          }
+          className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 flex items-center"
+        >
+          Mark as Paid
+          <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        {showPaymentDropdown === invoice._id && (
+          <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg z-10">
+            <div className="py-1">
+              <button
+                onClick={() => {
+                  handleMarkAsPaid(invoice._id, "cash");
+                  setShowPaymentDropdown(null);
+                }}
+                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                <span className="flex items-center">
+                  <svg
+                    className="w-4 h-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                    />
+                  </svg>
+                  Cash
+                </span>
+              </button>
+              <button
+                onClick={() => {
+                  handleMarkAsPaid(invoice._id, "card");
+                  setShowPaymentDropdown(null);
+                }}
+                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                <span className="flex items-center">
+                  <svg
+                    className="w-4 h-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                    />
+                  </svg>
+                  Card
+                </span>
+              </button>
+              <button
+                onClick={() => {
+                  handleMarkAsPaid(invoice._id, "insurance");
+                  setShowPaymentDropdown(null);
+                }}
+                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                <span className="flex items-center">
+                  <svg
+                    className="w-4 h-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                    />
+                  </svg>
+                  Insurance
+                </span>
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     );
   };
 
@@ -333,9 +466,23 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
               </div>
 
               <div className="sm:col-span-1">
-                <dt className="text-sm font-medium text-gray-500">Session Rate</dt>
+                <dt className="text-sm font-medium text-gray-500">Standard Session Rate</dt>
                 <dd className="mt-1 text-sm text-gray-900">
                   {client.billing.rate ? `$${client.billing.rate}` : "Not set"}
+                </dd>
+              </div>
+
+              <div className="sm:col-span-1">
+                <dt className="text-sm font-medium text-gray-500">Initial Session Rate</dt>
+                <dd className="mt-1 text-sm text-gray-900">
+                  {client.billing.initialRate ? `$${client.billing.initialRate}` : "Not set"}
+                </dd>
+              </div>
+
+              <div className="sm:col-span-1">
+                <dt className="text-sm font-medium text-gray-500">Group Session Rate</dt>
+                <dd className="mt-1 text-sm text-gray-900">
+                  {client.billing.groupRate ? `$${client.billing.groupRate}` : "Not set"}
                 </dd>
               </div>
 
@@ -366,25 +513,36 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
                                   Date: {new Date(invoice.date).toLocaleDateString()}
                                 </p>
                                 <p className="text-sm text-gray-600">Amount: ${invoice.amount}</p>
-                                <p className="text-sm">Status: {renderInvoiceStatus(invoice)}</p>
+                                <div className="text-sm">
+                                  Status: {renderInvoiceStatus(invoice)}
+                                </div>
+                                <p className="text-sm text-gray-600">
+                                  Payment Method:{" "}
+                                  {invoice.paymentMethod ? (
+                                    <span className="capitalize">{invoice.paymentMethod}</span>
+                                  ) : (
+                                    "Not specified"
+                                  )}
+                                </p>
                               </div>
                               <div className="flex space-x-2">
-                                {invoice.status !== "paid" && (
-                                  <button
-                                    onClick={() => handleMarkAsPaid(invoice._id)}
-                                    className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
+                                {renderPaymentOptions(invoice)}
+                                <div className="flex space-x-2">
+                                  <a
+                                    href={invoice.document}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
                                   >
-                                    Mark as Paid
+                                    View PDF
+                                  </a>
+                                  <button
+                                    onClick={() => handleDeleteInvoice(invoice._id)}
+                                    className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+                                  >
+                                    Delete
                                   </button>
-                                )}
-                                <a
-                                  href={invoice.document}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-                                >
-                                  View PDF
-                                </a>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -416,6 +574,8 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
                 handleBillingUpdate({
                   paymentMethod: formData.get("paymentMethod"),
                   rate: formData.get("rate"),
+                  initialRate: formData.get("initialRate"),
+                  groupRate: formData.get("groupRate"),
                   notes: formData.get("notes"),
                   invoiceFile: formData.get("invoiceFile"),
                   amount: formData.get("amount"),
@@ -439,12 +599,41 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Session Rate</label>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Standard Session Rate
+                  </label>
                   <input
                     type="number"
                     name="rate"
                     defaultValue={client.billing?.rate}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="Standard session rate"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Initial Session Rate
+                  </label>
+                  <input
+                    type="number"
+                    name="initialRate"
+                    defaultValue={client.billing?.initialRate}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="Initial consultation rate"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Group Session Rate
+                  </label>
+                  <input
+                    type="number"
+                    name="groupRate"
+                    defaultValue={client.billing?.groupRate}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="Group session rate"
                   />
                 </div>
 
@@ -546,7 +735,7 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
                 {sessions.map((session) => (
                   <div
                     key={session._id}
-                    className="flex items-center space-x-4 p-2 hover:bg-gray-50 rounded"
+                    className="flex items-center space-x-4 p-2 hover:bg-gray-50 rounded border border-gray-200"
                   >
                     <input
                       type="checkbox"
@@ -563,16 +752,32 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
                       className="h-4 w-4 text-blue-600"
                     />
                     <div className="flex-1">
-                      <p className="font-medium">
-                        {new Date(session.date).toLocaleDateString()} - {session.duration || "60"}{" "}
-                        minutes
-                      </p>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-medium">
+                          {new Date(session.date).toLocaleDateString()}
+                        </span>
+                        <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                          {session.type
+                            ? session.type.charAt(0).toUpperCase() + session.type.slice(1)
+                            : "Standard"}
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          {session.duration || "60"} minutes
+                        </span>
+                      </div>
                       {session.notes && (
                         <p className="text-sm text-gray-500 mt-1">{session.notes}</p>
                       )}
                     </div>
                     <div className="text-right">
-                      <p className="font-medium">${client.billing.rate}</p>
+                      <span className="font-medium">
+                        $
+                        {session.type === "initial"
+                          ? client.billing?.initialRate || client.billing?.rate
+                          : session.type === "group"
+                          ? client.billing?.groupRate || client.billing?.rate
+                          : client.billing?.rate}
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -580,7 +785,16 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
             )}
             <div className="mt-4 flex justify-between items-center">
               <p className="text-sm text-gray-600">
-                Total: ${selectedSessions.length * client.billing.rate}
+                Total: $
+                {selectedSessions.reduce((sum, session) => {
+                  const rate =
+                    session.type === "initial"
+                      ? client.billing?.initialRate || client.billing?.rate
+                      : session.type === "group"
+                      ? client.billing?.groupRate || client.billing?.rate
+                      : client.billing?.rate;
+                  return sum + rate;
+                }, 0)}
               </p>
               <div className="flex space-x-2">
                 <button

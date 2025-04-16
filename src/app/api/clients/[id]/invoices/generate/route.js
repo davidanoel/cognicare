@@ -31,7 +31,19 @@ export async function POST(req, context) {
     const { sessions = [], notes = "" } = body;
 
     // Calculate total amount
-    const totalAmount = sessions.length * client.billing.rate;
+    let totalAmount = 0;
+    for (const session of sessions) {
+      // Determine the rate based on session type
+      let sessionRate = client.billing.rate; // Default to standard rate
+      if (session.type === "initial") {
+        sessionRate = client.billing.initialRate;
+      } else if (session.type === "group") {
+        sessionRate = client.billing.groupRate;
+      }
+
+      const sessionAmount = sessionRate;
+      totalAmount += sessionAmount;
+    }
 
     // Generate PDF invoice
     const pdfDoc = await PDFDocument.create();
@@ -102,6 +114,30 @@ export async function POST(req, context) {
       color: rgb(0.3, 0.3, 0.3),
     });
 
+    // Add payment method
+    page.drawText("Payment Method:", {
+      x: pageWidth - margin - 200,
+      y: pageHeight - margin - 154,
+      size: 12,
+      color: rgb(0.3, 0.3, 0.3),
+    });
+
+    page.drawText(
+      client.billing.paymentMethod === "self-pay"
+        ? "Self Pay"
+        : client.billing.paymentMethod === "insurance"
+        ? "Insurance"
+        : client.billing.paymentMethod === "sliding-scale"
+        ? "Sliding Scale"
+        : "Not specified",
+      {
+        x: pageWidth - margin - 100,
+        y: pageHeight - margin - 154,
+        size: 12,
+        color: rgb(0, 0, 0),
+      }
+    );
+
     // Add payment status
     page.drawText("Payment Status:", {
       x: pageWidth - margin - 150,
@@ -111,12 +147,57 @@ export async function POST(req, context) {
       font: await pdfDoc.embedFont(StandardFonts.HelveticaBold),
     });
 
-    page.drawText("Unpaid", {
+    const statusText = client.billing.status === "paid" ? "Paid" : "Unpaid";
+    const statusColor = client.billing.status === "paid" ? rgb(0.2, 0.8, 0.2) : rgb(0.8, 0.2, 0.2);
+
+    page.drawText(statusText, {
       x: pageWidth - margin - 50,
       y: pageHeight - margin - 164,
       size: 12,
-      color: rgb(0.8, 0.2, 0.2),
+      color: statusColor,
     });
+
+    // If paid, show payment method and date
+    if (client.billing.status === "paid") {
+      page.drawText("Payment Method:", {
+        x: pageWidth - margin - 150,
+        y: pageHeight - margin - 184,
+        size: 12,
+        color: rgb(0.3, 0.3, 0.3),
+      });
+
+      const paymentMethodText =
+        client.billing.paymentMethod === "cash"
+          ? "Cash"
+          : client.billing.paymentMethod === "card"
+          ? "Card"
+          : client.billing.paymentMethod === "insurance"
+          ? "Insurance"
+          : "Not specified";
+
+      page.drawText(paymentMethodText, {
+        x: pageWidth - margin - 50,
+        y: pageHeight - margin - 184,
+        size: 12,
+        color: rgb(0, 0, 0),
+      });
+
+      if (client.billing.paymentDate) {
+        page.drawText("Payment Date:", {
+          x: pageWidth - margin - 150,
+          y: pageHeight - margin - 204,
+          size: 12,
+          color: rgb(0.3, 0.3, 0.3),
+        });
+
+        page.drawText(new Date(client.billing.paymentDate).toLocaleDateString(), {
+          x: pageWidth - margin - 50,
+          y: pageHeight - margin - 204,
+          size: 12,
+          color: rgb(0, 0, 0),
+        });
+      }
+    }
 
     // Add sessions table header with more space
     page.drawText("Description", {
@@ -144,130 +225,140 @@ export async function POST(req, context) {
     });
 
     // Add sessions table content
-    let yPosition = pageHeight - margin - 214;
-    sessions.forEach((session) => {
-      page.drawText(`Therapy Session - ${session.type}`, {
+    let yPos = pageHeight - margin - 214;
+    for (const session of sessions) {
+      // Determine the rate based on session type
+      let sessionRate = client.billing.rate; // Default to standard rate
+      if (session.type === "initial") {
+        sessionRate = client.billing.initialRate;
+      } else if (session.type === "group") {
+        sessionRate = client.billing.groupRate;
+      }
+
+      const sessionAmount = sessionRate;
+
+      page.drawText(session.notes || "Therapy Session", {
         x: margin,
-        y: yPosition,
+        y: yPos,
         size: 12,
         color: rgb(0, 0, 0),
       });
 
       page.drawText(new Date(session.date).toLocaleDateString(), {
         x: margin + 200,
-        y: yPosition,
+        y: yPos,
         size: 12,
         color: rgb(0, 0, 0),
       });
 
-      page.drawText(`$${client.billing.rate}`, {
+      page.drawText(`$${sessionAmount.toFixed(2)}`, {
         x: margin + 350,
-        y: yPosition,
+        y: yPos,
         size: 12,
         color: rgb(0, 0, 0),
       });
 
-      yPosition -= 20;
-    });
+      yPos -= 20;
+    }
 
     // Add total
-    yPosition -= 20;
+    yPos -= 20;
     page.drawLine({
-      start: { x: margin, y: yPosition },
-      end: { x: pageWidth - margin, y: yPosition },
+      start: { x: margin, y: yPos },
+      end: { x: pageWidth - margin, y: yPos },
       thickness: 1,
       color: rgb(0.8, 0.8, 0.8),
     });
 
-    yPosition -= 20;
+    yPos -= 20;
     page.drawText("Total", {
       x: pageWidth - margin - 100,
-      y: yPosition,
+      y: yPos,
       size: 12,
       color: rgb(0.3, 0.3, 0.3),
       font: await pdfDoc.embedFont(StandardFonts.HelveticaBold),
     });
 
-    page.drawText(`$${totalAmount}`, {
+    page.drawText(`$${totalAmount.toFixed(2)}`, {
       x: pageWidth - margin - 50,
-      y: yPosition,
+      y: yPos,
       size: 12,
       color: rgb(0, 0, 0),
       font: await pdfDoc.embedFont(StandardFonts.HelveticaBold),
     });
 
     // Add payment instructions before footer
-    yPosition = margin + 100;
+    yPos = margin + 100;
     page.drawText("Payment Instructions:", {
       x: margin,
-      y: yPosition,
+      y: yPos,
       size: 12,
       color: rgb(0.3, 0.3, 0.3),
       font: await pdfDoc.embedFont(StandardFonts.HelveticaBold),
     });
 
-    yPosition -= 20;
+    yPos -= 20;
     page.drawText(`Please make payment via ${client.billing.paymentMethod}`, {
       x: margin,
-      y: yPosition,
+      y: yPos,
       size: 11,
       color: rgb(0.4, 0.4, 0.4),
     });
 
-    yPosition -= 15;
+    yPos -= 15;
     page.drawText("Payment is due within 30 days of invoice date", {
       x: margin,
-      y: yPosition,
+      y: yPos,
       size: 11,
       color: rgb(0.4, 0.4, 0.4),
     });
 
     // Add footer with more spacing
-    yPosition = margin + 30;
+    yPos = margin + 30;
     page.drawText("Thank you for your business!", {
       x: margin,
-      y: yPosition,
+      y: yPos,
       size: 12,
       color: rgb(0.3, 0.3, 0.3),
       font: await pdfDoc.embedFont(StandardFonts.HelveticaBold),
     });
 
-    yPosition -= 20;
+    yPos -= 20;
     page.drawText("COGNICARE", {
       x: margin,
-      y: yPosition,
+      y: yPos,
       size: 11,
       color: rgb(0.4, 0.4, 0.4),
     });
 
-    yPosition -= 15;
+    yPos -= 15;
     page.drawText("Professional Mental Health Services", {
       x: margin,
-      y: yPosition,
+      y: yPos,
       size: 10,
       color: rgb(0.5, 0.5, 0.5),
     });
 
-    yPosition -= 12;
+    yPos -= 12;
     page.drawText("123 Therapy Lane, Suite 100", {
       x: margin,
-      y: yPosition,
+      y: yPos,
       size: 10,
       color: rgb(0.5, 0.5, 0.5),
     });
 
-    yPosition -= 10;
+    yPos -= 10;
     page.drawText("Anytown, ST 12345", {
       x: margin,
-      y: yPosition,
+      y: yPos,
       size: 10,
       color: rgb(0.5, 0.5, 0.5),
     });
 
-    yPosition -= 10;
+    yPos -= 10;
     page.drawText("Phone: (555) 123-4567 | Email: info@cognicare.com", {
       x: margin,
-      y: yPosition,
+      y: yPos,
       size: 10,
       color: rgb(0.5, 0.5, 0.5),
     });
@@ -297,6 +388,8 @@ export async function POST(req, context) {
       document: documentUrl,
       documentKey: fileKey,
       invoiceNumber: `INV-${timestamp}`,
+      paymentMethod: null,
+      paymentDate: null,
     };
 
     // Update client with new invoice

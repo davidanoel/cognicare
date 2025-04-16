@@ -24,6 +24,8 @@ export async function PATCH(req, context) {
     const billingUpdate = {
       "billing.paymentMethod": body.paymentMethod || "self-pay",
       "billing.rate": body.rate || 0,
+      "billing.initialRate": body.initialRate || 0,
+      "billing.groupRate": body.groupRate || 0,
       "billing.notes": body.notes || "",
     };
 

@@ -207,22 +207,59 @@ const clientSchema = new mongoose.Schema({
       type: String,
       enum: ["self-pay", "insurance", "sliding-scale"],
     },
-    rate: Number,
-    notes: String,
+    rate: {
+      type: Number,
+      default: 0,
+    },
+    initialRate: {
+      type: Number,
+      default: 0,
+    },
+    groupRate: {
+      type: Number,
+      default: 0,
+    },
+    notes: {
+      type: String,
+    },
     invoices: [
       {
-        date: { type: Date, default: Date.now },
-        amount: Number,
+        _id: {
+          type: mongoose.Schema.Types.ObjectId,
+          default: () => new mongoose.Types.ObjectId(),
+        },
+        invoiceNumber: {
+          type: String,
+        },
+        date: {
+          type: Date,
+          default: Date.now,
+        },
+        amount: {
+          type: Number,
+          required: true,
+        },
         status: {
           type: String,
           enum: ["pending", "paid"],
           default: "pending",
         },
-        paymentDate: Date,
-        notes: String,
-        document: String,
-        documentKey: String,
-        invoiceNumber: String,
+        paymentMethod: {
+          type: String,
+          enum: ["cash", "card", "insurance"],
+        },
+        paymentDate: {
+          type: Date,
+        },
+        notes: {
+          type: String,
+        },
+        document: {
+          type: String,
+        },
+        documentKey: {
+          type: String,
+        },
       },
     ],
   },

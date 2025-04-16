@@ -14,7 +14,7 @@ export async function PATCH(req, { params }) {
     }
 
     const { id, invoiceId } = await params;
-    const { status, paymentDate } = await req.json();
+    const { status, paymentDate, paymentMethod } = await req.json();
 
     // Find the client and update the invoice
     const client = await Client.findOne({ _id: id, userId: user._id });
@@ -31,6 +31,9 @@ export async function PATCH(req, { params }) {
     invoice.status = status;
     if (paymentDate) {
       invoice.paymentDate = paymentDate;
+    }
+    if (paymentMethod) {
+      invoice.paymentMethod = paymentMethod;
     }
 
     // Regenerate PDF with updated status
@@ -115,6 +118,13 @@ export async function PATCH(req, { params }) {
       page.drawText(`Paid on: ${new Date(paymentDate).toLocaleDateString()}`, {
         x: pageWidth - margin - 200,
         y: pageHeight - margin - 184,
+        size: 12,
+        color: rgb(0.3, 0.3, 0.3),
+      });
+
+      page.drawText(`Payment Method: ${paymentMethod}`, {
+        x: pageWidth - margin - 200,
+        y: pageHeight - margin - 204,
         size: 12,
         color: rgb(0.3, 0.3, 0.3),
       });
@@ -298,6 +308,7 @@ export async function PATCH(req, { params }) {
           "billing.invoices.$.documentKey": fileKey,
           "billing.invoices.$.status": status,
           "billing.invoices.$.paymentDate": paymentDate,
+          "billing.invoices.$.paymentMethod": paymentMethod,
           "billing.invoices.$.invoiceNumber": invoice.invoiceNumber,
         },
       },
