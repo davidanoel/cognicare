@@ -1,254 +1,176 @@
-# The CogniCare Collective 🧠
+# CogniCare - AI-Powered Mental Health Practice Management System
 
-CogniCare is a professional mental health platform that empowers counselors with advanced AI-assisted tools for client assessment, treatment planning, and progress monitoring. Powered by [Vercel AI SDK](https://sdk.vercel.ai/docs), CogniCare leverages a specialized chain of AI agents to enhance clinical decision-making and streamline practice management.
+CogniCare is a comprehensive practice management system designed for mental health professionals, integrating AI capabilities to enhance clinical workflows and patient care.
 
-## Latest Features 🆕
+## Features
 
-### 🤖 TheraBot - AI Session Assistant
+### Core Features
 
-- Real-time session assistance
-- Context-aware responses
-- Session history analysis
-- Treatment plan suggestions
-- Progress tracking insights
+- **Client Management**: Comprehensive client profiles with demographic, clinical, and billing information
+- **Session Documentation**: AI-assisted session notes and progress tracking
+- **Billing & Invoicing**: Automated invoice generation and payment tracking
+- **Document Management**: Secure storage and organization of clinical documents
+- **AI Integration**: Multiple AI agents for different aspects of mental health practice
+- **Audit Logging**: Comprehensive activity tracking for security and compliance
 
-### 📅 Enhanced Calendar System
+### AI Agents
 
-- Drag-and-drop session scheduling
-- Real-time updates
-- Session duration management
-- Conflict prevention
-- Visual session organization
-- Quick session rescheduling
+1. **Assessment Agent**: Evaluates client needs and recommends appropriate interventions
+2. **Diagnostic Agent**: Assists in clinical diagnosis and treatment planning
+3. **Treatment Agent**: Provides evidence-based treatment recommendations
+4. **Progress Agent**: Tracks and analyzes client progress over time
+5. **Documentation Agent**: Assists with clinical documentation and note-taking
+6. **Conversational Agent**: Provides general support and information
 
-### 💰 Integrated Billing System
+### Security Features
 
-- Automated invoice generation
-- Secure payment processing
-- Insurance claim support
-- Billing history tracking
-- Financial reporting
-- Payment reminders
+- **Role-Based Access Control**: Different access levels for counselors and admins
+- **Audit Logging**: Tracks all system activities including:
+  - User logins/logouts
+  - Client data access and modifications
+  - Session documentation changes
+  - Invoice generation and updates
+  - Document uploads and downloads
+- **Data Encryption**: Secure storage of sensitive information
+- **HIPAA Compliance**:
+  - End-to-end encryption for all data
+  - Secure authentication and authorization
+  - Comprehensive audit trails
+  - Automatic session timeouts
+  - Secure data backup and recovery
+  - Business Associate Agreement (BAA) support
+  - Minimum Necessary Rule implementation
+  - Data access controls and restrictions
+  - Secure messaging and file sharing
+  - Regular security assessments and updates
 
-## Core AI Implementation
+## Technical Stack
 
-### 🤖 AI Agent Chain
+### Frontend
 
-CogniCare's AI system operates through an interconnected chain of specialized agents, where each agent's output informs and enhances the next:
+- Next.js 14 with App Router
+- React 18
+- Tailwind CSS for styling
+- NextAuth.js for authentication
 
-1. **Assessment Agent**
+### Backend
 
-   - Initial data gathering and organization
-   - Basic risk screening
-   - Client history analysis
-   - Identifies areas needing deeper analysis
+- Next.js API Routes
+- MongoDB with Mongoose ODM
+- Google Cloud Storage for document storage
 
-2. **Diagnostic Agent** (DSM-5 Expert)
+### AI Integration
 
-   - Deep DSM-5 expertise and analysis
-   - Evidence-based diagnostic insights
-   - Clinical concern identification
-   - Risk factor assessment
-   - Diagnostic framework establishment
+- OpenAI GPT-4 for AI agents
+- Custom prompt engineering for mental health context
+- Vector embeddings for semantic search
 
-3. **Treatment Agent**
+### Security
 
-   - Treatment plan development
-   - Intervention recommendations
-   - Goal setting and timeline
-   - Evidence-based strategy selection
-
-4. **Progress Agent**
-
-   - Treatment effectiveness monitoring
-   - Goal completion tracking
-   - Pattern recognition
-   - Outcome measurement
-   - Plan adjustment suggestions
-
-5. **Documentation Agent**
-
-   - Comprehensive clinical notes
-   - Progress report generation
-   - Treatment record maintenance
-   - Compliance documentation
-   - Professional report formatting
-
-6. **Conversational Agent** (TheraBot)
-   - Real-time session assistance
-   - Context-aware responses
-   - Treatment plan suggestions
-   - Progress tracking insights
-   - Session history analysis
-
-### 🔄 Data Flow
-
-```typescript
-Client Data → Assessment → Diagnosis → Treatment → Progress → Documentation → TheraBot
-```
-
-Each agent in the chain:
-
-- Receives complete context from previous agents
-- Builds upon existing insights
-- Maintains clinical accuracy
-- Ensures HIPAA compliance
-- Generates actionable outputs
-
-### 🎯 Key Benefits
-
-- **Enhanced Clinical Decision-Making**: AI agents provide evidence-based insights while maintaining human oversight
-- **Streamlined Documentation**: Automated generation of comprehensive clinical notes and reports
-- **Consistent Care Quality**: Standardized assessment and treatment planning processes
-- **Time Efficiency**: Reduced administrative burden on mental health professionals
-- **Improved Outcomes**: Data-driven insights for better treatment effectiveness
-- **Real-time Assistance**: TheraBot provides immediate support during sessions
-- **Flexible Scheduling**: Intuitive calendar system for easy session management
-- **Integrated Billing**: Seamless financial management and reporting
-
-## Professional Features
-
-### 🤝 Client Management
-
-- Secure client profiles and records
-- Digital intake processing
-- Appointment scheduling
-- Treatment progress tracking
-- Secure communication channels
-- Session history and notes
-- Client progress visualization
-- Treatment plan management
-- Risk assessment tracking
-- Billing and payment history
-- Insurance information management
-
-### 🧠 AI Clinical Support Team
-
-- **Assessment Specialist**: Conducts comprehensive mental health evaluations
-- **Diagnostic Advisor**: Provides DSM-5 aligned clinical insights
-- **Treatment Planner**: Develops structured intervention strategies
-- **Progress Monitor**: Tracks therapeutic outcomes
-- **Documentation Assistant**: Generates clinical notes and reports
-- **TheraBot**: Real-time session assistance and insights
-
-### 📊 Clinical Tools
-
-- Evidence-based assessment instruments
-- Treatment planning templates
-- Progress note generation
-- Outcome measurement tools
-- Crisis response protocols
-- Resource management system
-- Session calendar with drag-and-drop
-- Billing and invoicing system
-- Insurance claim management
-
-### 📈 Practice Analytics
-
-- Treatment effectiveness metrics
-- Client progress visualization
-- Caseload management insights
-- Outcome tracking dashboards
-- Quality of care indicators
-- Financial performance metrics
-- Session attendance tracking
-- Revenue analysis
-- Insurance claim success rates
-
-## Technical Implementation
-
-CogniCare is built on cutting-edge technology:
-
-- **Next.js 14**: Modern React framework with App Router
-- **MongoDB**: Secure, HIPAA-compliant data storage
-- **NextAuth.js**: Secure authentication system
-- **Tailwind CSS**: Professional-grade UI components
-- **Vercel AI SDK**: Advanced AI integration, streaming, and agent orchestration
-- **Google Cloud Storage**: Secure file storage and management
-- **React Big Calendar**: Advanced calendar functionality
-- **Stripe**: Secure payment processing
-
-### Development Tools
-
-- **TypeScript**: Type-safe development
-- **ESLint**: Code quality and consistency
-- **Prettier**: Code formatting
-- **Jest**: Unit testing
-- **Cypress**: End-to-end testing
-
-### Dependencies
-
-```json
-{
-  "dependencies": {
-    "@ai-sdk/openai": "^1.3.7",
-    "ai": "^4.3.1",
-    "axios": "^1.8.4",
-    "bcryptjs": "^3.0.2",
-    "mongoose": "^8.13.2",
-    "next": "15.2.4",
-    "next-auth": "^4.24.11",
-    "openai": "^4.91.1",
-    "react": "^18.2.0",
-    "react-datepicker": "^6.9.0",
-    "react-dom": "^18.2.0",
-    "recharts": "^2.15.2",
-    "react-big-calendar": "^1.8.0",
-    "@google-cloud/storage": "^7.0.0",
-    "stripe": "^14.0.0"
-  }
-}
-```
-
-## Authentication & Authorization
-
-CogniCare implements robust security measures:
-
-- **Role-based access control**
-- **Multi-factor authentication**
-- **Session management**
-- **HIPAA-compliant data handling**
-- **Encrypted data transmission**
-- **Regular security audits**
-
-## Deployment
-
-CogniCare is deployed on Vercel with:
-
-- **Automatic deployments**
-- **Preview deployments**
-- **Environment variable management**
-- **Performance monitoring**
-- **Error tracking**
-- **Analytics integration**
+- JWT-based authentication
+- Role-based access control
+- Comprehensive audit logging
+- Secure file storage
+- HIPAA-compliant data handling
 
 ## Getting Started
 
+### Prerequisites
+
+- Node.js 18+
+- MongoDB
+- Google Cloud Storage account
+- OpenAI API key
+
+### Environment Variables
+
+Create a `.env.local` file with the following variables:
+
+```env
+# MongoDB
+MONGODB_URI=your_mongodb_uri
+
+# NextAuth
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your_nextauth_secret
+
+# OpenAI
+OPENAI_API_KEY=your_openai_api_key
+
+# Google Cloud Storage
+GOOGLE_CLOUD_PROJECT_ID=your_project_id
+GOOGLE_CLOUD_CLIENT_EMAIL=your_client_email
+GOOGLE_CLOUD_PRIVATE_KEY=your_private_key
+GOOGLE_CLOUD_BUCKET_NAME=your_bucket_name
+```
+
+### Installation
+
 1. Clone the repository
-2. Install dependencies: `npm install`
-3. Set up environment variables
-4. Run development server: `npm run dev`
-5. Build for production: `npm run build`
-6. Start production server: `npm start`
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Run the development server:
+   ```bash
+   npm run dev
+   ```
+
+## Usage
+
+### Client Management
+
+- Create and manage client profiles
+- Track client progress and treatment plans
+- Generate and manage invoices
+- Store and organize clinical documents
+
+### Session Documentation
+
+- Create session notes with AI assistance
+- Track client progress over time
+- Generate treatment plans and recommendations
+
+### Billing & Invoicing
+
+- Set up billing rates for different session types
+- Generate professional invoices
+- Track payment status
+- Export billing reports
+
+### Document Management
+
+- Upload and organize clinical documents
+- Secure document storage
+- Document version control
+- Easy document retrieval
+
+### Audit Logging
+
+- View comprehensive activity logs in the Admin section
+- Filter logs by:
+  - User ID
+  - Entity type (client, session, invoice, document)
+  - Action type (create, read, update, delete)
+  - Date range
+- Track IP addresses and user agents
+- Monitor system access and changes
 
 ## Contributing
 
-We welcome contributions to CogniCare! Please follow our contribution guidelines:
-
 1. Fork the repository
-2. Create a feature branch
+2. Create your feature branch
 3. Commit your changes
 4. Push to the branch
 5. Create a Pull Request
 
 ## License
 
-CogniCare is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-## Support
+## Acknowledgments
 
-For support, please contact:
-
-- Email: support@cognicare.com
-- Documentation: [docs.cognicare.com](https://docs.cognicare.com)
-- Community: [community.cognicare.com](https://community.cognicare.com)
+- OpenAI for GPT-4 integration
+- Next.js team for the amazing framework
+- MongoDB for the database solution
+- Google Cloud for storage services
