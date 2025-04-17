@@ -50,11 +50,46 @@ class SubscriptionService {
     await connectDB();
     const subscription = await Subscription.findOne({ userId, status: "active" });
 
-    if (subscription) {
-      await stripe.subscriptions.cancel(subscription.stripeSubscriptionId);
+    if (!subscription) {
+      throw new Error("No active subscription found");
+    }
+
+    try {
+      // Get the current subscription details from Stripe
+      const stripeSubscription = await stripe.subscriptions.retrieve(
+        subscription.stripeSubscriptionId
+      );
+
+      // Cancel the subscription at the end of the current period
+      await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+        cancel_at_period_end: true,
+      });
+
+      // Ensure we have a valid end date
+      let endDate;
+      if (stripeSubscription.current_period_end) {
+        endDate = new Date(stripeSubscription.current_period_end * 1000);
+      } else {
+        // If no end date from Stripe, set it to 30 days from now
+        endDate = new Date();
+        endDate.setDate(endDate.getDate() + 30);
+      }
+
+      // Validate the date
+      if (isNaN(endDate.getTime())) {
+        throw new Error("Invalid end date");
+      }
+
+      // Update the subscription record
       subscription.status = "cancelled";
-      subscription.endDate = new Date();
+      subscription.endDate = endDate;
       await subscription.save();
+
+      return true;
+    } catch (error) {
+      console.error("Error cancelling subscription:", error);
+      console.error("Stripe subscription:", stripeSubscription);
+      throw new Error(`Failed to cancel subscription: ${error.message}`);
     }
   }
 

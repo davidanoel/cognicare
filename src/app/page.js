@@ -199,7 +199,7 @@ export default function LandingPage() {
 
                   {/* AI Agent Icons with Human-like Interaction */}
                   {/* AI Agent Icons with Sequential Highlight */}
-                  <div className="absolute top-[10%] left-1/2 -translate-x-1/2 w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center animate-float group hover:bg-indigo-200 transition-colors">
+                  <div className="absolute top-1/4 left-1/4 w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center animate-float group hover:bg-indigo-200 transition-colors">
                     <svg
                       className="w-5 h-5 text-indigo-600"
                       fill="none"
@@ -236,7 +236,7 @@ export default function LandingPage() {
                       />
                     </circle>
                   </div>
-                  <div className="absolute top-[30%] right-[15%] w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center animate-float-delay group hover:bg-indigo-200 transition-colors">
+                  <div className="absolute top-1/4 right-1/4 w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center animate-float-delay group hover:bg-indigo-200 transition-colors">
                     <svg
                       className="w-5 h-5 text-indigo-700"
                       fill="none"
@@ -275,7 +275,7 @@ export default function LandingPage() {
                       />
                     </circle>
                   </div>
-                  <div className="absolute bottom-[30%] right-[15%] w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center animate-float-delay-2 group hover:bg-indigo-200 transition-colors">
+                  <div className="absolute bottom-1/4 left-1/4 w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center animate-float-delay-2 group hover:bg-indigo-200 transition-colors">
                     <svg
                       className="w-5 h-5 text-indigo-600"
                       fill="none"
@@ -314,7 +314,7 @@ export default function LandingPage() {
                       />
                     </circle>
                   </div>
-                  <div className="absolute bottom-[10%] left-1/2 -translate-x-1/2 w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center animate-float group hover:bg-indigo-200 transition-colors">
+                  <div className="absolute bottom-1/4 right-1/4 w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center animate-float group hover:bg-indigo-200 transition-colors">
                     <svg
                       className="w-5 h-5 text-indigo-700"
                       fill="none"
@@ -353,9 +353,9 @@ export default function LandingPage() {
                       />
                     </circle>
                   </div>
-                  <div className="absolute bottom-[30%] left-[15%] w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center animate-float-delay-2 group hover:bg-indigo-200 transition-colors">
+                  <div className="absolute top-1/2 left-1/2 w-12 h-12 bg-gradient-to-r from-indigo-600 to-indigo-700 rounded-full flex items-center justify-center animate-float-delay group hover:scale-110 transition-transform">
                     <svg
-                      className="w-5 h-5 text-indigo-600"
+                      className="w-6 h-6 text-white"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -372,13 +372,13 @@ export default function LandingPage() {
                       cy="50%"
                       r="45%"
                       fill="none"
-                      stroke="currentColor"
+                      stroke="white"
                       strokeWidth="2"
                       className="pulse-ring"
                     >
                       <animate
                         attributeName="r"
-                        values="45%;60%;45%"
+                        values="45%;70%;45%"
                         dur="2s"
                         repeatCount="indefinite"
                         begin="2s"
@@ -389,45 +389,6 @@ export default function LandingPage() {
                         dur="2s"
                         repeatCount="indefinite"
                         begin="2s"
-                      />
-                    </circle>
-                  </div>
-                  <div className="absolute top-[30%] left-[15%] w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center animate-float-delay group hover:bg-blue-200 transition-colors">
-                    <svg
-                      className="w-5 h-5 text-blue-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                      />
-                    </svg>
-                    <circle
-                      cx="50%"
-                      cy="50%"
-                      r="45%"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      className="pulse-ring"
-                    >
-                      <animate
-                        attributeName="r"
-                        values="45%;60%;45%"
-                        dur="2s"
-                        repeatCount="indefinite"
-                        begin="2.5s"
-                      />
-                      <animate
-                        attributeName="opacity"
-                        values="1;0;1"
-                        dur="2s"
-                        repeatCount="indefinite"
-                        begin="2.5s"
                       />
                     </circle>
                   </div>
@@ -595,7 +556,7 @@ export default function LandingPage() {
                 Beautiful charts and insights help you track client progress and celebrate their
                 wins.
               </p>
-      </div>
+            </div>
 
             <div className="p-6 rounded-2xl bg-white shadow-lg hover:shadow-xl transition-shadow">
               <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
@@ -627,7 +588,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-center text-indigo-900 mb-12">
             Everything You Need in One Place with CogniCare
-            </h2>
+          </h2>
           <div className="grid md:grid-cols-2 gap-12">
             <div className="space-y-6">
               <div className="flex items-start">
@@ -735,7 +696,7 @@ export default function LandingPage() {
                   </p>
                 </div>
               </div>
-          </div>
+            </div>
 
             <div className="space-y-6">
               <div className="flex items-start">
@@ -854,12 +815,11 @@ export default function LandingPage() {
           <h2 className="text-3xl font-bold text-center text-indigo-900 mb-12">
             Simple, Fair Pricing
           </h2>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             <div className="p-8 rounded-2xl border border-gray-200 hover:shadow-lg transition-shadow">
-              <h3 className="text-xl font-semibold mb-4">Starter</h3>
-              <div className="text-4xl font-bold text-indigo-600 mb-6">
-                $29<span className="text-lg text-gray-500">/month</span>
-              </div>
+              <h3 className="text-xl font-semibold mb-4">Free Trial</h3>
+              <div className="text-4xl font-bold text-indigo-600 mb-6">$0</div>
+              <p className="text-gray-600 mb-6">Try all features for 14 days</p>
               <ul className="space-y-4 mb-8">
                 <li className="flex items-center">
                   <svg
@@ -875,7 +835,7 @@ export default function LandingPage() {
                       d="M5 13l4 4L19 7"
                     />
                   </svg>
-                  <span>Up to 20 clients</span>
+                  <span>All 6 AI Agents</span>
                 </li>
                 <li className="flex items-center">
                   <svg
@@ -891,7 +851,7 @@ export default function LandingPage() {
                       d="M5 13l4 4L19 7"
                     />
                   </svg>
-                  <span>Basic AI features</span>
+                  <span>Up to 3 Clients</span>
                 </li>
                 <li className="flex items-center">
                   <svg
@@ -907,14 +867,46 @@ export default function LandingPage() {
                       d="M5 13l4 4L19 7"
                     />
                   </svg>
-                  <span>Email support</span>
+                  <span>Full Feature Access</span>
+                </li>
+                <li className="flex items-center">
+                  <svg
+                    className="w-5 h-5 text-green-500 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  <span>Email Support</span>
+                </li>
+                <li className="flex items-center">
+                  <svg
+                    className="w-5 h-5 text-green-500 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  <span>14-day Trial Period</span>
                 </li>
               </ul>
               <Link
                 href="/signup"
                 className="block w-full text-center bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3 rounded-full font-medium hover:from-indigo-700 hover:to-indigo-800 transition-colors"
               >
-                Get Started
+                Start Free Trial
               </Link>
             </div>
 
@@ -922,89 +914,11 @@ export default function LandingPage() {
               <div className="absolute top-0 right-0 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white px-4 py-1 rounded-bl-lg text-sm font-medium">
                 Most Popular
               </div>
-              <h3 className="text-xl font-semibold mb-4">Professional</h3>
-              <div className="text-4xl font-bold text-indigo-600 mb-6">
-                $59<span className="text-lg text-gray-500">/month</span>
-              </div>
-              <ul className="space-y-4 mb-8">
-                <li className="flex items-center">
-                  <svg
-                    className="w-5 h-5 text-green-500 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span>Up to 50 clients</span>
-                </li>
-                <li className="flex items-center">
-                  <svg
-                    className="w-5 h-5 text-green-500 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span>Advanced AI features</span>
-                </li>
-                <li className="flex items-center">
-                  <svg
-                    className="w-5 h-5 text-green-500 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span>Priority support</span>
-                </li>
-                <li className="flex items-center">
-                  <svg
-                    className="w-5 h-5 text-green-500 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span>Custom treatment plans</span>
-                </li>
-              </ul>
-              <Link
-                href="/signup"
-                className="block w-full text-center bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3 rounded-full font-medium hover:from-indigo-700 hover:to-indigo-800 transition-colors"
-              >
-                Get Started
-              </Link>
-            </div>
-
-            <div className="p-8 rounded-2xl border border-gray-200 hover:shadow-lg transition-shadow">
-              <h3 className="text-xl font-semibold mb-4">Enterprise</h3>
+              <h3 className="text-xl font-semibold mb-4">Single Therapist</h3>
               <div className="text-4xl font-bold text-indigo-600 mb-6">
                 $99<span className="text-lg text-gray-500">/month</span>
               </div>
+              <p className="text-gray-600 mb-6">Perfect for individual practitioners</p>
               <ul className="space-y-4 mb-8">
                 <li className="flex items-center">
                   <svg
@@ -1020,7 +934,7 @@ export default function LandingPage() {
                       d="M5 13l4 4L19 7"
                     />
                   </svg>
-                  <span>Unlimited clients</span>
+                  <span>All 6 AI Agents</span>
                 </li>
                 <li className="flex items-center">
                   <svg
@@ -1036,7 +950,7 @@ export default function LandingPage() {
                       d="M5 13l4 4L19 7"
                     />
                   </svg>
-                  <span>All AI features</span>
+                  <span>Up to 25 Clients</span>
                 </li>
                 <li className="flex items-center">
                   <svg
@@ -1052,7 +966,7 @@ export default function LandingPage() {
                       d="M5 13l4 4L19 7"
                     />
                   </svg>
-                  <span>24/7 support</span>
+                  <span>Full Feature Access</span>
                 </li>
                 <li className="flex items-center">
                   <svg
@@ -1068,7 +982,23 @@ export default function LandingPage() {
                       d="M5 13l4 4L19 7"
                     />
                   </svg>
-                  <span>Custom integrations</span>
+                  <span>Email Support</span>
+                </li>
+                <li className="flex items-center">
+                  <svg
+                    className="w-5 h-5 text-green-500 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  <span>1 Therapist License</span>
                 </li>
               </ul>
               <Link
@@ -1182,8 +1112,8 @@ export default function LandingPage() {
           </div>
           <div className="mt-12 pt-8 border-t border-gray-200 text-center text-gray-600">
             <p>© 2025 CogniCare. All rights reserved.</p>
+          </div>
         </div>
-      </div>
       </footer>
     </div>
   );

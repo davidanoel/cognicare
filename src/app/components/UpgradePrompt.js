@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 export default function UpgradePrompt({ reason }) {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const [subscription, setSubscription] = useState(null);
 
   const messages = {
     freeLimit: "You've reached your free trial client limit. Upgrade to add more clients.",
@@ -27,6 +28,19 @@ export default function UpgradePrompt({ reason }) {
       console.error("Error initiating upgrade:", error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const checkSubscription = async () => {
+    try {
+      const response = await fetch("/api/subscriptions/status");
+      if (!response.ok) {
+        throw new Error("Failed to fetch subscription status");
+      }
+      const data = await response.json();
+      setSubscription(data);
+    } catch (error) {
+      console.error("Error checking subscription:", error);
     }
   };
 
