@@ -89,6 +89,16 @@ export default function Navbar() {
               >
                 Reports
               </Link>
+              <Link
+                href="/settings"
+                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                  isActive("/settings")
+                    ? "border-white text-white"
+                    : "border-transparent text-indigo-100 hover:border-indigo-200 hover:text-white"
+                }`}
+              >
+                Settings
+              </Link>
               {isAdmin(session.user) && (
                 <>
                   <Link
