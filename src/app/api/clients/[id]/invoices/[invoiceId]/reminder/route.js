@@ -36,25 +36,41 @@ export async function POST(req, context) {
     }
 
     // Send reminder email
+    const emailContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #1a202c;">Invoice Reminder</h2>
+        <p>Dear ${client.name},</p>
+        <p>This is a friendly reminder that you have an outstanding invoice for your therapy sessions.</p>
+        <div style="background-color: #f7fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <p><strong>Invoice Details:</strong></p>
+          <p>Amount: $${invoice.amount.toFixed(2)}</p>
+          <p>Date: ${new Date(invoice.date).toLocaleDateString()}</p>
+          <p>Status: Pending</p>
+        </div>
+        ${
+          invoice.paymentLink
+            ? `
+          <p>You can pay this invoice securely online by clicking the button below:</p>
+          <div style="text-align: center; margin: 20px 0;">
+            <a href="${invoice.paymentLink}" 
+               style="display: inline-block; padding: 12px 24px; background-color: #4299e1; color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">
+              Pay Now
+            </a>
+          </div>
+        `
+            : ""
+        }
+        <p>If you have any questions about this invoice, please don't hesitate to contact us.</p>
+        <p>Thank you for your prompt attention to this matter.</p>
+        <p>Best regards,<br>${user.name}</p>
+      </div>
+    `;
+
     const { data, error } = await resend.emails.send({
       from: "Cognicare <onboarding@resend.dev>",
       to: client.contactInfo.email,
       subject: `Payment Reminder: Invoice #${invoice.invoiceNumber || invoiceId}`,
-      html: `
-        <h1>Payment Reminder</h1>
-        <p>Dear ${client.name},</p>
-        <p>This is a friendly reminder that your invoice #${
-          invoice.invoiceNumber || invoiceId
-        } for $${invoice.amount} is still pending payment.</p>
-        <p>Invoice Details:</p>
-        <ul>
-          <li>Amount: $${invoice.amount}</li>
-          <li>Date: ${new Date(invoice.date).toLocaleDateString()}</li>
-          <li>Status: Pending</li>
-        </ul>
-        <p>Please make payment at your earliest convenience.</p>
-        <p>Thank you,<br>Cognicare Team</p>
-      `,
+      html: emailContent,
     });
 
     if (error) {
