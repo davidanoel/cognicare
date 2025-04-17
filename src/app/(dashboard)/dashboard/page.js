@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-
+import SubscriptionButton from "@/app/components/SubscriptionButton";
+import SubscriptionStatus from "@/app/components/SubscriptionStatus";
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -104,6 +105,8 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Stats Grid */}
+      <SubscriptionButton />
+      <SubscriptionStatus />
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {/* Total Clients Card */}
         <div className="bg-white overflow-hidden shadow rounded-lg">

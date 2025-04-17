@@ -220,5 +220,16 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Real-time updates
 
 # Test credit card numbers
-Visa	4242424242424242	Any 3 digits	Any future date
-Visa (debit)	4000056655665556	Any 3 digits	Any future date
+
+Visa 4242424242424242 Any 3 digits Any future date
+Visa (debit) 4000056655665556 Any 3 digits Any future date
+
+# AI Pricing Strategy (internal)
+
+OpenAI API Costs
+* GPT-4: ~$0.03/1K tokens input, ~$0.06/1K tokens output
+* Average therapy session note: ~500-1000 tokens
+* 6 AI agents per session = ~3000-6000 tokens
+* Per session cost: ~$0.18-$0.36
+* 20 sessions/month = ~$3.60-$7.20
+* 100 sessions/month = ~$18-$36
