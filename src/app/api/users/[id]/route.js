@@ -7,31 +7,23 @@ import bcrypt from "bcryptjs";
 // Get a specific user
 export async function GET(req, { params }) {
   try {
-    // Check authentication first
-    const currentUser = await getCurrentUser();
-    if (!currentUser) {
+    const user = await getCurrentUser();
+    if (!user) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     await connectDB();
 
-    // Users can only view their own profile unless they're admin
-    if (!isAdmin(currentUser) && currentUser.id !== params.id) {
-      return NextResponse.json(
-        { message: "Unauthorized: Cannot view other user profiles" },
-        { status: 403 }
-      );
-    }
+    const { id } = await params;
+    const foundUser = await User.findById(id).select("-password").lean();
 
-    const user = await User.findById(params.id).select("-password").lean();
-
-    if (!user) {
+    if (!foundUser) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
-    return NextResponse.json(user);
+    return NextResponse.json(foundUser);
   } catch (error) {
-    console.error("User GET error:", error);
+    console.error("Error fetching user:", error);
     return NextResponse.json({ message: "Error fetching user" }, { status: 500 });
   }
 }
@@ -39,7 +31,6 @@ export async function GET(req, { params }) {
 // Update a user
 export async function PATCH(req, { params }) {
   try {
-    // Check authentication first
     const currentUser = await getCurrentUser();
     if (!currentUser) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -47,8 +38,10 @@ export async function PATCH(req, { params }) {
 
     await connectDB();
 
+    const { id } = await params;
+
     // Users can only update their own profile unless they're admin
-    if (!isAdmin(currentUser) && currentUser.id !== params.id) {
+    if (!isAdmin(currentUser) && currentUser.id !== id) {
       return NextResponse.json(
         { message: "Unauthorized: Cannot update other user profiles" },
         { status: 403 }
@@ -59,7 +52,7 @@ export async function PATCH(req, { params }) {
     const { name, email, password, licenseNumber, specialization, role } = body;
 
     // Find the user
-    const user = await User.findById(params.id);
+    const user = await User.findById(id);
     if (!user) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }

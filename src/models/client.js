@@ -187,7 +187,6 @@ const clientSchema = new mongoose.Schema({
       requestedBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
-        required: true,
       },
       requestedAt: {
         type: Date,
@@ -246,7 +245,7 @@ const clientSchema = new mongoose.Schema({
         },
         paymentMethod: {
           type: String,
-          enum: ["cash", "card", "insurance"],
+          enum: ["cash", "card", "insurance", "self-pay", "sliding-scale"],
         },
         paymentDate: {
           type: Date,
@@ -259,6 +258,9 @@ const clientSchema = new mongoose.Schema({
         },
         documentKey: {
           type: String,
+        },
+        lastReminderSent: {
+          type: Date,
         },
       },
     ],

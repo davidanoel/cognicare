@@ -84,7 +84,7 @@ export async function middleware(request) {
             statusCode: response.status,
             duration: Date.now() - startTime,
           },
-          ipAddress: headers.get("x-forwarded-for") || request.ip,
+          ipAddress: headers.get("x-forwarded-for") || headers.get("x-real-ip") || "unknown",
           userAgent: headers.get("user-agent"),
         }),
       });

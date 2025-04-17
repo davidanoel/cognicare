@@ -290,13 +290,14 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to send reminder");
+        const error = await response.json();
+        throw new Error(error.message || "Failed to send reminder");
       }
 
-      toast.success("Payment reminder sent successfully");
+      alert("Reminder sent successfully");
     } catch (error) {
       console.error("Error sending reminder:", error);
-      toast.error("Failed to send reminder");
+      alert(error.message || "Failed to send reminder");
     }
   };
 
