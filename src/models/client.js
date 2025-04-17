@@ -204,7 +204,8 @@ const clientSchema = new mongoose.Schema({
   billing: {
     paymentMethod: {
       type: String,
-      enum: ["self-pay", "insurance", "sliding-scale"],
+      enum: ["cash", "check", "credit", "insurance", "other"],
+      default: "cash",
     },
     rate: {
       type: Number,
@@ -240,28 +241,20 @@ const clientSchema = new mongoose.Schema({
         },
         status: {
           type: String,
-          enum: ["pending", "paid"],
+          enum: ["pending", "paid", "overdue"],
           default: "pending",
         },
         paymentMethod: {
           type: String,
-          enum: ["cash", "card", "insurance", "self-pay", "sliding-scale"],
+          enum: ["cash", "check", "credit", "insurance", "other"],
+          default: "cash",
         },
-        paymentDate: {
-          type: Date,
-        },
-        notes: {
-          type: String,
-        },
-        document: {
-          type: String,
-        },
-        documentKey: {
-          type: String,
-        },
-        lastReminderSent: {
-          type: Date,
-        },
+        paymentDate: { type: Date },
+        notes: { type: String },
+        document: { type: String },
+        documentKey: { type: String },
+        paymentLink: { type: String },
+        lastReminderSent: { type: Date },
       },
     ],
   },

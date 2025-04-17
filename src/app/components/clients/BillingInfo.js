@@ -208,8 +208,8 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
               session.type === "initial"
                 ? client.billing.initialRate || client.billing.rate
                 : session.type === "group"
-                ? client.billing.groupRate || client.billing.rate
-                : client.billing.rate,
+                  ? client.billing.groupRate || client.billing.rate
+                  : client.billing.rate,
           })),
           notes: "Automatically generated invoice",
         }),
@@ -370,7 +370,31 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
               </button>
               <button
                 onClick={() => {
-                  handleMarkAsPaid(invoice._id, "card");
+                  handleMarkAsPaid(invoice._id, "check");
+                  setShowPaymentDropdown(null);
+                }}
+                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                <span className="flex items-center">
+                  <svg
+                    className="w-4 h-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                    />
+                  </svg>
+                  Check
+                </span>
+              </button>
+              <button
+                onClick={() => {
+                  handleMarkAsPaid(invoice._id, "credit");
                   setShowPaymentDropdown(null);
                 }}
                 className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -389,7 +413,7 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
                       d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
                     />
                   </svg>
-                  Card
+                  Credit Card
                 </span>
               </button>
               <button
@@ -414,6 +438,30 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
                     />
                   </svg>
                   Insurance
+                </span>
+              </button>
+              <button
+                onClick={() => {
+                  handleMarkAsPaid(invoice._id, "other");
+                  setShowPaymentDropdown(null);
+                }}
+                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                <span className="flex items-center">
+                  <svg
+                    className="w-4 h-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+                    />
+                  </svg>
+                  Other
                 </span>
               </button>
             </div>
@@ -460,9 +508,11 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
               <div className="sm:col-span-1">
                 <dt className="text-sm font-medium text-gray-500">Payment Method</dt>
                 <dd className="mt-1 text-sm text-gray-900">
-                  {client.billing.paymentMethod === "self-pay" && "Self Pay"}
+                  {client.billing.paymentMethod === "cash" && "Cash"}
+                  {client.billing.paymentMethod === "check" && "Check"}
+                  {client.billing.paymentMethod === "credit" && "Credit Card"}
                   {client.billing.paymentMethod === "insurance" && "Insurance"}
-                  {client.billing.paymentMethod === "sliding-scale" && "Sliding Scale"}
+                  {client.billing.paymentMethod === "other" && "Other"}
                 </dd>
               </div>
 
@@ -520,11 +570,25 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
                                 <p className="text-sm text-gray-600">
                                   Payment Method:{" "}
                                   {invoice.paymentMethod ? (
-                                    <span className="capitalize">{invoice.paymentMethod}</span>
+                                    <span className="capitalize">
+                                      {invoice.paymentMethod === "credit"
+                                        ? "Credit Card"
+                                        : invoice.paymentMethod}
+                                    </span>
                                   ) : (
                                     "Not specified"
                                   )}
                                 </p>
+                                {invoice.status !== "paid" && invoice.paymentLink && (
+                                  <a
+                                    href={invoice.paymentLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:text-blue-800 text-sm"
+                                  >
+                                    Pay Online
+                                  </a>
+                                )}
                               </div>
                               <div className="flex space-x-2">
                                 {renderPaymentOptions(invoice)}
@@ -593,9 +657,11 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
                     defaultValue={client.billing?.paymentMethod}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   >
-                    <option value="self-pay">Self Pay</option>
+                    <option value="cash">Cash</option>
+                    <option value="check">Check</option>
+                    <option value="credit">Credit Card</option>
                     <option value="insurance">Insurance</option>
-                    <option value="sliding-scale">Sliding Scale</option>
+                    <option value="other">Other</option>
                   </select>
                 </div>
 
@@ -776,8 +842,8 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
                         {session.type === "initial"
                           ? client.billing?.initialRate || client.billing?.rate
                           : session.type === "group"
-                          ? client.billing?.groupRate || client.billing?.rate
-                          : client.billing?.rate}
+                            ? client.billing?.groupRate || client.billing?.rate
+                            : client.billing?.rate}
                       </span>
                     </div>
                   </div>
@@ -792,8 +858,8 @@ export default function BillingInfo({ client, onUpdate, onDelete }) {
                     session.type === "initial"
                       ? client.billing?.initialRate || client.billing?.rate
                       : session.type === "group"
-                      ? client.billing?.groupRate || client.billing?.rate
-                      : client.billing?.rate;
+                        ? client.billing?.groupRate || client.billing?.rate
+                        : client.billing?.rate;
                   return sum + rate;
                 }, 0)}
               </p>

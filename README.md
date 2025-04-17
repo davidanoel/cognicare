@@ -218,3 +218,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Email notifications
 - Secure file storage
 - Real-time updates
+
+# Test credit card numbers
+Visa	4242424242424242	Any 3 digits	Any future date
+Visa (debit)	4000056655665556	Any 3 digits	Any future date

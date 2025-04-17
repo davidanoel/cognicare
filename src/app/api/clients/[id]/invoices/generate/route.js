@@ -122,21 +122,21 @@ export async function POST(req, context) {
       color: rgb(0.3, 0.3, 0.3),
     });
 
-    page.drawText(
-      client.billing.paymentMethod === "self-pay"
-        ? "Self Pay"
-        : client.billing.paymentMethod === "insurance"
-        ? "Insurance"
-        : client.billing.paymentMethod === "sliding-scale"
-        ? "Sliding Scale"
-        : "Not specified",
+    const paymentMethodText =
       {
-        x: pageWidth - margin - 100,
-        y: pageHeight - margin - 154,
-        size: 12,
-        color: rgb(0, 0, 0),
-      }
-    );
+        cash: "Cash",
+        check: "Check",
+        credit: "Credit Card",
+        insurance: "Insurance",
+        other: "Other",
+      }[client.billing.paymentMethod] || "Not specified";
+
+    page.drawText(paymentMethodText, {
+      x: pageWidth - margin - 100,
+      y: pageHeight - margin - 154,
+      size: 12,
+      color: rgb(0, 0, 0),
+    });
 
     // Add payment status
     page.drawText("Payment Status:", {
@@ -169,11 +169,13 @@ export async function POST(req, context) {
       const paymentMethodText =
         client.billing.paymentMethod === "cash"
           ? "Cash"
-          : client.billing.paymentMethod === "card"
-          ? "Card"
-          : client.billing.paymentMethod === "insurance"
-          ? "Insurance"
-          : "Not specified";
+          : client.billing.paymentMethod === "check"
+            ? "Check"
+            : client.billing.paymentMethod === "credit"
+              ? "Card"
+              : client.billing.paymentMethod === "insurance"
+                ? "Insurance"
+                : "Not specified";
 
       page.drawText(paymentMethodText, {
         x: pageWidth - margin - 50,
@@ -388,9 +390,58 @@ export async function POST(req, context) {
       document: documentUrl,
       documentKey: fileKey,
       invoiceNumber: `INV-${timestamp}`,
-      paymentMethod: null,
+      paymentMethod: client.billing.paymentMethod || "cash",
       paymentDate: null,
     };
+
+    // Generate payment link only if payment method is credit
+    if (client.billing.paymentMethod === "credit") {
+      console.log("Generating payment link for credit card payment");
+      try {
+        console.log("Sending request to create payment link:", {
+          clientId: id,
+          invoiceId: invoiceData._id,
+          amount: totalAmount,
+          description: `Invoice ${invoiceData.invoiceNumber} for ${client.name}`,
+        });
+
+        const paymentLinkResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_APP_URL}/api/stripe/create-payment-link`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Cookie: req.headers.get("cookie"),
+            },
+            body: JSON.stringify({
+              clientId: id,
+              invoiceId: invoiceData._id,
+              amount: totalAmount,
+              description: `Invoice ${invoiceData.invoiceNumber} for ${client.name}`,
+            }),
+          }
+        );
+
+        console.log("Payment link response status:", paymentLinkResponse.status);
+
+        if (paymentLinkResponse.ok) {
+          const { paymentLink } = await paymentLinkResponse.json();
+          console.log("Payment link generated:", paymentLink);
+          invoiceData.paymentLink = paymentLink;
+        } else {
+          const error = await paymentLinkResponse.json();
+          console.error("Payment link generation failed:", error);
+        }
+      } catch (error) {
+        console.error("Error generating payment link:", error);
+        // Continue without payment link if there's an error
+      }
+    } else {
+      console.log(
+        "Payment method is not credit, skipping payment link generation:",
+        client.billing.paymentMethod
+      );
+    }
 
     // Update client with new invoice
     const updatedClient = await Client.findOneAndUpdate(
