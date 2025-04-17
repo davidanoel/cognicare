@@ -9,6 +9,10 @@ export async function middleware(request) {
     return NextResponse.next();
   }
 
+  // Refresh session on activity
+  const response = NextResponse.next();
+  response.cookies.set("lastActivity", Date.now().toString());
+
   const startTime = Date.now();
   const { method, url, headers } = request;
 

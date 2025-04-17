@@ -174,3 +174,47 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Next.js team for the amazing framework
 - MongoDB for the database solution
 - Google Cloud for storage services
+
+## What's New
+
+### Enhanced Security
+
+- Session timeout for inactivity
+- Improved audit logging
+- Role-based access control
+
+### Billing Improvements
+
+- Multiple rate types (standard, initial, group)
+- Automated invoice generation
+- Payment status tracking
+- Payment reminder system
+- Detailed invoice PDFs
+
+### Document Management
+
+- Secure document storage
+- Consent form management
+- Document versioning
+- Electronic signatures
+
+### Client Management
+
+- Comprehensive client profiles
+- Session tracking
+- Billing history
+- Document management
+
+### Admin Features
+
+- Audit logging system
+- User management
+- Role-based permissions
+- Activity monitoring
+
+### Technical Improvements
+
+- PDF generation
+- Email notifications
+- Secure file storage
+- Real-time updates
