@@ -82,14 +82,17 @@ export default function SubscriptionStatus() {
                       ? "bg-green-100 text-green-800"
                       : subscription.status === "cancelled"
                         ? "bg-red-100 text-red-800"
-                        : "bg-yellow-100 text-yellow-800"
+                        : subscription.status === "trial"
+                          ? "bg-blue-100 text-blue-800"
+                          : "bg-yellow-100 text-yellow-800"
                   }`}
                 >
-                  {subscription.status}
+                  {subscription.status === "trial" ? "Free Trial" : subscription.status}
                 </span>
               </p>
               <p className="mb-2">
-                <span className="font-medium">Plan:</span> {subscription.tier}
+                <span className="font-medium">Plan:</span>{" "}
+                {subscription.status === "trial" ? "Free Trial" : subscription.tier}
               </p>
               <p className="mb-2">
                 <span className="font-medium">Start Date:</span>{" "}
@@ -97,30 +100,44 @@ export default function SubscriptionStatus() {
               </p>
               {subscription.endDate && (
                 <p>
-                  <span className="font-medium">End Date:</span>{" "}
+                  <span className="font-medium">
+                    {subscription.status === "trial" ? "Trial Ends:" : "End Date:"}
+                  </span>{" "}
                   {new Date(subscription.endDate).toLocaleDateString()}
                 </p>
               )}
             </div>
             <div>
-              <p className="mb-2">
-                <span className="font-medium">Subscription ID:</span>{" "}
-                <span className="text-sm text-gray-600">{subscription.stripeSubscriptionId}</span>
-              </p>
-              <p className="mb-2">
-                <span className="font-medium">Customer ID:</span>{" "}
-                <span className="text-sm text-gray-600">{subscription.stripeCustomerId}</span>
-              </p>
-              <p className="mb-2">
-                <span className="font-medium">Auto-renew:</span>{" "}
-                <span
-                  className={
-                    subscription.status === "cancelled" ? "text-red-600" : "text-green-600"
-                  }
-                >
-                  {subscription.status === "cancelled" ? "No" : "Yes"}
-                </span>
-              </p>
+              {subscription.stripeSubscriptionId && (
+                <p className="mb-2">
+                  <span className="font-medium">Subscription ID:</span>{" "}
+                  <span className="text-sm text-gray-600">{subscription.stripeSubscriptionId}</span>
+                </p>
+              )}
+              {subscription.stripeCustomerId && (
+                <p className="mb-2">
+                  <span className="font-medium">Customer ID:</span>{" "}
+                  <span className="text-sm text-gray-600">{subscription.stripeCustomerId}</span>
+                </p>
+              )}
+              {subscription.status === "trial" && (
+                <p className="mb-2">
+                  <span className="font-medium">Client Limit:</span>{" "}
+                  <span className="text-sm text-gray-600">3 clients</span>
+                </p>
+              )}
+              {subscription.status !== "trial" && (
+                <p className="mb-2">
+                  <span className="font-medium">Auto-renew:</span>{" "}
+                  <span
+                    className={
+                      subscription.status === "cancelled" ? "text-red-600" : "text-green-600"
+                    }
+                  >
+                    {subscription.status === "cancelled" ? "No" : "Yes"}
+                  </span>
+                </p>
+              )}
             </div>
           </div>
 
@@ -132,6 +149,19 @@ export default function SubscriptionStatus() {
             >
               {cancelling ? "Cancelling..." : "Cancel Subscription"}
             </button>
+          )}
+          {subscription.status === "trial" && (
+            <div className="mt-4">
+              <p className="text-sm text-gray-600 mb-2">
+                Your trial includes access to all features with a 3-client limit.
+              </p>
+              <a
+                href="/pricing"
+                className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+              >
+                Upgrade to Full Plan
+              </a>
+            </div>
           )}
         </div>
       ) : (

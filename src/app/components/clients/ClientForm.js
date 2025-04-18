@@ -134,6 +134,16 @@ export default function ClientForm({ client, onSuccess, onCancel }) {
       });
 
       if (!response.ok) {
+        const errorData = await response.json();
+        if (errorData.reason === "free_trial_limit") {
+          throw new Error(
+            "You've reached your free trial client limit. Please upgrade to add more clients."
+          );
+        } else if (errorData.reason === "paid_limit") {
+          throw new Error(
+            "You've reached your client limit. Please contact support to add more clients."
+          );
+        }
         throw new Error(client ? "Failed to update client" : "Failed to create client");
       }
 
@@ -188,9 +198,9 @@ export default function ClientForm({ client, onSuccess, onCancel }) {
       if (onSuccess) {
         onSuccess(savedClient);
       }
-    } catch (err) {
-      console.error("Error:", err);
-      setError(err.message);
+    } catch (error) {
+      console.error("Error saving client:", error);
+      setError(error.message);
     } finally {
       setLoading(false);
     }

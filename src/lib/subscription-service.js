@@ -111,6 +111,37 @@ class SubscriptionService {
     }
     return { canAdd: true };
   }
+
+  async createTrialSubscription(userId) {
+    await connectDB();
+
+    // Check if user already has any type of subscription
+    const existingSubscription = await Subscription.findOne({ userId });
+    if (existingSubscription) {
+      throw new Error("User already has a subscription");
+    }
+
+    // Create trial subscription
+    const trialEndDate = new Date();
+    trialEndDate.setDate(trialEndDate.getDate() + 14); // 14-day trial
+
+    const trialSubscription = new Subscription({
+      userId,
+      tier: "free",
+      status: "trial",
+      startDate: new Date(),
+      endDate: trialEndDate,
+    });
+
+    await trialSubscription.save();
+    return trialSubscription;
+  }
+
+  async hasActiveSubscription(userId) {
+    await connectDB();
+    const subscription = await Subscription.findOne({ userId });
+    return !!subscription;
+  }
 }
 
 export const subscriptionService = new SubscriptionService();

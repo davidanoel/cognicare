@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/models/user";
 import { hash } from "bcryptjs";
+import { subscriptionService } from "@/lib/subscription-service";
 
 export async function POST(request) {
   try {
@@ -36,6 +37,9 @@ export async function POST(request) {
       specialization: specialization || "General Counseling",
       role: "counselor",
     });
+
+    // Create trial subscription
+    await subscriptionService.createTrialSubscription(user._id);
 
     // Remove password from response
     const { password: _, ...userWithoutPassword } = user.toObject();

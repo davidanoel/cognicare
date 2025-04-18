@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { connectDB } from "@/lib/mongodb";
-import Subscription from "@/models/subscription";
+import { subscriptionService } from "@/lib/subscription-service";
 
 export async function GET() {
   try {
@@ -10,8 +9,12 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await connectDB();
-    const subscription = await Subscription.findOne({ userId: session.user.id });
+    const subscription = await subscriptionService.getSubscriptionStatus(session.user.id);
+
+    // If no subscription exists, return null instead of creating a trial
+    if (!subscription) {
+      return NextResponse.json(null);
+    }
 
     return NextResponse.json(subscription);
   } catch (error) {
