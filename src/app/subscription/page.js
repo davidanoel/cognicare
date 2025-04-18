@@ -4,17 +4,30 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import SubscriptionStatus from "@/app/components/SubscriptionStatus";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function SubscriptionPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [clientCount, setClientCount] = useState(0);
+  const [subscription, setSubscription] = useState(null);
 
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
     } else if (status === "authenticated") {
       setLoading(false);
+      // Fetch client count and subscription status
+      Promise.all([
+        fetch("/api/clients").then((res) => res.json()),
+        fetch("/api/subscriptions/status").then((res) => res.json()),
+      ])
+        .then(([clients, subscription]) => {
+          setClientCount(clients.length);
+          setSubscription(subscription);
+        })
+        .catch(console.error);
     }
   }, [status, router]);
 
@@ -25,6 +38,9 @@ export default function SubscriptionPage() {
       </div>
     );
   }
+
+  const clientLimit = subscription?.tier === "trial" ? 3 : 25;
+  const progressPercentage = Math.min((clientCount / clientLimit) * 100, 100);
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -38,6 +54,41 @@ export default function SubscriptionPage() {
 
         <div className="bg-white shadow rounded-lg p-6 mb-8">
           <SubscriptionStatus />
+        </div>
+
+        <div className="bg-white shadow rounded-lg p-6 mb-8">
+          <h2 className="text-lg font-medium text-gray-900 mb-4">Client Limit</h2>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Current Clients</span>
+              <span className="text-sm font-medium">
+                {clientCount}/{clientLimit}
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div
+                className="bg-blue-600 h-2.5 rounded-full"
+                style={{ width: `${progressPercentage}%` }}
+              ></div>
+            </div>
+            <p className="text-sm text-gray-600">
+              {clientCount >= clientLimit
+                ? subscription?.tier === "trial"
+                  ? "You've reached your trial client limit. Upgrade to add more clients."
+                  : "You've reached your client limit."
+                : subscription?.tier === "trial"
+                  ? `Upgrade to add up to ${clientLimit} clients.`
+                  : `You can add up to ${clientLimit} clients.`}
+            </p>
+            {subscription?.tier === "trial" && (
+              <Link
+                href="/#pricing"
+                className="inline-block px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+              >
+                Upgrade Plan
+              </Link>
+            )}
+          </div>
         </div>
 
         <div className="bg-white shadow rounded-lg p-6">

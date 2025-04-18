@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 
 export default function ClientForm({ client, onSuccess, onCancel }) {
   const [formData, setFormData] = useState({
@@ -136,15 +137,19 @@ export default function ClientForm({ client, onSuccess, onCancel }) {
       if (!response.ok) {
         const errorData = await response.json();
         if (errorData.reason === "free_trial_limit") {
-          throw new Error(
+          setError(
             "You've reached your free trial client limit. Please upgrade to add more clients."
           );
+          setLoading(false);
+          return;
         } else if (errorData.reason === "paid_limit") {
-          throw new Error(
-            "You've reached your client limit. Please contact support to add more clients."
-          );
+          setError("You've reached your client limit. Please contact support to add more clients.");
+          setLoading(false);
+          return;
         }
-        throw new Error(client ? "Failed to update client" : "Failed to create client");
+        setError(client ? "Failed to update client" : "Failed to create client");
+        setLoading(false);
+        return;
       }
 
       const savedClient = await response.json();
@@ -214,6 +219,16 @@ export default function ClientForm({ client, onSuccess, onCancel }) {
           role="alert"
         >
           <span className="block sm:inline">{error}</span>
+          {error.includes("free trial client limit") && (
+            <div className="mt-4">
+              <Link
+                href="/#pricing"
+                className="inline-block px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+              >
+                Upgrade Plan
+              </Link>
+            </div>
+          )}
         </div>
       )}
 

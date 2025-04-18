@@ -23,16 +23,19 @@ export async function POST(request) {
   switch (event.type) {
     case "checkout.session.completed":
       const session = event.data.object;
-      // Create subscription record when checkout is completed
-      const newSubscription = new Subscription({
-        userId: session.metadata.userId,
-        tier: session.metadata.plan,
-        status: "active",
-        startDate: new Date(),
-        stripeCustomerId: session.customer,
-        stripeSubscriptionId: session.subscription,
-      });
-      await newSubscription.save();
+      // Update existing subscription when checkout is completed
+      await Subscription.updateOne(
+        { userId: session.metadata.userId },
+        {
+          $set: {
+            tier: session.metadata.plan,
+            status: "active",
+            startDate: new Date(),
+            stripeCustomerId: session.customer,
+            stripeSubscriptionId: session.subscription,
+          },
+        }
+      );
       break;
 
     case "customer.subscription.created":

@@ -1,10 +1,75 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function LandingPage() {
   const [email, setEmail] = useState("");
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [subscription, setSubscription] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [upgrading, setUpgrading] = useState(false);
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      fetch("/api/subscriptions/status")
+        .then((res) => res.json())
+        .then((data) => {
+          setSubscription(data);
+          setLoading(false);
+        })
+        .catch((error) => {
+          console.error("Error fetching subscription:", error);
+          setLoading(false);
+        });
+    } else {
+      setLoading(false);
+    }
+  }, [status]);
+
+  const handleGetStarted = () => {
+    if (status === "authenticated") {
+      router.push("/clients");
+    } else {
+      router.push("/signup");
+    }
+  };
+
+  const handleUpgrade = async () => {
+    try {
+      setUpgrading(true);
+      const response = await fetch("/api/subscriptions/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          plan: "paid",
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      if (!data.url) {
+        throw new Error("No checkout URL received");
+      }
+
+      // Redirect to Stripe Checkout
+      window.location.href = data.url;
+    } catch (error) {
+      console.error("Subscription error:", error);
+      alert(error.message);
+    } finally {
+      setUpgrading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white">
@@ -810,14 +875,25 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing Section */}
-      <section className="py-16 px-4">
+      <section id="pricing" className="py-16 px-4">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-center text-indigo-900 mb-12">
             Simple, Fair Pricing
           </h2>
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <div className="p-8 rounded-2xl border border-gray-200 hover:shadow-lg transition-shadow">
+            <div
+              className={`p-8 rounded-2xl border ${
+                subscription?.status === "trial"
+                  ? "border-indigo-600 bg-indigo-50"
+                  : "border-gray-200"
+              } hover:shadow-lg transition-shadow`}
+            >
               <h3 className="text-xl font-semibold mb-4">Free Trial</h3>
+              {subscription?.status === "trial" && (
+                <div className="mb-4 p-2 bg-indigo-100 text-indigo-800 rounded text-sm">
+                  Your Current Plan
+                </div>
+              )}
               <div className="text-4xl font-bold text-indigo-600 mb-6">$0</div>
               <p className="text-gray-600 mb-6">Try all features for 14 days</p>
               <ul className="space-y-4 mb-8">
@@ -902,18 +978,31 @@ export default function LandingPage() {
                   <span>14-day Trial Period</span>
                 </li>
               </ul>
-              <Link
-                href="/signup"
-                className="block w-full text-center bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3 rounded-full font-medium hover:from-indigo-700 hover:to-indigo-800 transition-colors"
-              >
-                Start Free Trial
-              </Link>
+              {!subscription && (
+                <Link
+                  href="/signup"
+                  className="block w-full text-center bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3 rounded-full font-medium hover:from-indigo-700 hover:to-indigo-800 transition-colors"
+                >
+                  Start Free Trial
+                </Link>
+              )}
             </div>
 
-            <div className="p-8 rounded-2xl border-2 border-indigo-600 bg-indigo-50 transform scale-105">
+            <div
+              className={`p-8 rounded-2xl ${
+                subscription?.status === "active"
+                  ? "border-2 border-indigo-600 bg-indigo-50"
+                  : "border-2 border-indigo-600 bg-indigo-50"
+              } transform scale-105`}
+            >
               <div className="absolute top-0 right-0 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white px-4 py-1 rounded-bl-lg text-sm font-medium">
                 Most Popular
               </div>
+              {subscription?.status === "active" && (
+                <div className="mb-4 p-2 bg-indigo-100 text-indigo-800 rounded text-sm">
+                  Your Current Plan
+                </div>
+              )}
               <h3 className="text-xl font-semibold mb-4">Single Therapist</h3>
               <div className="text-4xl font-bold text-indigo-600 mb-6">
                 $99<span className="text-lg text-gray-500">/month</span>
@@ -1001,12 +1090,22 @@ export default function LandingPage() {
                   <span>1 Therapist License</span>
                 </li>
               </ul>
-              <Link
-                href="/signup"
-                className="block w-full text-center bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3 rounded-full font-medium hover:from-indigo-700 hover:to-indigo-800 transition-colors"
-              >
-                Get Started
-              </Link>
+              {!subscription || subscription.status === "trial" ? (
+                <button
+                  onClick={handleUpgrade}
+                  disabled={upgrading}
+                  className="block w-full text-center bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3 rounded-full font-medium hover:from-indigo-700 hover:to-indigo-800 transition-colors disabled:opacity-50"
+                >
+                  {upgrading ? "Processing..." : "Upgrade Now"}
+                </button>
+              ) : (
+                <Link
+                  href="/dashboard"
+                  className="block w-full text-center bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3 rounded-full font-medium hover:from-indigo-700 hover:to-indigo-800 transition-colors"
+                >
+                  Go to Dashboard
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -1055,11 +1154,6 @@ export default function LandingPage() {
                 <li>
                   <Link href="#features" className="text-gray-600 hover:text-indigo-500">
                     Features
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/pricing" className="text-gray-600 hover:text-indigo-500">
-                    Pricing
                   </Link>
                 </li>
                 <li>

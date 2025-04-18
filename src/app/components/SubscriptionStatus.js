@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 
 export default function SubscriptionStatus() {
   const [subscription, setSubscription] = useState(null);
@@ -68,108 +69,76 @@ export default function SubscriptionStatus() {
   }
 
   return (
-    <div className="p-4 bg-white rounded-lg shadow">
-      <h2 className="text-lg font-semibold mb-4">Subscription Status</h2>
-      {subscription ? (
-        <div>
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <p className="mb-2">
-                <span className="font-medium">Status:</span>{" "}
-                <span
-                  className={`px-2 py-1 rounded text-sm ${
-                    subscription.status === "active"
-                      ? "bg-green-100 text-green-800"
-                      : subscription.status === "cancelled"
-                        ? "bg-red-100 text-red-800"
-                        : subscription.status === "trial"
-                          ? "bg-blue-100 text-blue-800"
-                          : "bg-yellow-100 text-yellow-800"
-                  }`}
-                >
-                  {subscription.status === "trial" ? "Free Trial" : subscription.status}
-                </span>
+    <div className="bg-white rounded-lg shadow p-6">
+      <h2 className="text-xl font-semibold mb-4">Subscription Status</h2>
+      {loading ? (
+        <div className="flex justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        </div>
+      ) : subscription ? (
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-1">
+              <p className="text-gray-600">Current Plan</p>
+              <p className="text-lg font-medium">
+                {subscription.tier === "trial" ? "Free Trial" : "Single Therapist"}
               </p>
-              <p className="mb-2">
-                <span className="font-medium">Plan:</span>{" "}
-                {subscription.status === "trial" ? "Free Trial" : subscription.tier}
+              <p className="text-sm text-gray-500">
+                {subscription.tier === "trial" ? "3 clients" : "25 clients"}
               </p>
-              <p className="mb-2">
-                <span className="font-medium">Start Date:</span>{" "}
-                {new Date(subscription.startDate).toLocaleDateString()}
-              </p>
-              {subscription.endDate && (
-                <p>
-                  <span className="font-medium">
-                    {subscription.status === "trial" ? "Trial Ends:" : "End Date:"}
-                  </span>{" "}
-                  {new Date(subscription.endDate).toLocaleDateString()}
-                </p>
-              )}
             </div>
-            <div>
-              {subscription.stripeSubscriptionId && (
-                <p className="mb-2">
-                  <span className="font-medium">Subscription ID:</span>{" "}
-                  <span className="text-sm text-gray-600">{subscription.stripeSubscriptionId}</span>
-                </p>
-              )}
-              {subscription.stripeCustomerId && (
-                <p className="mb-2">
-                  <span className="font-medium">Customer ID:</span>{" "}
-                  <span className="text-sm text-gray-600">{subscription.stripeCustomerId}</span>
-                </p>
-              )}
-              {subscription.status === "trial" && (
-                <p className="mb-2">
-                  <span className="font-medium">Client Limit:</span>{" "}
-                  <span className="text-sm text-gray-600">3 clients</span>
-                </p>
-              )}
-              {subscription.status !== "trial" && (
-                <p className="mb-2">
-                  <span className="font-medium">Auto-renew:</span>{" "}
-                  <span
-                    className={
-                      subscription.status === "cancelled" ? "text-red-600" : "text-green-600"
-                    }
-                  >
-                    {subscription.status === "cancelled" ? "No" : "Yes"}
-                  </span>
-                </p>
-              )}
+            <div className="space-y-1">
+              <p className="text-gray-600">Status</p>
+              <p className="text-lg font-medium capitalize">{subscription.status}</p>
+              <p className="text-sm text-gray-500">
+                {subscription.status === "active" ? "Auto-renewing" : "Not auto-renewing"}
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <p className="text-gray-600">Subscription ID</p>
+            <p className="text-sm font-mono">{subscription.stripeSubscriptionId || "N/A"}</p>
+            <p className="text-gray-600 mt-2">Customer ID</p>
+            <p className="text-sm font-mono">{subscription.stripeCustomerId || "N/A"}</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-1">
+              <p className="text-gray-600">Start Date</p>
+              <p className="text-sm">{new Date(subscription.startDate).toLocaleDateString()}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-gray-600">
+                {subscription.status === "active" ? "Next Billing Date" : "End Date"}
+              </p>
+              <p className="text-sm">
+                {subscription.endDate ? new Date(subscription.endDate).toLocaleDateString() : "N/A"}
+              </p>
             </div>
           </div>
 
           {subscription.status === "active" && (
-            <button
-              onClick={handleCancel}
-              disabled={cancelling}
-              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-gray-400"
-            >
-              {cancelling ? "Cancelling..." : "Cancel Subscription"}
-            </button>
-          )}
-          {subscription.status === "trial" && (
-            <div className="mt-4">
-              <p className="text-sm text-gray-600 mb-2">
-                Your trial includes access to all features with a 3-client limit.
-              </p>
-              <a
-                href="/pricing"
-                className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+            <div className="pt-4">
+              <button
+                onClick={handleCancel}
+                disabled={cancelling}
+                className="w-full bg-red-50 text-red-600 hover:bg-red-100 px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
               >
-                Upgrade to Full Plan
-              </a>
+                {cancelling ? "Cancelling..." : "Cancel Subscription"}
+              </button>
             </div>
           )}
         </div>
       ) : (
-        <div>
-          <p className="text-gray-600 mb-4">No active subscription found</p>
-          <a href="/pricing" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+        <div className="text-center py-4">
+          <p className="text-gray-600 mb-4">No active subscription</p>
+          <Link
+            href="/#pricing"
+            className="inline-block bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 transition-colors"
+          >
             View Pricing Plans
-          </a>
+          </Link>
         </div>
       )}
     </div>
