@@ -79,7 +79,7 @@ export default function SignupPage() {
         <div className="max-w-md text-white">
           <h1 className="text-4xl font-bold mb-6">Join CogniCare</h1>
           <p className="text-lg mb-8 opacity-90">
-            Start your journey with 5 specialized AI agents working together to enhance your therapy
+            Start your journey with 6 specialized AI agents working together to enhance your therapy
             practice.
           </p>
           <div className="space-y-4">
@@ -94,7 +94,7 @@ export default function SignupPage() {
                   />
                 </svg>
               </div>
-              <span>5 specialized AI agents</span>
+              <span>6 specialized AI agents</span>
             </div>
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">

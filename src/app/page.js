@@ -32,7 +32,7 @@ export default function LandingPage() {
 
   const handleGetStarted = () => {
     if (status === "authenticated") {
-      router.push("/clients");
+      router.push("/dashboard");
     } else {
       router.push("/signup");
     }
@@ -84,12 +84,12 @@ export default function LandingPage() {
           practice.
         </p>
         <div className="flex justify-center gap-4">
-          <Link
-            href="/signup"
+          <button
+            onClick={handleGetStarted}
             className="bg-indigo-600 text-white px-8 py-3 rounded-full font-medium hover:bg-indigo-700 transition-colors shadow-lg hover:shadow-indigo-200"
           >
             Try CogniCare Free
-          </Link>
+          </button>
           <Link
             href="#features"
             className="bg-white text-indigo-600 px-8 py-3 rounded-full font-medium border border-indigo-200 hover:bg-indigo-50 transition-colors"
@@ -978,12 +978,22 @@ export default function LandingPage() {
                   <span>14-day Trial Period</span>
                 </li>
               </ul>
-              {!subscription && (
-                <Link
-                  href="/signup"
+              {/* Show button only if not logged in or no subscription */}
+              {status !== "authenticated" && (
+                <button
+                  onClick={handleGetStarted}
                   className="block w-full text-center bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3 rounded-full font-medium hover:from-indigo-700 hover:to-indigo-800 transition-colors"
                 >
                   Start Free Trial
+                </button>
+              )}
+              {/* Show button if logged in with active subscription */}
+              {status === "authenticated" && subscription?.status === "active" && (
+                <Link
+                  href="/dashboard"
+                  className="block w-full text-center bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3 rounded-full font-medium hover:from-indigo-700 hover:to-indigo-800 transition-colors"
+                >
+                  Go to Dashboard
                 </Link>
               )}
             </div>
@@ -1090,7 +1100,18 @@ export default function LandingPage() {
                   <span>1 Therapist License</span>
                 </li>
               </ul>
-              {!subscription || subscription.status === "trial" ? (
+              {/* Not logged in - show button to subscribe directly */}
+              {status !== "authenticated" && (
+                <button
+                  onClick={handleUpgrade}
+                  disabled={upgrading}
+                  className="block w-full text-center bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3 rounded-full font-medium hover:from-indigo-700 hover:to-indigo-800 transition-colors disabled:opacity-50"
+                >
+                  {upgrading ? "Processing..." : "Subscribe Now"}
+                </button>
+              )}
+              {/* Logged in with trial - show upgrade button */}
+              {status === "authenticated" && subscription?.status === "trial" && (
                 <button
                   onClick={handleUpgrade}
                   disabled={upgrading}
@@ -1098,7 +1119,9 @@ export default function LandingPage() {
                 >
                   {upgrading ? "Processing..." : "Upgrade Now"}
                 </button>
-              ) : (
+              )}
+              {/* Logged in with active subscription - show dashboard button */}
+              {status === "authenticated" && subscription?.status === "active" && (
                 <Link
                   href="/dashboard"
                   className="block w-full text-center bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3 rounded-full font-medium hover:from-indigo-700 hover:to-indigo-800 transition-colors"
@@ -1122,18 +1145,12 @@ export default function LandingPage() {
             improve client outcomes.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/signup"
+            <button
+              onClick={handleGetStarted}
               className="bg-white text-indigo-600 px-8 py-3 rounded-full font-medium hover:bg-indigo-50 transition-colors shadow-lg"
             >
               Start Free Trial
-            </Link>
-            <Link
-              href="/login"
-              className="bg-transparent text-white px-8 py-3 rounded-full font-medium border-2 border-white hover:bg-white/10 transition-colors"
-            >
-              Request Demo
-            </Link>
+            </button>
           </div>
         </div>
       </section>
