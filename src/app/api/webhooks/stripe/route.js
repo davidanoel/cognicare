@@ -47,11 +47,14 @@ export async function POST(request) {
         ? new Date(subscription.current_period_end * 1000)
         : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // Fallback to 30 days if no period end
 
+      // If subscription is cancelled at period end, update status
+      const status = subscription.cancel_at_period_end ? "cancelled" : subscription.status;
+
       await Subscription.updateOne(
         { stripeSubscriptionId: subscription.id },
         {
           $set: {
-            status: subscription.status,
+            status: status,
             endDate: endDate,
           },
         }
