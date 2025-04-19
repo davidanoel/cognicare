@@ -13,7 +13,7 @@ export default function AboutPage() {
               About CogniCare
             </h1>
             <p className="mt-6 text-xl text-gray-500 max-w-3xl">
-              The Cognitive Collective (CogniCare). Empowering mental health professionals with
+              The Cognitive Care Collective (CogniCare). A team of 6 AI agents, empowering mental health professionals with
               AI-driven insights and tools to deliver better care.
             </p>
           </div>
