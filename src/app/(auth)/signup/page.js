@@ -171,17 +171,19 @@ export default function SignupPage() {
                 />
               </div>
               <div>
-                <label htmlFor="licenseNumber" className="sr-only">
-                  License Number
+                <label htmlFor="licenseNumber" className="block text-sm font-medium text-gray-700">
+                  Professional License Number <span className="text-gray-500">(optional)</span>
                 </label>
                 <input
                   id="licenseNumber"
                   name="licenseNumber"
                   type="text"
-                  required
-                  className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                  placeholder="Professional License Number"
+                  className="mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                  placeholder="Enter your license number if you have one"
                 />
+                <p className="mt-1 text-sm text-gray-500">
+                  If you're a student or in training, you can leave this blank.
+                </p>
               </div>
               <div>
                 <label htmlFor="specialization" className="sr-only">

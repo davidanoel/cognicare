@@ -73,6 +73,28 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white">
+      {/* Header */}
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <Link href="/" className="text-2xl font-bold text-indigo-900">
+              CogniCare
+            </Link>
+            <div className="flex items-center space-x-4">
+              <Link href="/login" className="text-indigo-600 hover:text-indigo-800 font-medium">
+                Log In
+              </Link>
+              <button
+                onClick={handleGetStarted}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-full font-medium hover:bg-indigo-700 transition-colors"
+              >
+                Get Started
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
       {/* Hero Section */}
       <section className="py-20 px-4 text-center">
         <h1 className="text-6xl font-bold text-indigo-900 mb-4">CogniCare</h1>
@@ -84,18 +106,18 @@ export default function LandingPage() {
           practice.
         </p>
         <div className="flex justify-center gap-4">
+          <Link
+            href="/login"
+            className="bg-white text-indigo-600 px-8 py-3 rounded-full font-medium border border-indigo-200 hover:bg-indigo-50 transition-colors"
+          >
+            Log In
+          </Link>
           <button
             onClick={handleGetStarted}
             className="bg-indigo-600 text-white px-8 py-3 rounded-full font-medium hover:bg-indigo-700 transition-colors shadow-lg hover:shadow-indigo-200"
           >
-            Try CogniCare Free
+            Start Free Trial
           </button>
-          <Link
-            href="#features"
-            className="bg-white text-indigo-600 px-8 py-3 rounded-full font-medium border border-indigo-200 hover:bg-indigo-50 transition-colors"
-          >
-            See How It Works
-          </Link>
         </div>
       </section>
 
@@ -862,10 +884,9 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <div className="ml-4">
-                  <h3 className="text-lg font-semibold text-indigo-900">Custom Report Templates</h3>
+                  <h3 className="text-lg font-semibold text-indigo-900">Diagnostic Insights</h3>
                   <p className="text-gray-600">
-                    Create and save your own report templates for different purposes, from progress
-                    notes to treatment summaries.
+                    Get diagnostic insights to help you understand your clients needs better.
                   </p>
                 </div>
               </div>
@@ -976,6 +997,22 @@ export default function LandingPage() {
                     />
                   </svg>
                   <span>14-day Trial Period</span>
+                </li>
+                <li className="flex items-center">
+                  <svg
+                    className="w-5 h-5 text-green-500 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  <span>No Credit Card Required</span>
                 </li>
               </ul>
               {/* Show button only if not logged in or no subscription */}

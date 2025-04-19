@@ -136,14 +136,18 @@ export default function ClientForm({ client, onSuccess, onCancel }) {
 
       if (!response.ok) {
         const errorData = await response.json();
-        if (errorData.reason === "free_trial_limit") {
+        if (errorData.reason === "freeLimit") {
           setError(
             "You've reached your free trial client limit. Please upgrade to add more clients."
           );
           setLoading(false);
           return;
-        } else if (errorData.reason === "paid_limit") {
+        } else if (errorData.reason === "paidLimit") {
           setError("You've reached your client limit. Please contact support to add more clients.");
+          setLoading(false);
+          return;
+        } else if (errorData.reason === "subscriptionExpired") {
+          setError("Your subscription has expired. Please renew your subscription to add clients.");
           setLoading(false);
           return;
         }
@@ -161,7 +165,7 @@ export default function ClientForm({ client, onSuccess, onCancel }) {
           console.log("Sending AI workflow request for client:", savedClient._id);
 
           // Use the new agent workflow API instead of the old trigger function
-          const aiResponse = await fetch("/api/ai/agent-workflow", {
+          const aiResponse = await fetch("/api/ai/agent-workflow1", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

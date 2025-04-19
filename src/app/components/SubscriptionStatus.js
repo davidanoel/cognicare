@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 
-export default function SubscriptionStatus() {
+export default function SubscriptionStatus({ isDashboard = false }) {
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
@@ -68,23 +68,43 @@ export default function SubscriptionStatus() {
     );
   }
 
+  // Simplified version for dashboard
+  if (isDashboard) {
+    return (
+      <div className="py-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <span className="text-sm font-medium">{subscription?.tier}</span>
+            <span className="text-xs text-gray-500">{subscription?.status}</span>
+          </div>
+          {subscription?.status === "active" ? (
+            <Link href="/subscription" className="text-sm text-indigo-600 hover:text-indigo-800">
+              Manage Subscription
+            </Link>
+          ) : (
+            <Link href="/#pricing" className="text-sm text-indigo-600 hover:text-indigo-800">
+              Upgrade Now
+            </Link>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Full version for subscription page
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <h2 className="text-xl font-semibold mb-4">Subscription Status</h2>
-      {loading ? (
-        <div className="flex justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-        </div>
-      ) : subscription ? (
+      {subscription ? (
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-1">
               <p className="text-gray-600">Current Plan</p>
               <p className="text-lg font-medium">
-                {subscription.tier === "trial" ? "Free Trial" : "Single Therapist"}
+                {subscription.tier === "free" ? "Free Trial" : "Single Therapist"}
               </p>
               <p className="text-sm text-gray-500">
-                {subscription.tier === "trial" ? "3 clients" : "25 clients"}
+                {subscription.tier === "free" ? "3 clients" : "25 clients"}
               </p>
             </div>
             <div className="space-y-1">

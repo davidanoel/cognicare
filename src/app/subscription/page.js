@@ -39,7 +39,7 @@ export default function SubscriptionPage() {
     );
   }
 
-  const clientLimit = subscription?.tier === "trial" ? 3 : 25;
+  const clientLimit = subscription?.tier === "free" ? 3 : 25;
   const progressPercentage = Math.min((clientCount / clientLimit) * 100, 100);
 
   return (
@@ -73,14 +73,14 @@ export default function SubscriptionPage() {
             </div>
             <p className="text-sm text-gray-600">
               {clientCount >= clientLimit
-                ? subscription?.tier === "trial"
+                ? subscription?.tier === "free"
                   ? "You've reached your trial client limit. Upgrade to add more clients."
                   : "You've reached your client limit."
-                : subscription?.tier === "trial"
+                : subscription?.tier === "free"
                   ? `Upgrade to add up to ${clientLimit} clients.`
                   : `You can add up to ${clientLimit} clients.`}
             </p>
-            {subscription?.tier === "trial" && (
+            {subscription?.tier === "free" && (
               <Link
                 href="/#pricing"
                 className="inline-block px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"

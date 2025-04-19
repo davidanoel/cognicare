@@ -55,7 +55,7 @@ export const POST = requireAuth(async (req) => {
       return NextResponse.json(
         {
           message: "Client limit reached",
-          reason: reason === "freeLimit" ? "free_trial_limit" : "paid_limit",
+          reason,
         },
         { status: 403 }
       );

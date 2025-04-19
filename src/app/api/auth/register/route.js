@@ -9,9 +9,9 @@ export async function POST(request) {
     const { email, password, name, licenseNumber, specialization } = await request.json();
 
     // Validate input
-    if (!email || !password || !name || !licenseNumber) {
+    if (!email || !password || !name) {
       return NextResponse.json(
-        { message: "Email, password, name, and license number are required" },
+        { message: "Email, password, and name are required" },
         { status: 400 }
       );
     }
@@ -33,7 +33,7 @@ export async function POST(request) {
       email,
       password: hashedPassword,
       name,
-      licenseNumber,
+      licenseNumber: licenseNumber || null,
       specialization: specialization || "General Counseling",
       role: "counselor",
     });

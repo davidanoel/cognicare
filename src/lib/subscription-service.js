@@ -103,6 +103,13 @@ class SubscriptionService {
     const subscription = await this.getSubscriptionStatus(userId);
     const clientCount = await Client.countDocuments({ counselorId: userId });
 
+    console.log("subscription", subscription);
+
+    // If no subscription or subscription is expired, don't allow adding clients
+    if (!subscription || (subscription.endDate && new Date(subscription.endDate) < new Date())) {
+      return { canAdd: false, reason: "subscriptionExpired" };
+    }
+
     if (subscription.tier === "free" && clientCount >= 3) {
       return { canAdd: false, reason: "freeLimit" };
     }

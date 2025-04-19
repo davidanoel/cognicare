@@ -19,7 +19,6 @@ const userSchema = new mongoose.Schema({
   },
   licenseNumber: {
     type: String,
-    unique: true,
     trim: true,
   },
   specialization: {
