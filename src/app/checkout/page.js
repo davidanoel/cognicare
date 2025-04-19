@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { loadStripe } from "@stripe/stripe-js";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const [error, setError] = useState(null);
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");
@@ -68,5 +68,23 @@ export default function CheckoutPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow">
+            <div>
+              <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Loading...</h2>
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <CheckoutContent />
+    </Suspense>
   );
 }
