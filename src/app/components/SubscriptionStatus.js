@@ -8,23 +8,30 @@ export default function SubscriptionStatus({ isDashboard = false }) {
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
   const { data: session } = useSession();
 
-  useEffect(() => {
-    const fetchSubscription = async () => {
-      if (!session) return;
+  const fetchSubscription = async () => {
+    if (!session) return;
 
-      try {
-        const response = await fetch("/api/subscriptions/status");
-        const data = await response.json();
-        setSubscription(data);
-      } catch (error) {
-        console.error("Error fetching subscription:", error);
-      } finally {
-        setLoading(false);
+    try {
+      setError(null);
+      const response = await fetch("/api/subscriptions/status");
+      if (!response.ok) {
+        throw new Error("Failed to fetch subscription status");
       }
-    };
+      const data = await response.json();
+      setSubscription(data);
+    } catch (error) {
+      console.error("Error fetching subscription:", error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchSubscription();
   }, [session]);
 
@@ -33,6 +40,8 @@ export default function SubscriptionStatus({ isDashboard = false }) {
 
     try {
       setCancelling(true);
+      setError(null);
+      setSuccess(false);
       const response = await fetch("/api/subscriptions/cancel", {
         method: "POST",
       });
@@ -44,9 +53,10 @@ export default function SubscriptionStatus({ isDashboard = false }) {
       // Refresh subscription status
       const data = await fetch("/api/subscriptions/status").then((res) => res.json());
       setSubscription(data);
+      setSuccess(true);
     } catch (error) {
       console.error("Error cancelling subscription:", error);
-      alert(error.message);
+      setError(error.message);
     } finally {
       setCancelling(false);
     }
@@ -62,8 +72,56 @@ export default function SubscriptionStatus({ isDashboard = false }) {
 
   if (loading) {
     return (
-      <div className="p-4">
-        <p>Loading subscription status...</p>
+      <div className="p-4 flex items-center justify-center">
+        <svg
+          className="animate-spin h-5 w-5 text-indigo-600"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          ></circle>
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          ></path>
+        </svg>
+        <span className="ml-2">Loading subscription status...</span>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="p-4 bg-red-50 rounded-lg">
+        <p className="text-red-800">{error}</p>
+        <button
+          onClick={() => {
+            setError(null);
+            setLoading(true);
+            fetchSubscription();
+          }}
+          className="mt-2 text-sm text-red-600 hover:text-red-800"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
+  // Success message
+  if (success) {
+    return (
+      <div className="p-4 bg-green-50 rounded-lg">
+        <p className="text-green-800">Subscription cancelled successfully!</p>
       </div>
     );
   }
@@ -143,9 +201,35 @@ export default function SubscriptionStatus({ isDashboard = false }) {
               <button
                 onClick={handleCancel}
                 disabled={cancelling}
-                className="w-full bg-red-50 text-red-600 hover:bg-red-100 px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
+                className="w-full bg-red-50 text-red-600 hover:bg-red-100 px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {cancelling ? "Cancelling..." : "Cancel Subscription"}
+                {cancelling ? (
+                  <span className="flex items-center justify-center">
+                    <svg
+                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-red-600"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Cancelling...
+                  </span>
+                ) : (
+                  "Cancel Subscription"
+                )}
               </button>
             </div>
           )}

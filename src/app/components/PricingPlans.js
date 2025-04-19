@@ -12,11 +12,59 @@ export default function PricingPlans({
   showGetStartedButton = false,
   onGetStarted,
 }) {
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
   const trialPlan = plans.trial;
   const paidPlan = plans.paid;
 
+  const handleUpgrade = async () => {
+    try {
+      setError(null);
+      setSuccess(false);
+      await onUpgrade();
+      setSuccess(true);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleGetStarted = async () => {
+    try {
+      setError(null);
+      setSuccess(false);
+      await onGetStarted();
+      setSuccess(true);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   return (
     <div className="grid md:grid-cols-2 gap-8">
+      {/* Error Message */}
+      {error && (
+        <div className="col-span-2">
+          <div
+            className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative"
+            role="alert"
+          >
+            <span className="block sm:inline">{error}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Success Message */}
+      {success && (
+        <div className="col-span-2">
+          <div
+            className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded relative"
+            role="alert"
+          >
+            <span className="block sm:inline">Subscription upgrade initiated successfully!</span>
+          </div>
+        </div>
+      )}
+
       <div
         className={`p-6 rounded-2xl border ${
           subscription?.status === "trial" ? "border-indigo-600 bg-indigo-50" : "border-gray-200"
@@ -58,10 +106,37 @@ export default function PricingPlans({
         </ul>
         {showGetStartedButton && (
           <button
-            onClick={onGetStarted}
-            className="block w-full text-center bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3 rounded-full font-medium hover:from-indigo-700 hover:to-indigo-800 transition-colors"
+            onClick={handleGetStarted}
+            disabled={upgrading}
+            className="block w-full text-center bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3 rounded-full font-medium hover:from-indigo-700 hover:to-indigo-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {trialPlan.cta}
+            {upgrading ? (
+              <span className="flex items-center justify-center">
+                <svg
+                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                Processing...
+              </span>
+            ) : (
+              trialPlan.cta
+            )}
           </button>
         )}
       </div>
@@ -125,17 +200,41 @@ export default function PricingPlans({
             subscription?.status === "cancelled" ||
             subscription?.status === "past_due") && (
             <button
-              onClick={onUpgrade}
+              onClick={handleUpgrade}
               disabled={upgrading}
-              className="block w-full text-center bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3 rounded-full font-medium hover:from-indigo-700 hover:to-indigo-800 transition-colors disabled:opacity-50"
+              className="block w-full text-center bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3 rounded-full font-medium hover:from-indigo-700 hover:to-indigo-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {upgrading
-                ? "Processing..."
-                : subscription?.status === "cancelled"
-                  ? "Resubscribe"
-                  : subscription?.status === "past_due"
-                    ? "Update Payment"
-                    : paidPlan.cta}
+              {upgrading ? (
+                <span className="flex items-center justify-center">
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Processing...
+                </span>
+              ) : subscription?.status === "cancelled" ? (
+                "Resubscribe"
+              ) : subscription?.status === "past_due" ? (
+                "Update Payment"
+              ) : (
+                paidPlan.cta
+              )}
             </button>
           )}
       </div>

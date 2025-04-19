@@ -13,19 +13,27 @@ export default function SubscriptionPage() {
   const [clientLimit, setClientLimit] = useState(3);
   const [upgrading, setUpgrading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       if (!session) return;
 
       try {
+        setError(null);
         // Fetch subscription status
         const subscriptionResponse = await fetch("/api/subscriptions/status");
+        if (!subscriptionResponse.ok) {
+          throw new Error("Failed to fetch subscription status");
+        }
         const subscriptionData = await subscriptionResponse.json();
         setSubscription(subscriptionData);
 
         // Fetch client count
         const clientsResponse = await fetch("/api/clients");
+        if (!clientsResponse.ok) {
+          throw new Error("Failed to fetch client count");
+        }
         const clientsData = await clientsResponse.json();
         setClientCount(clientsData.length);
 
@@ -33,6 +41,7 @@ export default function SubscriptionPage() {
         setClientLimit(subscriptionData.tier === "free" ? 3 : 25);
       } catch (error) {
         console.error("Error fetching data:", error);
+        setError(error.message);
       } finally {
         setLoading(false);
       }
@@ -44,6 +53,7 @@ export default function SubscriptionPage() {
   const handleUpgrade = async () => {
     try {
       setUpgrading(true);
+      setError(null);
       const response = await fetch("/api/subscriptions/create", {
         method: "POST",
         headers: {
@@ -53,6 +63,10 @@ export default function SubscriptionPage() {
           plan: "paid",
         }),
       });
+
+      if (!response.ok) {
+        throw new Error("Failed to create subscription");
+      }
 
       const data = await response.json();
 
@@ -68,13 +82,70 @@ export default function SubscriptionPage() {
       window.location.href = data.url;
     } catch (error) {
       console.error("Subscription error:", error);
-      alert(error.message);
+      setError(error.message);
     } finally {
       setUpgrading(false);
     }
   };
 
   const progressPercentage = Math.min((clientCount / clientLimit) * 100, 100);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto">
+          <div className="flex items-center justify-center h-64">
+            <svg
+              className="animate-spin h-8 w-8 text-indigo-600"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            <span className="ml-2">Loading subscription data...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto">
+          <div
+            className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative"
+            role="alert"
+          >
+            <span className="block sm:inline">{error}</span>
+            <button
+              onClick={() => {
+                setError(null);
+                setLoading(true);
+                fetchData();
+              }}
+              className="mt-2 text-sm text-red-600 hover:text-red-800"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
