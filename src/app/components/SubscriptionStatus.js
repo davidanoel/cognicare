@@ -82,7 +82,7 @@ export default function SubscriptionStatus({ isDashboard = false }) {
               Manage Subscription
             </Link>
           ) : (
-            <Link href="/#pricing" className="text-sm text-indigo-600 hover:text-indigo-800">
+            <Link href="/subscription" className="text-sm text-indigo-600 hover:text-indigo-800">
               Upgrade Now
             </Link>
           )}
@@ -154,7 +154,7 @@ export default function SubscriptionStatus({ isDashboard = false }) {
         <div className="text-center py-4">
           <p className="text-gray-600 mb-4">No active subscription</p>
           <Link
-            href="/#pricing"
+            href="/subscription"
             className="inline-block bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 transition-colors"
           >
             View Pricing Plans

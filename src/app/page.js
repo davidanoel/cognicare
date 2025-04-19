@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import PricingPlans from "@/app/components/PricingPlans";
 
 export default function LandingPage() {
   const [email, setEmail] = useState("");
@@ -29,6 +30,12 @@ export default function LandingPage() {
       setLoading(false);
     }
   }, [status]);
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.push("/dashboard");
+    }
+  }, [status, router]);
 
   const handleGetStarted = () => {
     if (status === "authenticated") {
@@ -544,7 +551,7 @@ export default function LandingPage() {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-16 px-4 bg-white">
+      <section id="how-it-works" className="py-16 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-center text-indigo-900 mb-12">
             How CogniCare Works
@@ -896,280 +903,26 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-16 px-4">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center text-indigo-900 mb-12">
-            Simple, Fair Pricing
-          </h2>
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <div
-              className={`p-8 rounded-2xl border ${
-                subscription?.status === "trial"
-                  ? "border-indigo-600 bg-indigo-50"
-                  : "border-gray-200"
-              } hover:shadow-lg transition-shadow`}
-            >
-              <h3 className="text-xl font-semibold mb-4">Free Trial</h3>
-              {subscription?.status === "trial" && (
-                <div className="mb-4 p-2 bg-indigo-100 text-indigo-800 rounded text-sm">
-                  Your Current Plan
-                </div>
-              )}
-              <div className="text-4xl font-bold text-indigo-600 mb-6">$0</div>
-              <p className="text-gray-600 mb-6">Try all features for 14 days</p>
-              <ul className="space-y-4 mb-8">
-                <li className="flex items-center">
-                  <svg
-                    className="w-5 h-5 text-green-500 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span>All 6 AI Agents</span>
-                </li>
-                <li className="flex items-center">
-                  <svg
-                    className="w-5 h-5 text-green-500 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span>Up to 3 Clients</span>
-                </li>
-                <li className="flex items-center">
-                  <svg
-                    className="w-5 h-5 text-green-500 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span>Full Feature Access</span>
-                </li>
-                <li className="flex items-center">
-                  <svg
-                    className="w-5 h-5 text-green-500 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span>Email Support</span>
-                </li>
-                <li className="flex items-center">
-                  <svg
-                    className="w-5 h-5 text-green-500 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span>14-day Trial Period</span>
-                </li>
-                <li className="flex items-center">
-                  <svg
-                    className="w-5 h-5 text-green-500 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span>No Credit Card Required</span>
-                </li>
-              </ul>
-              {/* Show button only if not logged in or no subscription */}
-              {status !== "authenticated" && (
-                <button
-                  onClick={handleGetStarted}
-                  className="block w-full text-center bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3 rounded-full font-medium hover:from-indigo-700 hover:to-indigo-800 transition-colors"
-                >
-                  Start Free Trial
-                </button>
-              )}
-              {/* Show button if logged in with active subscription */}
-              {status === "authenticated" && subscription?.status === "active" && (
-                <Link
-                  href="/dashboard"
-                  className="block w-full text-center bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3 rounded-full font-medium hover:from-indigo-700 hover:to-indigo-800 transition-colors"
-                >
-                  Go to Dashboard
-                </Link>
-              )}
-            </div>
-
-            <div
-              className={`p-8 rounded-2xl ${
-                subscription?.status === "active"
-                  ? "border-2 border-indigo-600 bg-indigo-50"
-                  : "border-2 border-indigo-600 bg-indigo-50"
-              } transform scale-105`}
-            >
-              <div className="absolute top-0 right-0 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white px-4 py-1 rounded-bl-lg text-sm font-medium">
-                Most Popular
-              </div>
-              {subscription?.status === "active" && (
-                <div className="mb-4 p-2 bg-indigo-100 text-indigo-800 rounded text-sm">
-                  Your Current Plan
-                </div>
-              )}
-              <h3 className="text-xl font-semibold mb-4">Single Therapist</h3>
-              <div className="text-4xl font-bold text-indigo-600 mb-6">
-                $99<span className="text-lg text-gray-500">/month</span>
-              </div>
-              <p className="text-gray-600 mb-6">Perfect for individual practitioners</p>
-              <ul className="space-y-4 mb-8">
-                <li className="flex items-center">
-                  <svg
-                    className="w-5 h-5 text-green-500 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span>All 6 AI Agents</span>
-                </li>
-                <li className="flex items-center">
-                  <svg
-                    className="w-5 h-5 text-green-500 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span>Up to 25 Clients</span>
-                </li>
-                <li className="flex items-center">
-                  <svg
-                    className="w-5 h-5 text-green-500 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span>Full Feature Access</span>
-                </li>
-                <li className="flex items-center">
-                  <svg
-                    className="w-5 h-5 text-green-500 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span>Email Support</span>
-                </li>
-                <li className="flex items-center">
-                  <svg
-                    className="w-5 h-5 text-green-500 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span>1 Therapist License</span>
-                </li>
-              </ul>
-              {/* Not logged in - show button to subscribe directly */}
-              {status !== "authenticated" && (
-                <button
-                  onClick={handleUpgrade}
-                  disabled={upgrading}
-                  className="block w-full text-center bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3 rounded-full font-medium hover:from-indigo-700 hover:to-indigo-800 transition-colors disabled:opacity-50"
-                >
-                  {upgrading ? "Processing..." : "Subscribe Now"}
-                </button>
-              )}
-              {/* Logged in with trial - show upgrade button */}
-              {status === "authenticated" && subscription?.status === "trial" && (
-                <button
-                  onClick={handleUpgrade}
-                  disabled={upgrading}
-                  className="block w-full text-center bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3 rounded-full font-medium hover:from-indigo-700 hover:to-indigo-800 transition-colors disabled:opacity-50"
-                >
-                  {upgrading ? "Processing..." : "Upgrade Now"}
-                </button>
-              )}
-              {/* Logged in with active subscription - show dashboard button */}
-              {status === "authenticated" && subscription?.status === "active" && (
-                <Link
-                  href="/dashboard"
-                  className="block w-full text-center bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3 rounded-full font-medium hover:from-indigo-700 hover:to-indigo-800 transition-colors"
-                >
-                  Go to Dashboard
-                </Link>
-              )}
-            </div>
+      <div id="pricing" className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
+              Simple, Fair Pricing
+            </h2>
+            <p className="mt-4 text-xl text-gray-600">Choose the plan that works best for you</p>
+          </div>
+          <div className="mt-12">
+            <PricingPlans
+              subscription={subscription}
+              onUpgrade={handleUpgrade}
+              upgrading={upgrading}
+              showUpgradeButton={true}
+              showGetStartedButton={!session}
+              onGetStarted={handleGetStarted}
+            />
           </div>
         </div>
-      </section>
+      </div>
 
       {/* CTA Section */}
       <section className="py-20 px-4 text-center bg-gradient-to-r from-indigo-600 to-blue-600 text-white">

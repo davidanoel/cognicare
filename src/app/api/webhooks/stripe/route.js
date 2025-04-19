@@ -33,6 +33,7 @@ export async function POST(request) {
             startDate: new Date(),
             stripeCustomerId: session.customer,
             stripeSubscriptionId: session.subscription,
+            endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Set initial end date to 30 days from now
           },
         }
       );
@@ -41,12 +42,17 @@ export async function POST(request) {
     case "customer.subscription.created":
     case "customer.subscription.updated":
       const subscription = event.data.object;
+      // Only update end date if it's a valid timestamp
+      const endDate = subscription.current_period_end
+        ? new Date(subscription.current_period_end * 1000)
+        : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // Fallback to 30 days if no period end
+
       await Subscription.updateOne(
         { stripeSubscriptionId: subscription.id },
         {
           $set: {
             status: subscription.status,
-            endDate: new Date(subscription.current_period_end * 1000),
+            endDate: endDate,
           },
         }
       );

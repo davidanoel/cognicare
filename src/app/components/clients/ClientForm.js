@@ -226,7 +226,7 @@ export default function ClientForm({ client, onSuccess, onCancel }) {
           {error.includes("free trial client limit") && (
             <div className="mt-4">
               <Link
-                href="/#pricing"
+                href="/subscription"
                 className="inline-block px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
               >
                 Upgrade Plan

@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import SubscriptionStatus from "@/app/components/SubscriptionStatus";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import PricingPlans from "@/app/components/PricingPlans";
 
 export default function SubscriptionPage() {
   const { data: session, status } = useSession();
@@ -12,6 +13,7 @@ export default function SubscriptionPage() {
   const [loading, setLoading] = useState(true);
   const [clientCount, setClientCount] = useState(0);
   const [subscription, setSubscription] = useState(null);
+  const [upgrading, setUpgrading] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -30,6 +32,39 @@ export default function SubscriptionPage() {
         .catch(console.error);
     }
   }, [status, router]);
+
+  const handleUpgrade = async () => {
+    try {
+      setUpgrading(true);
+      const response = await fetch("/api/subscriptions/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          plan: "paid",
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      if (!data.url) {
+        throw new Error("No checkout URL received");
+      }
+
+      // Redirect to Stripe Checkout
+      window.location.href = data.url;
+    } catch (error) {
+      console.error("Subscription error:", error);
+      alert(error.message);
+    } finally {
+      setUpgrading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -80,15 +115,18 @@ export default function SubscriptionPage() {
                   ? `Upgrade to add up to ${clientLimit} clients.`
                   : `You can add up to ${clientLimit} clients.`}
             </p>
-            {subscription?.tier === "free" && (
-              <Link
-                href="/#pricing"
-                className="inline-block px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-              >
-                Upgrade Plan
-              </Link>
-            )}
           </div>
+        </div>
+
+        {/* Pricing Section */}
+        <div className="bg-white shadow rounded-lg p-6 mb-8">
+          <h2 className="text-lg font-medium text-gray-900 mb-4">Available Plans</h2>
+          <PricingPlans
+            subscription={subscription}
+            onUpgrade={handleUpgrade}
+            upgrading={upgrading}
+            showUpgradeButton={true}
+          />
         </div>
 
         <div className="bg-white shadow rounded-lg p-6">
