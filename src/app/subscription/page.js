@@ -3,35 +3,43 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import SubscriptionStatus from "@/app/components/SubscriptionStatus";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
 import PricingPlans from "@/app/components/PricingPlans";
+import Link from "next/link";
 
 export default function SubscriptionPage() {
   const { data: session, status } = useSession();
-  const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [clientCount, setClientCount] = useState(0);
   const [subscription, setSubscription] = useState(null);
+  const [clientCount, setClientCount] = useState(0);
+  const [clientLimit, setClientLimit] = useState(3);
   const [upgrading, setUpgrading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/login");
-    } else if (status === "authenticated") {
-      setLoading(false);
-      // Fetch client count and subscription status
-      Promise.all([
-        fetch("/api/clients").then((res) => res.json()),
-        fetch("/api/subscriptions/status").then((res) => res.json()),
-      ])
-        .then(([clients, subscription]) => {
-          setClientCount(clients.length);
-          setSubscription(subscription);
-        })
-        .catch(console.error);
-    }
-  }, [status, router]);
+    const fetchData = async () => {
+      if (!session) return;
+
+      try {
+        // Fetch subscription status
+        const subscriptionResponse = await fetch("/api/subscriptions/status");
+        const subscriptionData = await subscriptionResponse.json();
+        setSubscription(subscriptionData);
+
+        // Fetch client count
+        const clientsResponse = await fetch("/api/clients");
+        const clientsData = await clientsResponse.json();
+        setClientCount(clientsData.length);
+
+        // Set client limit based on subscription tier
+        setClientLimit(subscriptionData.tier === "free" ? 3 : 25);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [session]);
 
   const handleUpgrade = async () => {
     try {
@@ -66,15 +74,6 @@ export default function SubscriptionPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Loading...</p>
-      </div>
-    );
-  }
-
-  const clientLimit = subscription?.tier === "free" ? 3 : 25;
   const progressPercentage = Math.min((clientCount / clientLimit) * 100, 100);
 
   return (
@@ -115,10 +114,17 @@ export default function SubscriptionPage() {
                   ? `Upgrade to add up to ${clientLimit} clients.`
                   : `You can add up to ${clientLimit} clients.`}
             </p>
+            {subscription?.tier === "free" && (
+              <Link
+                href="/subscription#pricing"
+                className="inline-block px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+              >
+                Upgrade Plan
+              </Link>
+            )}
           </div>
         </div>
 
-        {/* Pricing Section */}
         <div className="bg-white shadow rounded-lg p-6 mb-8">
           <h2 className="text-lg font-medium text-gray-900 mb-4">Available Plans</h2>
           <PricingPlans
