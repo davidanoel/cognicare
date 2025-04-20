@@ -324,7 +324,6 @@ export default function SessionDetail({ sessionId }) {
           {!isEditing && <SessionAIInsights session={session} />}
 
           <div className="mt-8 border-t pt-6">
-            <h3 className="text-lg font-semibold mb-4">AI Assistant</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <AIWorkflow

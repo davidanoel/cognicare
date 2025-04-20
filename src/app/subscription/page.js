@@ -14,6 +14,8 @@ export default function SubscriptionPage() {
   const [upgrading, setUpgrading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [autoRenew, setAutoRenew] = useState(true);
+  const [togglingAutoRenew, setTogglingAutoRenew] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -28,6 +30,7 @@ export default function SubscriptionPage() {
         }
         const subscriptionData = await subscriptionResponse.json();
         setSubscription(subscriptionData);
+        setAutoRenew(subscriptionData.autoRenew);
 
         // Fetch client count
         const clientsResponse = await fetch("/api/clients");
@@ -85,6 +88,37 @@ export default function SubscriptionPage() {
       setError(error.message);
     } finally {
       setUpgrading(false);
+    }
+  };
+
+  const handleToggleAutoRenew = async () => {
+    try {
+      setTogglingAutoRenew(true);
+      const response = await fetch("/api/subscriptions/auto-renew", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ autoRenew: !autoRenew }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update auto-renewal status");
+      }
+
+      setAutoRenew(!autoRenew);
+      // Refresh subscription data
+      const subscriptionResponse = await fetch("/api/subscriptions/status");
+      if (!subscriptionResponse.ok) {
+        throw new Error("Failed to fetch subscription status");
+      }
+      const subscriptionData = await subscriptionResponse.json();
+      setSubscription(subscriptionData);
+    } catch (error) {
+      console.error("Error toggling auto-renewal:", error);
+      setError(error.message);
+    } finally {
+      setTogglingAutoRenew(false);
     }
   };
 
@@ -196,6 +230,60 @@ export default function SubscriptionPage() {
           </div>
         </div>
 
+        {subscription?.tier === "paid" && (
+          <div className="bg-white shadow rounded-lg p-6 mb-8">
+            <h2 className="text-lg font-medium text-gray-900 mb-4">Auto-Renewal</h2>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">
+                  {autoRenew
+                    ? "Your subscription will automatically renew at the end of the billing period."
+                    : "Your subscription will not automatically renew."}
+                </p>
+              </div>
+              <button
+                onClick={handleToggleAutoRenew}
+                disabled={togglingAutoRenew}
+                className={`px-4 py-2 rounded-md text-sm font-medium ${
+                  autoRenew
+                    ? "bg-red-100 text-red-700 hover:bg-red-200"
+                    : "bg-green-100 text-green-700 hover:bg-green-200"
+                } disabled:opacity-50`}
+              >
+                {togglingAutoRenew ? (
+                  <span className="flex items-center">
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Updating...
+                  </span>
+                ) : autoRenew ? (
+                  "Turn Off Auto-Renewal"
+                ) : (
+                  "Turn On Auto-Renewal"
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="bg-white shadow rounded-lg p-6 mb-8">
           <h2 className="text-lg font-medium text-gray-900 mb-4">Available Plans</h2>
           <PricingPlans
@@ -208,9 +296,45 @@ export default function SubscriptionPage() {
 
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">Billing History</h2>
-          <p className="text-gray-600">
-            Your billing history will appear here once you have an active subscription.
-          </p>
+          {subscription?.billingHistory && subscription.billingHistory.length > 0 ? (
+            <div className="space-y-4">
+              {subscription.billingHistory.map((bill, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-4 border rounded-lg"
+                >
+                  <div>
+                    <p className="font-medium">${bill.amount}</p>
+                    <p className="text-sm text-gray-600">
+                      {new Date(bill.date).toLocaleDateString()}
+                    </p>
+                    {bill.description && (
+                      <p className="text-sm text-gray-500">{bill.description}</p>
+                    )}
+                  </div>
+                  <div>
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        bill.status === "paid"
+                          ? "bg-green-100 text-green-800"
+                          : bill.status === "failed"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-yellow-100 text-yellow-800"
+                      }`}
+                    >
+                      {bill.status.charAt(0).toUpperCase() + bill.status.slice(1)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-600">
+              {subscription?.tier === "paid"
+                ? "No billing history available yet."
+                : "Your billing history will appear here once you have an active subscription."}
+            </p>
+          )}
         </div>
       </div>
     </div>

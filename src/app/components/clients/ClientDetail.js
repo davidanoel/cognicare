@@ -997,7 +997,6 @@ export default function ClientDetail({ clientId }) {
 
         {activeTab === "ai-assistant" && (
           <div className="space-y-6">
-            <h2 className="text-xl font-semibold text-gray-900">AI Assistant</h2>
             <p className="text-gray-600 mb-4">
               Use AI tools to help with assessment, treatment planning, and progress tracking.
             </p>

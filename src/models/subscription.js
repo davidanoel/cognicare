@@ -1,5 +1,14 @@
 import mongoose from "mongoose";
 
+const billingHistorySchema = new mongoose.Schema({
+  date: { type: Date, required: true },
+  amount: { type: Number, required: true },
+  status: { type: String, enum: ["paid", "failed", "pending"], required: true },
+  invoiceId: { type: String },
+  paymentMethod: { type: String },
+  description: { type: String },
+});
+
 const subscriptionSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   tier: { type: String, enum: ["free", "paid"], required: true },
@@ -8,6 +17,8 @@ const subscriptionSchema = new mongoose.Schema({
   endDate: { type: Date },
   stripeCustomerId: String,
   stripeSubscriptionId: String,
+  autoRenew: { type: Boolean, default: true },
+  billingHistory: [billingHistorySchema],
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });

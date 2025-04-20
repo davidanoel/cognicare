@@ -23,8 +23,15 @@ export async function POST(request) {
   switch (event.type) {
     case "checkout.session.completed":
       const session = event.data.object;
+      console.log("Processing checkout.session.completed webhook:", {
+        sessionId: session.id,
+        subscriptionId: session.subscription,
+        customerId: session.customer,
+        metadata: session.metadata,
+      });
+
       // Update existing subscription when checkout is completed
-      await Subscription.updateOne(
+      const updateResult = await Subscription.updateOne(
         { userId: session.metadata.userId },
         {
           $set: {
@@ -37,11 +44,34 @@ export async function POST(request) {
           },
         }
       );
+
+      console.log("Subscription update result:", {
+        matchedCount: updateResult.matchedCount,
+        modifiedCount: updateResult.modifiedCount,
+        acknowledged: updateResult.acknowledged,
+      });
+
+      // Verify the update
+      const updatedSubscription = await Subscription.findOne({ userId: session.metadata.userId });
+      console.log("Updated subscription:", {
+        exists: !!updatedSubscription,
+        subscriptionId: updatedSubscription?._id,
+        stripeSubscriptionId: updatedSubscription?.stripeSubscriptionId,
+        status: updatedSubscription?.status,
+      });
       break;
 
     case "customer.subscription.created":
     case "customer.subscription.updated":
       const subscription = event.data.object;
+      console.log("Processing subscription event:", {
+        eventType: event.type,
+        subscriptionId: subscription.id,
+        status: subscription.status,
+        currentPeriodEnd: subscription.current_period_end,
+        cancelAtPeriodEnd: subscription.cancel_at_period_end,
+      });
+
       // Only update end date if it's a valid timestamp
       const endDate = subscription.current_period_end
         ? new Date(subscription.current_period_end * 1000)
@@ -50,15 +80,61 @@ export async function POST(request) {
       // If subscription is cancelled at period end, update status
       const status = subscription.cancel_at_period_end ? "cancelled" : subscription.status;
 
-      await Subscription.updateOne(
-        { stripeSubscriptionId: subscription.id },
-        {
-          $set: {
-            status: status,
-            endDate: endDate,
+      // Get the latest invoice for this subscription
+      const invoices = await stripe.invoices.list({
+        subscription: subscription.id,
+        limit: 1,
+      });
+
+      const updateData = {
+        status: status,
+        endDate: endDate,
+      };
+
+      // If we have a recent invoice, add it to billing history
+      if (invoices.data.length > 0) {
+        const latestInvoice = invoices.data[0];
+        console.log("Found latest invoice:", {
+          invoiceId: latestInvoice.id,
+          amount: latestInvoice.amount_paid,
+          status: latestInvoice.status,
+        });
+
+        updateData.$push = {
+          billingHistory: {
+            date: new Date(latestInvoice.created * 1000),
+            amount: latestInvoice.amount_paid / 100, // Convert from cents to dollars
+            status: latestInvoice.status === "paid" ? "paid" : "failed",
+            invoiceId: latestInvoice.id,
+            paymentMethod: latestInvoice.payment_method_types?.[0] || "card",
+            description: "Subscription payment",
           },
-        }
+        };
+      }
+
+      const subscriptionUpdateResult = await Subscription.updateOne(
+        { stripeSubscriptionId: subscription.id },
+        updateData
       );
+
+      console.log("Subscription update result:", {
+        matchedCount: subscriptionUpdateResult.matchedCount,
+        modifiedCount: subscriptionUpdateResult.modifiedCount,
+        acknowledged: subscriptionUpdateResult.acknowledged,
+        hasBillingHistory: !!updateData.$push,
+      });
+
+      // Verify the update
+      const subscriptionAfterUpdate = await Subscription.findOne({
+        stripeSubscriptionId: subscription.id,
+      });
+      console.log("Updated subscription:", {
+        exists: !!subscriptionAfterUpdate,
+        subscriptionId: subscriptionAfterUpdate?._id,
+        stripeSubscriptionId: subscriptionAfterUpdate?.stripeSubscriptionId,
+        status: subscriptionAfterUpdate?.status,
+        billingHistoryLength: subscriptionAfterUpdate?.billingHistory?.length,
+      });
       break;
 
     case "customer.subscription.deleted":
@@ -76,15 +152,60 @@ export async function POST(request) {
 
     case "invoice.payment_succeeded":
       const invoice = event.data.object;
+      console.log("Processing invoice.payment_succeeded webhook:", {
+        invoiceId: invoice.id,
+        subscriptionId: invoice.subscription,
+        amount: invoice.amount_paid,
+        created: new Date(invoice.created * 1000).toISOString(),
+      });
+
       if (invoice.subscription) {
-        await Subscription.updateOne(
+        // Log the subscription lookup
+        const subscription = await Subscription.findOne({
+          stripeSubscriptionId: invoice.subscription,
+        });
+        console.log("Found subscription:", {
+          exists: !!subscription,
+          subscriptionId: subscription?._id,
+          stripeSubscriptionId: subscription?.stripeSubscriptionId,
+        });
+
+        const updateResult = await Subscription.updateOne(
           { stripeSubscriptionId: invoice.subscription },
           {
             $set: {
               status: "active",
             },
+            $push: {
+              billingHistory: {
+                date: new Date(invoice.created * 1000),
+                amount: invoice.amount_paid / 100, // Convert from cents to dollars
+                status: "paid",
+                invoiceId: invoice.id,
+                paymentMethod: invoice.payment_method_types?.[0] || "card",
+                description: "Subscription payment",
+              },
+            },
           }
         );
+
+        console.log("Update result:", {
+          matchedCount: updateResult.matchedCount,
+          modifiedCount: updateResult.modifiedCount,
+          acknowledged: updateResult.acknowledged,
+        });
+
+        // Verify the update
+        const updatedSubscription = await Subscription.findOne({
+          stripeSubscriptionId: invoice.subscription,
+        });
+        console.log("Updated subscription billing history:", {
+          billingHistoryLength: updatedSubscription?.billingHistory?.length,
+          latestEntry:
+            updatedSubscription?.billingHistory?.[updatedSubscription.billingHistory.length - 1],
+        });
+      } else {
+        console.log("No subscription ID found in invoice");
       }
       break;
 
@@ -96,6 +217,16 @@ export async function POST(request) {
           {
             $set: {
               status: "past_due",
+            },
+            $push: {
+              billingHistory: {
+                date: new Date(failedInvoice.created * 1000),
+                amount: failedInvoice.amount_due / 100, // Convert from cents to dollars
+                status: "failed",
+                invoiceId: failedInvoice.id,
+                paymentMethod: failedInvoice.payment_method_types?.[0] || "card",
+                description: "Failed subscription payment",
+              },
             },
           }
         );

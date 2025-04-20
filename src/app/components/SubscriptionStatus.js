@@ -169,7 +169,7 @@ export default function SubscriptionStatus({ isDashboard = false }) {
               <p className="text-gray-600">Status</p>
               <p className="text-lg font-medium capitalize">{subscription.status}</p>
               <p className="text-sm text-gray-500">
-                {subscription.status === "active" ? "Auto-renewing" : "Not auto-renewing"}
+                {subscription.autoRenew ? "Auto-renewing" : "Not auto-renewing"}
               </p>
             </div>
           </div>

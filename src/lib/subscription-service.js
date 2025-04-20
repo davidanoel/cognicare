@@ -10,6 +10,11 @@ class SubscriptionService {
   async createSubscription(userId, plan) {
     await connectDB();
     const user = await User.findById(userId);
+    console.log("Creating subscription for user:", {
+      userId,
+      email: user.email,
+      existingStripeCustomerId: user.stripeCustomerId,
+    });
 
     // Create Stripe customer if not exists
     let customerId = user.stripeCustomerId;
@@ -20,6 +25,7 @@ class SubscriptionService {
       });
       customerId = customer.id;
       await User.updateOne({ _id: userId }, { $set: { stripeCustomerId: customerId } });
+      console.log("Created new Stripe customer:", customerId);
     }
 
     // Create checkout session instead of subscription directly
@@ -41,12 +47,18 @@ class SubscriptionService {
       },
     });
 
+    console.log("Created Stripe checkout session:", {
+      sessionId: session.id,
+      url: session.url,
+      subscriptionId: session.subscription,
+    });
+
     return {
       url: session.url,
     };
   }
 
-  async cancelSubscription(userId) {
+  async cancelSubscription(userId, autoRenew) {
     await connectDB();
     const subscription = await Subscription.findOne({ userId, status: "active" });
 
@@ -60,9 +72,9 @@ class SubscriptionService {
         subscription.stripeSubscriptionId
       );
 
-      // Cancel the subscription at the end of the current period
+      // Update the subscription's auto-renewal status
       await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
-        cancel_at_period_end: true,
+        cancel_at_period_end: !autoRenew,
       });
 
       // Ensure we have a valid end date
@@ -81,15 +93,16 @@ class SubscriptionService {
       }
 
       // Update the subscription record
-      subscription.status = "cancelled";
+      subscription.status = autoRenew ? "active" : "cancelled";
       subscription.endDate = endDate;
+      subscription.autoRenew = autoRenew;
       await subscription.save();
 
       return true;
     } catch (error) {
-      console.error("Error cancelling subscription:", error);
+      console.error("Error updating subscription:", error);
       console.error("Stripe subscription:", stripeSubscription);
-      throw new Error(`Failed to cancel subscription: ${error.message}`);
+      throw new Error(`Failed to update subscription: ${error.message}`);
     }
   }
 
