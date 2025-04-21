@@ -9,8 +9,8 @@ export async function POST() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await subscriptionService.cancelSubscription(session.user.id);
-    return NextResponse.json({ success: true });
+    const updatedSubscription = await subscriptionService.cancelSubscription(session.user.id);
+    return NextResponse.json(updatedSubscription);
   } catch (error) {
     console.error("Error cancelling subscription:", error);
     return NextResponse.json(

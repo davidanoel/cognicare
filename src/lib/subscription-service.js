@@ -10,11 +10,6 @@ class SubscriptionService {
   async createSubscription(userId, plan) {
     await connectDB();
     const user = await User.findById(userId);
-    console.log("Creating subscription for user:", {
-      userId,
-      email: user.email,
-      existingStripeCustomerId: user.stripeCustomerId,
-    });
 
     // Create Stripe customer if not exists
     let customerId = user.stripeCustomerId;
@@ -25,7 +20,6 @@ class SubscriptionService {
       });
       customerId = customer.id;
       await User.updateOne({ _id: userId }, { $set: { stripeCustomerId: customerId } });
-      console.log("Created new Stripe customer:", customerId);
     }
 
     // Create checkout session instead of subscription directly
@@ -47,18 +41,12 @@ class SubscriptionService {
       },
     });
 
-    console.log("Created Stripe checkout session:", {
-      sessionId: session.id,
-      url: session.url,
-      subscriptionId: session.subscription,
-    });
-
     return {
       url: session.url,
     };
   }
 
-  async cancelSubscription(userId, autoRenew) {
+  async cancelSubscription(userId) {
     await connectDB();
     const subscription = await Subscription.findOne({ userId, status: "active" });
 
@@ -67,15 +55,15 @@ class SubscriptionService {
     }
 
     try {
+      // Update the subscription in Stripe to cancel at period end
+      await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+        cancel_at_period_end: true,
+      });
+
       // Get the current subscription details from Stripe
       const stripeSubscription = await stripe.subscriptions.retrieve(
         subscription.stripeSubscriptionId
       );
-
-      // Update the subscription's auto-renewal status
-      await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
-        cancel_at_period_end: !autoRenew,
-      });
 
       // Ensure we have a valid end date
       let endDate;
@@ -93,16 +81,20 @@ class SubscriptionService {
       }
 
       // Update the subscription record
-      subscription.status = autoRenew ? "active" : "cancelled";
-      subscription.endDate = endDate;
-      subscription.autoRenew = autoRenew;
-      await subscription.save();
+      const updatedSubscription = await Subscription.findOneAndUpdate(
+        { userId },
+        {
+          status: "cancelled", // Mark as cancelled even though it's active until end date
+          endDate,
+          autoRenew: false,
+        },
+        { new: true }
+      );
 
-      return true;
+      return updatedSubscription;
     } catch (error) {
-      console.error("Error updating subscription:", error);
-      console.error("Stripe subscription:", stripeSubscription);
-      throw new Error(`Failed to update subscription: ${error.message}`);
+      console.error("Error cancelling subscription:", error);
+      throw error;
     }
   }
 
@@ -113,7 +105,7 @@ class SubscriptionService {
 
   async checkClientLimit(userId) {
     await connectDB();
-    const subscription = await this.getSubscriptionStatus(userId);
+    const subscription = await getSubscriptionStatus(userId);
     const clientCount = await Client.countDocuments({ counselorId: userId });
 
     console.log("subscription", subscription);
@@ -161,6 +153,47 @@ class SubscriptionService {
     await connectDB();
     const subscription = await Subscription.findOne({ userId });
     return !!subscription;
+  }
+
+  async updateAutoRenew(userId, autoRenew) {
+    try {
+      await connectDB();
+
+      // Get the user's subscription
+      const subscription = await Subscription.findOne({ userId });
+      if (!subscription) {
+        throw new Error("Subscription not found");
+      }
+
+      if (!subscription.stripeSubscriptionId) {
+        throw new Error("No Stripe subscription found");
+      }
+
+      // Get the current subscription details from Stripe
+      const stripeSubscription = await stripe.subscriptions.retrieve(
+        subscription.stripeSubscriptionId
+      );
+
+      // Update the subscription in Stripe
+      await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+        cancel_at_period_end: !autoRenew,
+      });
+
+      // Update the subscription in our database
+      const updatedSubscription = await Subscription.findOneAndUpdate(
+        { userId },
+        {
+          autoRenew,
+          status: stripeSubscription.status, // Use Stripe's status
+        },
+        { new: true }
+      );
+
+      return updatedSubscription;
+    } catch (error) {
+      console.error("Error updating auto-renewal:", error);
+      throw error;
+    }
   }
 }
 

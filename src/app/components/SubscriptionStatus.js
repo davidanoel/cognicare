@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import toast from "react-hot-toast";
 
 export default function SubscriptionStatus({ isDashboard = false }) {
   const [subscription, setSubscription] = useState(null);
@@ -10,6 +11,7 @@ export default function SubscriptionStatus({ isDashboard = false }) {
   const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [togglingAutoRenew, setTogglingAutoRenew] = useState(false);
   const { data: session } = useSession();
 
   const fetchSubscription = async () => {
@@ -41,24 +43,54 @@ export default function SubscriptionStatus({ isDashboard = false }) {
     try {
       setCancelling(true);
       setError(null);
-      setSuccess(false);
       const response = await fetch("/api/subscriptions/cancel", {
         method: "POST",
       });
 
       if (!response.ok) {
-        throw new Error("Failed to cancel subscription");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to cancel subscription");
       }
 
-      // Refresh subscription status
-      const data = await fetch("/api/subscriptions/status").then((res) => res.json());
-      setSubscription(data);
-      setSuccess(true);
+      // Get updated subscription from response and update state directly
+      const updatedSubscription = await response.json();
+      setSubscription(updatedSubscription);
+
+      toast.success("Subscription cancelled successfully!");
     } catch (error) {
       console.error("Error cancelling subscription:", error);
-      setError(error.message);
+      toast.error(error.message);
     } finally {
       setCancelling(false);
+    }
+  };
+
+  const handleToggleAutoRenew = async () => {
+    try {
+      setTogglingAutoRenew(true);
+      setError(null);
+      const response = await fetch("/api/subscriptions/auto-renew", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ autoRenew: !subscription.autoRenew }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update auto-renewal status");
+      }
+
+      // Refresh subscription data
+      await fetchSubscription();
+      toast.success(
+        `Auto-renewal ${!subscription.autoRenew ? "enabled" : "disabled"} successfully!`
+      );
+    } catch (error) {
+      console.error("Error toggling auto-renewal:", error);
+      toast.error(error.message);
+    } finally {
+      setTogglingAutoRenew(false);
     }
   };
 
@@ -117,38 +149,6 @@ export default function SubscriptionStatus({ isDashboard = false }) {
     );
   }
 
-  // Success message
-  if (success) {
-    return (
-      <div className="p-4 bg-green-50 rounded-lg">
-        <p className="text-green-800">Subscription cancelled successfully!</p>
-      </div>
-    );
-  }
-
-  // Simplified version for dashboard
-  if (isDashboard) {
-    return (
-      <div className="py-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <span className="text-sm font-medium">{subscription?.tier}</span>
-            <span className="text-xs text-gray-500">{subscription?.status}</span>
-          </div>
-          {subscription?.status === "active" ? (
-            <Link href="/subscription" className="text-sm text-indigo-600 hover:text-indigo-800">
-              Manage Subscription
-            </Link>
-          ) : (
-            <Link href="/subscription" className="text-sm text-indigo-600 hover:text-indigo-800">
-              Upgrade Now
-            </Link>
-          )}
-        </div>
-      </div>
-    );
-  }
-
   // Full version for subscription page
   return (
     <div className="bg-white rounded-lg shadow p-6">
@@ -171,6 +171,47 @@ export default function SubscriptionStatus({ isDashboard = false }) {
               <p className="text-sm text-gray-500">
                 {subscription.autoRenew ? "Auto-renewing" : "Not auto-renewing"}
               </p>
+              {subscription.status === "active" && (
+                <button
+                  onClick={handleToggleAutoRenew}
+                  disabled={togglingAutoRenew}
+                  className={`mt-2 inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm ${
+                    subscription.autoRenew
+                      ? "bg-red-100 text-red-700 hover:bg-red-200"
+                      : "bg-green-100 text-green-700 hover:bg-green-200"
+                  }`}
+                >
+                  {togglingAutoRenew ? (
+                    <span className="flex items-center">
+                      <svg
+                        className="animate-spin -ml-1 mr-2 h-4 w-4"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Updating...
+                    </span>
+                  ) : subscription.autoRenew ? (
+                    "Turn Off Auto-Renewal"
+                  ) : (
+                    "Turn On Auto-Renewal"
+                  )}
+                </button>
+              )}
             </div>
           </div>
 

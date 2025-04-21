@@ -77,8 +77,8 @@ export async function POST(request) {
         ? new Date(subscription.current_period_end * 1000)
         : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // Fallback to 30 days if no period end
 
-      // If subscription is cancelled at period end, update status
-      const status = subscription.cancel_at_period_end ? "cancelled" : subscription.status;
+      // Update status based on subscription state
+      let status = subscription.status; // Use Stripe's status directly
 
       // Get the latest invoice for this subscription
       const invoices = await stripe.invoices.list({
@@ -89,27 +89,31 @@ export async function POST(request) {
       const updateData = {
         status: status,
         endDate: endDate,
+        autoRenew: !subscription.cancel_at_period_end,
       };
 
-      // If we have a recent invoice, add it to billing history
+      // Only add to billing history if we have a recent invoice and it's a payment event
       if (invoices.data.length > 0) {
         const latestInvoice = invoices.data[0];
-        console.log("Found latest invoice:", {
-          invoiceId: latestInvoice.id,
-          amount: latestInvoice.amount_paid,
-          status: latestInvoice.status,
-        });
-
-        updateData.$push = {
-          billingHistory: {
-            date: new Date(latestInvoice.created * 1000),
-            amount: latestInvoice.amount_paid / 100, // Convert from cents to dollars
-            status: latestInvoice.status === "paid" ? "paid" : "failed",
+        // Only add to billing history if this is a payment event
+        if (latestInvoice.status === "paid" || latestInvoice.status === "open") {
+          console.log("Found latest invoice:", {
             invoiceId: latestInvoice.id,
-            paymentMethod: latestInvoice.payment_method_types?.[0] || "card",
-            description: "Subscription payment",
-          },
-        };
+            amount: latestInvoice.amount_paid,
+            status: latestInvoice.status,
+          });
+
+          updateData.$push = {
+            billingHistory: {
+              date: new Date(latestInvoice.created * 1000),
+              amount: latestInvoice.amount_paid / 100, // Convert from cents to dollars
+              status: latestInvoice.status === "paid" ? "paid" : "pending",
+              invoiceId: latestInvoice.id,
+              paymentMethod: latestInvoice.payment_method_types?.[0] || "card",
+              description: "Subscription payment",
+            },
+          };
+        }
       }
 
       const subscriptionUpdateResult = await Subscription.updateOne(
@@ -160,7 +164,6 @@ export async function POST(request) {
       });
 
       if (invoice.subscription) {
-        // Log the subscription lookup
         const subscription = await Subscription.findOne({
           stripeSubscriptionId: invoice.subscription,
         });
@@ -170,40 +173,40 @@ export async function POST(request) {
           stripeSubscriptionId: subscription?.stripeSubscriptionId,
         });
 
-        const updateResult = await Subscription.updateOne(
-          { stripeSubscriptionId: invoice.subscription },
-          {
-            $set: {
-              status: "active",
-            },
-            $push: {
-              billingHistory: {
-                date: new Date(invoice.created * 1000),
-                amount: invoice.amount_paid / 100, // Convert from cents to dollars
-                status: "paid",
-                invoiceId: invoice.id,
-                paymentMethod: invoice.payment_method_types?.[0] || "card",
-                description: "Subscription payment",
+        if (subscription) {
+          const updateResult = await Subscription.updateOne(
+            { stripeSubscriptionId: invoice.subscription },
+            {
+              // Only update billing history, do not change status here
+              $push: {
+                billingHistory: {
+                  date: new Date(invoice.created * 1000),
+                  amount: invoice.amount_paid / 100, // Convert from cents to dollars
+                  status: "paid",
+                  invoiceId: invoice.id,
+                  paymentMethod: invoice.payment_method_types?.[0] || "card",
+                  description: "Subscription payment",
+                },
               },
-            },
-          }
-        );
+            }
+          );
 
-        console.log("Update result:", {
-          matchedCount: updateResult.matchedCount,
-          modifiedCount: updateResult.modifiedCount,
-          acknowledged: updateResult.acknowledged,
-        });
+          console.log("Update result (billing history only):", {
+            matchedCount: updateResult.matchedCount,
+            modifiedCount: updateResult.modifiedCount,
+            acknowledged: updateResult.acknowledged,
+          });
 
-        // Verify the update
-        const updatedSubscription = await Subscription.findOne({
-          stripeSubscriptionId: invoice.subscription,
-        });
-        console.log("Updated subscription billing history:", {
-          billingHistoryLength: updatedSubscription?.billingHistory?.length,
-          latestEntry:
-            updatedSubscription?.billingHistory?.[updatedSubscription.billingHistory.length - 1],
-        });
+          // Verify the update
+          const updatedSubscription = await Subscription.findOne({
+            stripeSubscriptionId: invoice.subscription,
+          });
+          console.log("Updated subscription billing history:", {
+            billingHistoryLength: updatedSubscription?.billingHistory?.length,
+            latestEntry:
+              updatedSubscription?.billingHistory?.[updatedSubscription.billingHistory.length - 1],
+          });
+        }
       } else {
         console.log("No subscription ID found in invoice");
       }

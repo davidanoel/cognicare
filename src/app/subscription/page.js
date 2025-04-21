@@ -14,8 +14,8 @@ export default function SubscriptionPage() {
   const [upgrading, setUpgrading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [autoRenew, setAutoRenew] = useState(true);
-  const [togglingAutoRenew, setTogglingAutoRenew] = useState(false);
+  // const [autoRenew, setAutoRenew] = useState(true);
+  // const [togglingAutoRenew, setTogglingAutoRenew] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -30,7 +30,7 @@ export default function SubscriptionPage() {
         }
         const subscriptionData = await subscriptionResponse.json();
         setSubscription(subscriptionData);
-        setAutoRenew(subscriptionData.autoRenew);
+        //setAutoRenew(subscriptionData.autoRenew);
 
         // Fetch client count
         const clientsResponse = await fetch("/api/clients");
@@ -91,36 +91,36 @@ export default function SubscriptionPage() {
     }
   };
 
-  const handleToggleAutoRenew = async () => {
-    try {
-      setTogglingAutoRenew(true);
-      const response = await fetch("/api/subscriptions/auto-renew", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ autoRenew: !autoRenew }),
-      });
+  // const handleToggleAutoRenew = async () => {
+  //   try {
+  //     setTogglingAutoRenew(true);
+  //     const response = await fetch("/api/subscriptions/auto-renew", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({ autoRenew: !autoRenew }),
+  //     });
 
-      if (!response.ok) {
-        throw new Error("Failed to update auto-renewal status");
-      }
+  //     if (!response.ok) {
+  //       throw new Error("Failed to update auto-renewal status");
+  //     }
 
-      setAutoRenew(!autoRenew);
-      // Refresh subscription data
-      const subscriptionResponse = await fetch("/api/subscriptions/status");
-      if (!subscriptionResponse.ok) {
-        throw new Error("Failed to fetch subscription status");
-      }
-      const subscriptionData = await subscriptionResponse.json();
-      setSubscription(subscriptionData);
-    } catch (error) {
-      console.error("Error toggling auto-renewal:", error);
-      setError(error.message);
-    } finally {
-      setTogglingAutoRenew(false);
-    }
-  };
+  //     setAutoRenew(!autoRenew);
+  //     // Refresh subscription data
+  //     const subscriptionResponse = await fetch("/api/subscriptions/status");
+  //     if (!subscriptionResponse.ok) {
+  //       throw new Error("Failed to fetch subscription status");
+  //     }
+  //     const subscriptionData = await subscriptionResponse.json();
+  //     setSubscription(subscriptionData);
+  //   } catch (error) {
+  //     console.error("Error toggling auto-renewal:", error);
+  //     setError(error.message);
+  //   } finally {
+  //     setTogglingAutoRenew(false);
+  //   }
+  // };
 
   const progressPercentage = Math.min((clientCount / clientLimit) * 100, 100);
 
@@ -230,7 +230,7 @@ export default function SubscriptionPage() {
           </div>
         </div>
 
-        {subscription?.tier === "paid" && (
+        {/* {subscription?.tier === "paid" && (
           <div className="bg-white shadow rounded-lg p-6 mb-8">
             <h2 className="text-lg font-medium text-gray-900 mb-4">Auto-Renewal</h2>
             <div className="flex items-center justify-between">
@@ -282,7 +282,7 @@ export default function SubscriptionPage() {
               </button>
             </div>
           </div>
-        )}
+        )} */}
 
         <div className="bg-white shadow rounded-lg p-6 mb-8">
           <h2 className="text-lg font-medium text-gray-900 mb-4">Available Plans</h2>
