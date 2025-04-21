@@ -41,6 +41,7 @@ export async function POST(request) {
             stripeCustomerId: session.customer,
             stripeSubscriptionId: session.subscription,
             endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Set initial end date to 30 days from now
+            autoRenew: true, // Ensure autoRenew is set to true on new checkout
           },
         }
       );
@@ -77,29 +78,27 @@ export async function POST(request) {
         ? new Date(subscription.current_period_end * 1000)
         : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // Fallback to 30 days if no period end
 
-      // Update status based on subscription state
-      let status = subscription.status; // Use Stripe's status directly
+      // --- Do not update status based on this event ---
+      // Status should only be updated by explicit actions (cancel, checkout, delete)
 
-      // Get the latest invoice for this subscription
+      // Get the latest invoice for this subscription (for potential billing history update)
       const invoices = await stripe.invoices.list({
         subscription: subscription.id,
         limit: 1,
       });
 
+      // Prepare data for update - only sync endDate and autoRenew
       const updateData = {
-        status: status,
         endDate: endDate,
         autoRenew: !subscription.cancel_at_period_end,
       };
 
-      // Only add to billing history if we have a recent invoice and it's a payment event
+      // Check if we need to add billing history (only for payment events)
       if (invoices.data.length > 0) {
         const latestInvoice = invoices.data[0];
-        // Only add to billing history if this is a payment event
         if (latestInvoice.status === "paid" || latestInvoice.status === "open") {
-          console.log("Found latest invoice:", {
+          console.log("Found latest invoice for billing history update:", {
             invoiceId: latestInvoice.id,
-            amount: latestInvoice.amount_paid,
             status: latestInvoice.status,
           });
 
@@ -118,7 +117,7 @@ export async function POST(request) {
 
       const subscriptionUpdateResult = await Subscription.updateOne(
         { stripeSubscriptionId: subscription.id },
-        updateData
+        updateData // updateData now only contains endDate, autoRenew, and possibly billingHistory
       );
 
       console.log("Subscription update result:", {

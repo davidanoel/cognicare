@@ -66,6 +66,9 @@ export default function SubscriptionStatus({ isDashboard = false }) {
   };
 
   const handleToggleAutoRenew = async () => {
+    // Store the current autoRenew state to display the correct toast message later
+    const currentAutoRenewState = subscription?.autoRenew;
+
     try {
       setTogglingAutoRenew(true);
       setError(null);
@@ -74,18 +77,20 @@ export default function SubscriptionStatus({ isDashboard = false }) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ autoRenew: !subscription.autoRenew }),
+        body: JSON.stringify({ autoRenew: !currentAutoRenewState }),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to update auto-renewal status");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to update auto-renewal status");
       }
 
-      // Refresh subscription data
-      await fetchSubscription();
-      toast.success(
-        `Auto-renewal ${!subscription.autoRenew ? "enabled" : "disabled"} successfully!`
-      );
+      // Get updated subscription from response and update state directly
+      const updatedSubscription = await response.json();
+      setSubscription(updatedSubscription);
+
+      // Use the state *before* the update for the toast message logic
+      toast.success(`Auto-renewal ${currentAutoRenewState ? "disabled" : "enabled"} successfully!`);
     } catch (error) {
       console.error("Error toggling auto-renewal:", error);
       toast.error(error.message);

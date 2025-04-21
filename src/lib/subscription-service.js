@@ -169,22 +169,16 @@ class SubscriptionService {
         throw new Error("No Stripe subscription found");
       }
 
-      // Get the current subscription details from Stripe
-      const stripeSubscription = await stripe.subscriptions.retrieve(
-        subscription.stripeSubscriptionId
-      );
-
       // Update the subscription in Stripe
       await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
         cancel_at_period_end: !autoRenew,
       });
 
-      // Update the subscription in our database
+      // Update ONLY the autoRenew field in our database
       const updatedSubscription = await Subscription.findOneAndUpdate(
         { userId },
         {
-          autoRenew,
-          status: stripeSubscription.status, // Use Stripe's status
+          $set: { autoRenew }, // Only update autoRenew
         },
         { new: true }
       );
