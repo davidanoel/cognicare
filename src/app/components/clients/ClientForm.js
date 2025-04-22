@@ -165,7 +165,7 @@ export default function ClientForm({ client, onSuccess, onCancel }) {
           console.log("Sending AI workflow request for client:", savedClient._id);
 
           // Use the new agent workflow API instead of the old trigger function
-          const aiResponse = await fetch("/api/ai/agent-workflow1", {
+          const aiResponse = await fetch("/api/ai/agent-workflow", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

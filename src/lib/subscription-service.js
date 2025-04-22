@@ -105,7 +105,7 @@ class SubscriptionService {
 
   async checkClientLimit(userId) {
     await connectDB();
-    const subscription = await getSubscriptionStatus(userId);
+    const subscription = await this.getSubscriptionStatus(userId);
     const clientCount = await Client.countDocuments({ counselorId: userId });
 
     console.log("subscription", subscription);

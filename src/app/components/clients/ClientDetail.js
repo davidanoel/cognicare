@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import ClientForm from "./ClientForm";
 import ClientInsights from "./ClientInsights";
 import ClientAnalytics from "./ClientAnalytics";
@@ -280,7 +281,11 @@ export default function ClientDetail({ clientId }) {
     e.preventDefault();
 
     if (!consentFormFile) {
-      alert("Please upload a PDF file");
+      toast.error("Please upload a PDF file");
+      return;
+    }
+    if (!selectedConsentType) {
+      toast.error("Please select a consent type");
       return;
     }
 
@@ -290,6 +295,8 @@ export default function ClientDetail({ clientId }) {
     formData.append("file", consentFormFile);
     formData.append("notes", consentFormNotes);
 
+    const toastId = toast.loading("Requesting consent...");
+
     try {
       const response = await fetch("/api/consent-forms", {
         method: "POST",
@@ -297,14 +304,25 @@ export default function ClientDetail({ clientId }) {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to create consent form");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create consent form");
       }
 
-      const newConsentForm = await response.json();
-      setClient((prev) => ({
-        ...prev,
-        consentForms: [...prev.consentForms, newConsentForm],
-      }));
+      const newConsentData = await response.json();
+
+      if (
+        !newConsentData ||
+        !newConsentData.newConsentForm ||
+        !newConsentData.newConsentForm.token
+      ) {
+        throw new Error("API did not return the expected consent form data with a token.");
+      }
+
+      // Update client state with the updated client data containing the new form
+      setClient(newConsentData.client);
+
+      // Construct the shareable link
+      const shareableLink = `${window.location.origin}/client-portal/consent/${newConsentData.newConsentForm.token}`;
 
       // Reset form state
       setSelectedConsentType("");
@@ -312,9 +330,61 @@ export default function ClientDetail({ clientId }) {
       setConsentFormNotes("");
       setConsentFormFile(null);
       setShowConsentModal(false);
+
+      // Show success toast with the link and copy button
+      toast.success(
+        (t) => (
+          <span className="flex flex-col items-start">
+            <span>Consent requested successfully! Email sent to client.</span>
+            <span className="text-xs mt-1">Shareable Link:</span>
+            <div className="flex items-center space-x-2 mt-1 w-full">
+              <input
+                type="text"
+                readOnly
+                value={shareableLink}
+                className="flex-1 text-xs border rounded px-1 py-0.5 bg-gray-100 w-full"
+              />
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(shareableLink);
+                  toast.success("Link copied!", { id: "copy-toast" });
+                }}
+                className="p-1 bg-blue-100 text-blue-600 rounded hover:bg-blue-200"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                  />
+                </svg>
+              </button>
+            </div>
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="mt-2 text-xs text-gray-500 hover:text-gray-700 self-end"
+            >
+              Dismiss
+            </button>
+          </span>
+        ),
+        {
+          id: toastId,
+          duration: 15000,
+        }
+      );
     } catch (error) {
       console.error("Error creating consent form:", error);
-      alert("Failed to create consent form");
+      toast.error(`Failed to create consent form: ${error.message}`, {
+        id: toastId,
+      });
     }
   };
 
@@ -410,10 +480,10 @@ export default function ClientDetail({ clientId }) {
               client.status === "active"
                 ? "bg-green-100 text-green-800"
                 : client.status === "inactive"
-                ? "bg-gray-100 text-gray-800"
-                : client.status === "completed"
-                ? "bg-blue-100 text-blue-800"
-                : "bg-yellow-100 text-yellow-800"
+                  ? "bg-gray-100 text-gray-800"
+                  : client.status === "completed"
+                    ? "bg-blue-100 text-blue-800"
+                    : "bg-yellow-100 text-yellow-800"
             }`}
           >
             {client.status.charAt(0).toUpperCase() + client.status.slice(1)}
@@ -1049,10 +1119,10 @@ export default function ClientDetail({ clientId }) {
                             form.status === "signed"
                               ? "bg-green-100 text-green-800"
                               : form.status === "pending"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : form.status === "expired"
-                              ? "bg-red-100 text-red-800"
-                              : "bg-gray-100 text-gray-800"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : form.status === "expired"
+                                  ? "bg-red-100 text-red-800"
+                                  : "bg-gray-100 text-gray-800"
                           }`}
                         >
                           {form.status}
@@ -1121,53 +1191,37 @@ export default function ClientDetail({ clientId }) {
                   <h3 className="font-semibold">{selectedConsent.type}</h3>
                   <p className="text-sm text-gray-600">Version: {selectedConsent.version}</p>
                   <p className="text-sm text-gray-600">Status: {selectedConsent.status}</p>
+                  {selectedConsent.dateSigned && (
+                    <p className="text-sm text-gray-600">
+                      Date Signed: {new Date(selectedConsent.dateSigned).toLocaleDateString()}
+                    </p>
+                  )}
                 </div>
 
-                {selectedConsent.document && (
+                {/* Determine which document URL to show */}
+                {(selectedConsent.signedDocument || selectedConsent.document) && (
                   <div className="mb-4">
                     <a
-                      href={selectedConsent.document}
+                      href={selectedConsent.signedDocument || selectedConsent.document}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-600 hover:underline"
                     >
-                      View Document
+                      {selectedConsent.signedDocument
+                        ? "View Signed Document"
+                        : "View Original Document"}
                     </a>
                   </div>
                 )}
 
-                {selectedConsent.shareableLink && (
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Shareable Link
-                    </label>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="text"
-                        readOnly
-                        value={selectedConsent.shareableLink}
-                        className="flex-1 text-sm border rounded-md px-2 py-1 bg-gray-50"
-                      />
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(selectedConsent.shareableLink);
-                          // You might want to add a toast notification here
-                        }}
-                        className="text-blue-600 hover:text-blue-800"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                        >
-                          <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
-                          <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
+                {/* Conditionally show upload if pending? (Optional enhancement) */}
+                {selectedConsent.status === "pending" && !selectedConsent.signedDocument && (
+                  <p className="text-sm text-yellow-700">
+                    Waiting for client to upload signed document.
+                  </p>
                 )}
+
+                {/* Add other actions like Revoke/Resend if needed */}
 
                 <div className="mt-4">
                   <button
