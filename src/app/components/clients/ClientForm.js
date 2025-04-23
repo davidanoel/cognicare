@@ -158,52 +158,6 @@ export default function ClientForm({ client, onSuccess, onCancel }) {
 
       const savedClient = await response.json();
 
-      // Only trigger AI assessment for new clients
-      if (!client) {
-        setAiProcessing(true);
-        try {
-          console.log("Sending AI workflow request for client:", savedClient._id);
-
-          // Use the new agent workflow API instead of the old trigger function
-          const aiResponse = await fetch("/api/ai/agent-workflow", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              stage: "intake",
-              clientId: savedClient._id,
-              clientData: savedClient,
-            }),
-          });
-
-          console.log("AI response status:", aiResponse.status);
-
-          if (!aiResponse.ok) {
-            const errorText = await aiResponse.text();
-            console.error("AI Response Error Text:", errorText);
-            let errorJson;
-            try {
-              errorJson = JSON.parse(errorText);
-              console.error("Error details:", errorJson);
-            } catch (e) {
-              // Text wasn't JSON
-            }
-            throw new Error(
-              `AI workflow failed: ${errorJson?.error || errorText || aiResponse.status}`
-            );
-          }
-
-          const aiResult = await aiResponse.json();
-          console.log("AI intake processing completed:", aiResult);
-        } catch (aiError) {
-          console.error("AI Processing Error:", aiError);
-          setError(`AI Processing Error: ${aiError.message || "Unknown error"}`);
-          // Don't block the client creation if AI processing fails
-        }
-        setAiProcessing(false);
-      }
-
       if (onSuccess) {
         onSuccess(savedClient);
       }

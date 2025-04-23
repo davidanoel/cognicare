@@ -39,9 +39,18 @@ export default function ClientDetail({ clientId }) {
   const [consentFormNotes, setConsentFormNotes] = useState("");
   const [consentFormFile, setConsentFormFile] = useState(null);
   const [availableTemplates, setAvailableTemplates] = useState([]);
+  const [showNewClientReminder, setShowNewClientReminder] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
+    // Check sessionStorage for the flag on initial load
+    const newClientId = sessionStorage.getItem("showClientReminderForId");
+    if (newClientId && newClientId === clientId) {
+      setShowNewClientReminder(true);
+      // Immediately remove the flag so it doesn't show again
+      sessionStorage.removeItem("showClientReminderForId");
+    }
+
     if (clientId) {
       fetchClient();
     }
@@ -422,6 +431,11 @@ export default function ClientDetail({ clientId }) {
     setClient(updatedClient);
   };
 
+  const dismissNewClientReminder = () => {
+    setShowNewClientReminder(false);
+    // No need to modify URL params here anymore
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -471,6 +485,32 @@ export default function ClientDetail({ clientId }) {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* New Client Reminder Banner (logic remains the same) */}
+      {showNewClientReminder && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-300 text-blue-800 rounded-lg flex justify-between items-center">
+          <span>
+            ✨ New client created successfully! Run the AI Initial Assessment from the AI Assistant
+            tab when ready.
+          </span>
+          <button
+            onClick={dismissNewClientReminder}
+            className="text-blue-600 hover:text-blue-800 ml-4"
+            aria-label="Dismiss reminder"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">

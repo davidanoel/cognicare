@@ -78,10 +78,11 @@ export default function ClientList() {
 
   const handleClientAdded = (newClient) => {
     setShowAddClient(false);
-    fetchAllClients(); // Refresh all clients
+    //fetchAllClients(); // Refresh all clients
     // Navigate to client details with insights tab active
     if (newClient && newClient._id) {
-      router.push(`/clients/${newClient._id}?tab=insights`);
+      sessionStorage.setItem("showClientReminderForId", newClient._id);
+      router.push(`/clients/${newClient._id}`);
     }
   };
 
@@ -204,10 +205,10 @@ export default function ClientList() {
                         client.status === "active"
                           ? "bg-green-100 text-green-800"
                           : client.status === "inactive"
-                          ? "bg-gray-100 text-gray-800"
-                          : client.status === "completed"
-                          ? "bg-blue-100 text-blue-800"
-                          : "bg-yellow-100 text-yellow-800"
+                            ? "bg-gray-100 text-gray-800"
+                            : client.status === "completed"
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-yellow-100 text-yellow-800"
                       }`}
                     >
                       {client.status.charAt(0).toUpperCase() + client.status.slice(1)}
